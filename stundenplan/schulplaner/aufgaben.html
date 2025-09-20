@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Schulplaner — Aufgaben</title>
+  <link rel="stylesheet" href="./shared.css" />
+  <script type="module">
+    import { initStore, mountCommon, DB, DATA, setPlanFor, getPlanFor, setDirty } from "./app.js";
+    import "./auth.js";
+
+    initStore().then(() => {
+      mountCommon("aufgaben.html");
+      fillSubjects();
+      renderList();
+    });
+
+    function fillSubjects(){
+      const subs=new Set();
+      Object.values(DATA.entries||{}).forEach(day=> day.forEach(e=> e?.subject && subs.add(e.subject)));
+      const sel=document.querySelector('#tSubject'); sel.innerHTML='';
+      [...subs].sort().forEach(s=>{
+        const o=document.createElement('option'); o.value=s; o.textContent=s; sel.appendChild(o);
+      });
+      const o=document.createElement('option'); o.value='(Andere)'; o.textContent='Andere'; sel.appendChild(o);
+    }
+
+    function taskProgress(t){
+      if(!t.subtasks||t.subtasks.length===0) return t.progress||0;
+      const d=t.subtasks.filter(s=>s.done).length; return Math.round((d/t.subtasks.length)*100);
+    }
+
+    function renderList(){
+      const sortBy=document.querySelector('#sortBy').value;
+      let arr=[...(DB.tasks||[])];
+      arr.sort((a,b)=>
+        sortBy==='priority' ? (b.priority||2)-(a.priority||2)
+        : sortBy==='progress' ? taskProgress(b)-taskProgress(a)
+        : (new Date(a.deadline)-new Date(b.deadline))
+      );
+      const list=document.querySelector('#tasks'); list.innerHTML='';
+      if(!arr.length){ list.innerHTML='<div class="muted">Keine Aufgaben.</div>'; return; }
+      arr.forEach(t=>{
+        const card=document.createElement('div'); card.className='card';
+        card.innerHTML = `
+          <div class="session">
+            <div>
+              <div><strong>${t.title}</strong> · <span class="muted">${t.subject||""}</span></div>
+              <div class="muted">${new Date(t.deadline).toLocaleString('de-DE')}</div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-sm" data-done="${t.id}">Erledigt</button>
+              <button class="btn btn-sm btn-ghost" data-del="${t.id}">Löschen</button>
+            </div>
+          </div>`;
+        list.appendChild(card);
+      });
+
+      list.onclick=(e)=>{
+        const d=e.target.closest('button[data-del]');
+        const k=e.target.closest('button[data-done]');
+        if(d){
+          const id=d.getAttribute('data-del');
+          DB.tasks=(DB.tasks||[]).filter(x=>x.id!==id);
+          setDirty();
+          setPlanFor(new Date(), getPlanFor(new Date())); renderList();
+        }
+        if(k){
+          const id=k.getAttribute('data-done');
+          const t=(DB.tasks||[]).find(x=>x.id===id);
+          if(t){ t.done=true; t.progress=100;
+            setDirty();
+            setPlanFor(new Date(), getPlanFor(new Date())); renderList(); }
+        }
+      };
+    }
+
+    document.addEventListener('click',(e)=>{
+      if(e.target.id==='addTask'){
+        const t = {
+        id: crypto.randomUUID(),
+        title: document.querySelector('#tTitle').value.trim(),
+        subject: document.querySelector('#tSubject').value || null,
+        deadline: new Date(document.querySelector('#tDeadline').value).toISOString(),
+        estMin: parseInt(document.querySelector('#tEst').value || '0', 10),
+        progress: 0,
+        subtasks: [],                 // <—
+        priority: parseInt(document.querySelector('#tPriority').value || '2', 10),
+        notes: (document.querySelector('#tNotes').value || '').trim(),  // <—
+        done: false
+        };
+        if(!t.title || !t.deadline || !t.estMin){ alert('Bitte Titel, Fälligkeit und Zeitbedarf eingeben.'); return; }
+        (DB.tasks=DB.tasks||[]).push(t);
+        setDirty();
+        setPlanFor(new Date(), getPlanFor(new Date()));
+        document.querySelector('#tTitle').value='';
+        document.querySelector('#tDeadline').value='';
+        document.querySelector('#tEst').value='';
+        document.querySelector('#tNotes').value='';
+        renderList();
+      }
+      if(e.target.id==='sortBy'){ renderList(); }
+    });
+  </script>
+</head>
+<body>
+  <div class="app">
+    <section class="card"><h2>Aufgaben</h2></section>
+
+    <section class="card">
+      <h2>Neue Aufgabe</h2>
+      <div class="row" style="margin-bottom:10px">
+        <input class="input" id="tTitle" placeholder="Titel" />
+        <select class="input" id="tSubject"></select>
+      </div>
+      <div class="row" style="margin-bottom:10px">
+        <input class="input" id="tDeadline" type="datetime-local" />
+        <input class="input" id="tEst" type="number" min="5" step="5" placeholder="Zeitbedarf (Minuten)" />
+      </div>
+      <div class="row" style="margin-bottom:10px">
+        <select class="input" id="tPriority">
+          <option value="2">Priorität: Normal</option>
+          <option value="3">Priorität: Hoch</option>
+          <option value="1">Priorität: Niedrig</option>
+        </select>
+        <input class="input" id="tNotes" placeholder="Notizen (optional)" />
+      </div>
+      <div><button class="btn btn-accent" id="addTask">Hinzufügen</button></div>
+    </section>
+
+    <section class="card">
+      <div style="display:flex;gap:8px;align-items:center;justify-content:space-between">
+        <h2>Alle Aufgaben</h2>
+        <div>
+          <select class="input" id="sortBy" style="max-width:220px">
+            <option value="due">Sortierung: Fällig</option>
+            <option value="priority">Sortierung: Priorität</option>
+            <option value="progress">Sortierung: Fortschritt</option>
+          </select>
+        </div>
+      </div>
+      <div id="tasks" class="grid"></div>
+    </section>
+  </div>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Schulplaner — Prüfungen & Ereignisse</title>
+  <link rel="stylesheet" href="./shared.css" />
+  <script type="module">
+    import { initStore, mountCommon, DB, isoDate, setPlanFor, getPlanFor, setDirty } from "./app.js";
+    import "./auth.js";
+
+    initStore().then(() => {
+      mountCommon("pruefungen.html");
+      renderExams();
+      renderEvents();
+    });
+
+    function renderExams(){
+      const box=document.querySelector('#examsList'); box.innerHTML='';
+      if(!(DB.exams||[]).length){ box.innerHTML='<div class="muted">Keine Prüfungen.</div>'; return; }
+      DB.exams.sort((a,b)=> new Date(a.dateISO)-new Date(b.dateISO));
+      DB.exams.forEach(x=>{
+        const row=document.createElement('div'); row.className='session';
+        row.innerHTML=`
+          <div><strong>${x.subject}</strong> — ${x.title}
+          <span class="muted">(${new Date(x.dateISO).toLocaleString('de-DE')})</span></div>
+          <button class="btn btn-sm btn-ghost" data-del="${x.id}">Löschen</button>`;
+        box.appendChild(row);
+      });
+      box.onclick=(e)=>{
+        const b=e.target.closest('button[data-del]'); if(!b) return;
+        DB.exams=DB.exams.filter(x=>x.id!==b.getAttribute('data-del'));
+        setDirty();
+        setPlanFor(new Date(), getPlanFor(new Date())); renderExams();
+      };
+    }
+
+    function renderEvents(){
+      const box=document.querySelector('#eventsList'); box.innerHTML='';
+      if(!(DB.events||[]).length){ box.innerHTML='<div class="muted">Keine Ereignisse.</div>'; return; }
+      DB.events.sort((a,b)=> new Date(a.fromISO)-new Date(b.fromISO));
+      DB.events.forEach(ev=>{
+        const f=new Date(ev.fromISO), t=ev.toISO? new Date(ev.toISO):null;
+        const when = ev.allDay ? 'Ganztägig' : `${f.toLocaleString('de-DE')}${t? ' – '+t.toLocaleString('de-DE'):''}`;
+        const row=document.createElement('div'); row.className='session';
+        row.innerHTML=`
+          <div><strong>${ev.title}</strong> <span class="muted">(${when})</span></div>
+          <button class="btn btn-sm btn-ghost" data-del="${ev.id}">Löschen</button>`;
+        box.appendChild(row);
+      });
+    box.onclick = (e) => {
+        const b = e.target.closest('button[data-del]'); if(!b) return;
+        DB.events = DB.events.filter(x => x.id !== b.getAttribute('data-del'));
+        setDirty(); // <-- add this
+        setPlanFor(new Date(), getPlanFor(new Date()));
+        renderEvents();
+    };
+    }
+
+    document.addEventListener('click',(e)=>{
+      if(e.target.id==='addExam'){
+        const title=document.querySelector('#xTitle').value.trim();
+        const subject=document.querySelector('#xSubject').value.trim();
+        const date=document.querySelector('#xDate').value;
+        const prio=parseInt(document.querySelector('#xPriority').value||'2',10);
+        if(!title||!subject||!date){ alert('Bitte alles ausfüllen.'); return; }
+        (DB.exams=DB.exams||[]).push({
+          id: crypto.randomUUID(),
+          title, subject,
+          dateISO: new Date(date).toISOString(),
+          priority: prio
+        });
+        setDirty();
+        setPlanFor(new Date(), getPlanFor(new Date()));
+        document.querySelector('#xTitle').value='';
+        document.querySelector('#xSubject').value='';
+        document.querySelector('#xDate').value='';
+        renderExams();
+      }
+
+    if (e.target.id === 'addEvent') {
+    const title = document.querySelector('#eTitle').value.trim();
+    const from  = document.querySelector('#eFrom').value;
+    const to    = document.querySelector('#eTo').value;
+    const allDay = document.querySelector('#eAllDay').checked;
+    if (!title || !from) { alert('Bitte Titel und Startzeit.'); return; }
+
+    let fromISO, toISO;
+    if (allDay) {
+        const day = new Date(from); day.setHours(0,0,0,0);
+        fromISO = day.toISOString();
+        const end = new Date(to || from); end.setHours(23,59,59,999);
+        toISO = end.toISOString();
+    } else {
+        fromISO = new Date(from).toISOString();
+        toISO = to ? new Date(to).toISOString() : null;   // <— important: null, not undefined
+    }
+
+    (DB.events = DB.events || []).push({ id: crypto.randomUUID(), title, fromISO, toISO, allDay });
+    setDirty();
+    // keep your existing lines…
+    document.querySelector('#eTitle').value='';
+    document.querySelector('#eFrom').value='';
+    document.querySelector('#eTo').value='';
+    document.querySelector('#eAllDay').checked=false;
+    renderEvents();
+    }
+
+    });
+  </script>
+</head>
+<body>
+  <div class="app">
+    <section class="card"><h2>Prüfungen & Ereignisse</h2></section>
+
+    <div class="grid cols-2">
+      <section class="card">
+        <h2>Prüfung hinzufügen</h2>
+        <div class="row" style="margin-bottom:10px">
+          <input class="input" id="xTitle" placeholder="Thema" />
+          <input class="input" id="xSubject" placeholder="Fach" />
+        </div>
+        <div class="row" style="margin-bottom:10px">
+          <input class="input" id="xDate" type="datetime-local" />
+          <select class="input" id="xPriority">
+            <option value="2">Wichtigkeit: Normal</option>
+            <option value="3">Wichtigkeit: Hoch</option>
+            <option value="1">Wichtigkeit: Niedrig</option>
+          </select>
+        </div>
+        <button class="btn btn-accent" id="addExam">Speichern</button>
+        <div id="examsList" class="list" style="margin-top:10px"></div>
+      </section>
+
+      <section class="card">
+        <h2>Ereignis hinzufügen</h2>
+        <div class="row" style="margin-bottom:10px">
+          <input class="input" id="eTitle" placeholder="Titel" />
+          <input class="input" id="eLocation" placeholder="Ort (optional)" />
+        </div>
+        <div class="row" style="margin-bottom:10px">
+          <input class="input" id="eFrom" type="datetime-local" />
+          <input class="input" id="eTo" type="datetime-local" />
+        </div>
+        <div style="margin-bottom:10px">
+          <label><input type="checkbox" id="eAllDay"> Ganztägig</label>
+        </div>
+        <button class="btn btn-accent" id="addEvent">Speichern</button>
+        <div id="eventsList" class="list" style="margin-top:10px"></div>
+      </section>
+    </div>
+  </div>
+</body>
+</html>

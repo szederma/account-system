@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Schulplaner — Kalender</title>
+  <link rel="stylesheet" href="./shared.css" />
+  <script type="module">
+    import { initStore, mountCommon, isoDate, DB } from "./app.js";
+    import "./auth.js";
+
+    let calMonth = new Date(); // zeigt aktueller Monat
+    calMonth.setDate(1);
+
+    initStore().then(() => {
+      mountCommon("kalender.html");
+      renderCalendar();
+    });
+
+    function renderCalendar(){
+      document.querySelector('#calTitle').textContent =
+        calMonth.toLocaleDateString('de-DE',{month:'long', year:'numeric'});
+      document.querySelector('#calSubtitle').textContent =
+        '📝 Prüfungen (rot) · ⭐ Ereignisse (orange) · 📚 Lernen (grün)';
+
+      const dow=document.querySelector('#calDow'); dow.innerHTML='';
+      ['Mo','Di','Mi','Do','Fr','Sa','So'].forEach(s=>{
+        const d=document.createElement('div'); d.className='cal-dow'; d.textContent=s; dow.appendChild(d);
+      });
+
+      const grid=document.querySelector('#calGrid'); grid.innerHTML='';
+      const first=new Date(calMonth);
+      const firstDay=(first.getDay()+6)%7; // Mo=0
+      const showStart=new Date(first); showStart.setDate(first.getDate()-firstDay);
+
+      for(let i=0;i<42;i++){
+        const d=new Date(showStart); d.setDate(showStart.getDate()+i);
+        const cell=document.createElement('div'); cell.className='cal-day';
+        const dayStr=isoDate(d);
+        cell.setAttribute('data-date', dayStr);
+        cell.innerHTML = `<div class="dnum">${d.getDate()}.</div>`;
+
+        const dayExams  = (DB.exams || []).filter(x => isoDate(x.dateISO) === dayStr);
+        const dayEvents = (DB.events|| []).filter(e => isoDate(e.fromISO) <= dayStr && isoDate(e.toISO || e.fromISO) >= dayStr);
+        const daySessions = ((DB.planned?.byDate||{})[dayStr]||[]).length;
+
+        let count=0; const max=3;
+        dayExams.slice(0,max).forEach(x=>{
+          const lab=document.createElement('div'); lab.className='pill-mini p-exam'; lab.textContent=`📝 ${x.title}`;
+          cell.appendChild(lab); count++;
+        });
+        if(count<max){
+          dayEvents.slice(0,max-count).forEach(e=>{
+            const lab=document.createElement('div'); lab.className='pill-mini p-event'; lab.textContent=`⭐ ${e.title}`;
+            cell.appendChild(lab); count++;
+          });
+        }
+        if(daySessions && count<max){
+          const lab=document.createElement('div'); lab.className='pill-mini p-study'; lab.textContent=`📚 ${daySessions} Sessions`;
+          cell.appendChild(lab);
+        }
+
+        grid.appendChild(cell);
+      }
+
+      // Default: heutiger Tag Details
+      renderCalDayDetails(new Date());
+    }
+
+    function renderCalDayDetails(date){
+      const dayStr=isoDate(date);
+      const box=document.querySelector('#calDayDetails'); box.innerHTML='';
+
+      // Prüfungen
+      (DB.exams||[]).filter(x=>isoDate(x.dateISO)===dayStr).forEach(x=>{
+        const d=new Date(x.dateISO);
+        box.innerHTML += `<div class="session"><div><strong>${x.title}</strong> · ${x.subject}</div><div class="muted">${d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}</div></div>`;
+      });
+
+      // Ereignisse
+      (DB.events||[]).filter(e=> isoDate(e.fromISO)<=dayStr && isoDate(e.toISO||e.fromISO)>=dayStr).forEach(ev=>{
+        const f=new Date(ev.fromISO); const t=ev.toISO? new Date(ev.toISO):null;
+        const when = ev.allDay ? 'Ganztägig' : `${f.toLocaleString('de-DE')}${t? ' – '+t.toLocaleString('de-DE'):''}`;
+        box.innerHTML += `<div class="session"><div><strong>${ev.title}</strong></div><div class="muted">${when}</div></div>`;
+      });
+
+      // Lern-Sessions
+      (((DB.planned||{}).byDate||{})[dayStr]||[]).forEach(s=>{
+        box.innerHTML += `<div class="session"><div><strong>${s.start}–${s.end}</strong> · ${s.subject}</div></div>`;
+      });
+
+      if(!box.innerHTML){
+        box.innerHTML = '<div class="muted">Keine Einträge.</div>';
+      }
+    }
+
+    document.addEventListener('click',(e)=>{
+      if(e.target.id==='calPrev'){ calMonth.setMonth(calMonth.getMonth()-1); renderCalendar(); }
+      if(e.target.id==='calNext'){ calMonth.setMonth(calMonth.getMonth()+1); renderCalendar(); }
+
+      const dayCell = e.target.closest('.cal-day');
+      if(dayCell){
+        const d=new Date(dayCell.getAttribute('data-date'));
+        renderCalDayDetails(d);
+      }
+    });
+  </script>
+</head>
+<body>
+  <div class="app">
+    <section class="card"><h2>Kalender</h2></section>
+
+    <section class="card">
+      <div class="cal-wrap">
+        <div class="cal-head">
+          <button class="btn btn-sm" id="calPrev">⟵</button>
+          <div>
+            <h2 id="calTitle" style="display:inline-block;margin-right:8px"></h2>
+            <span class="muted" id="calSubtitle"></span>
+          </div>
+          <button class="btn btn-sm" id="calNext">⟶</button>
+        </div>
+        <div class="cal-grid" id="calDow"></div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Tag auswählen</h2>
+      <div id="calDayDetails" class="list"></div>
+    </section>
+  </div>
+</body>
+</html>

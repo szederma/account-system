@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login - Distanzuino</title>
+  <style>
+    @font-face {
+        font-family: 'Caros';
+        src: url('/caros/Caros-Bold.otf') format('opentype'); /* Adjust path if necessary */
+        font-weight: bold;
+        font-style: normal;
+    }
+
+    :root {
+      --dark-bg-main: #101010;
+      --darker-bg-container: #1c1c1c; /* From Distanzuino */
+      --bento-container-bg: rgba(35, 35, 35, 0.95); /* From Distanzuino */
+      --accent-red: #ff1f1f; /* Distanzuino red */
+      --accent-red-hover: #d31818; /* Distanzuino red hover */
+      --text-primary: #f0f0f0;
+      --text-secondary: #b0b0b0;
+      --input-bg: #2c2c2c; /* Darker input similar to Distanzuino select */
+      --border-color: rgba(255, 31, 31, 0.20); /* Distanzuino border */
+      --border-color-focus: rgba(255, 31, 31, 0.5); /* Distanzuino border hover */
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Caros', sans-serif;
+      font-weight: 700; /* Bold is default for Caros in index.html */
+    }
+
+    body {
+      background: linear-gradient(135deg, #101010 0%, #1c1c1c 80%, #2a2a2a 100%);
+      color: var(--text-primary);
+      font-family: 'Caros', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column; /* Added for logo alignment */
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      opacity: 0; /* Initially hidden */
+      transition: opacity 0.5s ease-in-out; /* Smooth fade-in */
+    }
+
+    body.loaded {
+        opacity: 1; /* Fade in when loaded */
+    }
+
+    /* Loader styles */
+    #page-loading-overlay {
+        position: fixed;
+        inset: 0;
+        background-color: #1c1c1c; /* Match body background */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 10001; /* Ensure it's on top */
+        text-align: center;
+    }
+    #page-loading-overlay img {
+        width: 80px;
+        height: auto;
+        margin-bottom: 20px;
+        border-radius: 4px; /* Consistent with logo */
+    }
+    #page-loading-overlay p {
+        color: #f0f0f0;
+        font-size: 1.5rem;
+        font-family: 'Caros', sans-serif;
+        font-weight: 700;
+    }
+
+
+    #logo-container {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    #logo {
+      width: 70px; /* Consistent with index.html */
+      height: auto;
+      border-radius: 4px;
+    }
+
+    #logo-container h1 {
+      font-size: 2.2rem; /* Consistent with index.html */
+      color: #ffffff;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    .auth-container {
+      background: var(--bento-container-bg);
+      border-radius: 16px;
+      padding: clamp(20px, 4vw, 30px) clamp(25px, 5vw, 40px); /* Responsive padding */
+      width: 100%;
+      max-width: 420px; /* Slightly wider for better spacing */
+      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+      border: 1px solid var(--border-color);
+      text-align: center;
+    }
+
+    h2.auth-title {
+      font-size: clamp(1.5rem, 5vw, 1.8rem); /* Responsive title */
+      color: var(--text-primary); /* White title */
+      margin-bottom: 25px;
+    }
+
+    input[type="email"], input[type="password"], input[type="text"] {
+      width: 100%;
+      padding: 14px 18px;
+      margin-bottom: 15px;
+      background: var(--input-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 10px; /* Match Distanzuino buttons */
+      color: var(--text-primary);
+      box-sizing: border-box;
+      font-size: clamp(0.9rem, 2.5vw, 1rem);
+      outline: none;
+      transition: border-color 0.25s ease, background-color 0.25s ease;
+      font-weight: 500; /* Lighter weight for input text */
+    }
+    input:focus {
+        border-color: var(--accent-red-focus);
+        background-color: #333; /* Slightly lighter on focus */
+    }
+
+    #auth-username-container {
+        display: none; /* Initially hidden for login */
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.5s ease-out, margin-top 0.5s ease-out;
+    }
+    #auth-username-container.visible {
+        display: block; /* Will be overridden by flex/block as needed */
+        max-height: 100px; /* Adjust as needed */
+        margin-top: 0; /* No extra margin when visible */
+    }
+
+
+    .button-group {
+      display: flex;
+      flex-direction: column; /* Stack buttons */
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    button.auth-button {
+      padding: clamp(10px, 2.2vw, 14px) clamp(15px, 3vw, 25px); /* Responsive padding */
+      font-size: clamp(0.85rem, 2.5vw, 1rem);
+      border: 1px solid var(--accent-red);
+      border-radius: 10px;
+      background: linear-gradient(45deg, #e61a1a, #ff3b3b);
+      color: white;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.75px;
+      width: 100%;
+    }
+    button.auth-button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      background: linear-gradient(45deg, #d31818, #eb3333);
+      border-color: rgba(255, 31, 31, 0.6);
+    }
+    button.auth-button:active:not(:disabled) {
+        transform: translateY(-1px);
+        background: linear-gradient(45deg, #c01010, #d32020);
+    }
+    button.auth-button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        background: #555;
+        border-color: #444;
+    }
+    
+    .toggle-auth-mode {
+        background: none;
+        border: none;
+        color: var(--accent-red);
+        cursor: pointer;
+        font-size: clamp(0.8rem, 2.2vw, 0.9rem);
+        margin-top: 20px;
+        text-decoration: underline;
+        font-weight: 600;
+    }
+    .toggle-auth-mode:hover {
+        color: var(--accent-red-hover);
+    }
+
+    .status-message {
+        padding: 10px;
+        margin-bottom: 15px;
+        border-radius: 8px;
+        text-align: center;
+        font-size: 0.9rem;
+        color: #E4717A; 
+        background-color: rgba(220, 53, 69, 0.1);
+        border: 1px solid rgba(220, 53, 69, 0.2);
+        font-weight: 500;
+    }
+    .status-message.success {
+        color: #43B581; /* Green for success */
+        background-color: rgba(67, 181, 129, 0.1);
+        border: 1px solid rgba(67, 181, 129, 0.2);
+    }
+
+  </style>
+</head>
+<body>
+  <div id="page-loading-overlay">
+    <img src="/images/logo.png" alt="Loading Logo">
+    <p>Loading Distanzuino...</p>
+  </div>
+
+  <div id="logo-container">
+    <a href="/bt/"><img id="logo" src="/images/logo.png" alt="Distanzuino Logo"></a>
+    <h1>Distanzuino</h1>
+  </div>
+
+  <div class="auth-container">
+    <h2 class="auth-title" id="auth-form-title">Login</h2>
+    <div id="status-area"></div>
+
+    <input id="auth-email" type="email" placeholder="Email Address" autocomplete="email" />
+    <input id="auth-password" type="password" placeholder="Password" autocomplete="current-password" />
+    
+    <div id="auth-username-container">
+      <input id="auth-username" type="text" placeholder="Username" autocomplete="username" />
+    </div>
+
+    <div class="button-group">
+      <button id="main-auth-btn" class="auth-button">Login</button>
+    </div>
+    <button id="toggle-auth-link" class="toggle-auth-mode">Don't have an account? Register here.</button>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // Firebase configuration (ensure this is correct)
+    const firebaseConfig = {
+        apiKey: "AIzaSyAddXTzBxZk1Su6fNnsgRuNnWqFrq_ZjCY", // Replace with your actual API key
+        authDomain: "distanzuino-project.firebaseapp.com",
+        projectId: "distanzuino-project",
+        storageBucket: "distanzuino-project.appspot.com",
+        messagingSenderId: "584745723160",
+        appId: "1:584745723160:web:97387a22f4b4b9fb9c6a6d"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // DOM Elements
+    const emailInput = document.getElementById("auth-email");
+    const passwordInput = document.getElementById("auth-password");
+    const usernameInput = document.getElementById("auth-username");
+    const usernameContainer = document.getElementById("auth-username-container");
+    
+    const mainAuthBtn = document.getElementById("main-auth-btn");
+    const toggleAuthLink = document.getElementById("toggle-auth-link");
+    const statusArea = document.getElementById("status-area");
+    const authFormTitle = document.getElementById("auth-form-title");
+    const pageLoadingOverlay = document.getElementById("page-loading-overlay"); // Loader element
+
+    let isLoginMode = true;
+
+    // Utility to show status messages
+    function showStatus(message, type = "error") {
+        statusArea.innerHTML = `<div class="status-message ${type}">${message}</div>`;
+    }
+    // Utility to clear status messages
+    function clearStatus() {
+        statusArea.innerHTML = "";
+    }
+    // Utility to disable/enable form elements
+    function setFormDisabled(disabled) {
+        mainAuthBtn.disabled = disabled;
+        emailInput.disabled = disabled;
+        passwordInput.disabled = disabled;
+        usernameInput.disabled = disabled;
+        toggleAuthLink.disabled = disabled; // Also disable the toggle link during operations
+    }
+
+    // Function to update UI based on login/register mode
+    function updateAuthMode() {
+        if (isLoginMode) {
+            authFormTitle.textContent = "Login";
+            mainAuthBtn.textContent = "Login";
+            usernameContainer.classList.remove("visible");
+            // Ensure it's hidden before potential transition, using style.display
+            usernameContainer.style.display = "none"; 
+            toggleAuthLink.textContent = "Don't have an account? Register here.";
+        } else {
+            authFormTitle.textContent = "Register";
+            mainAuthBtn.textContent = "Register";
+            // Make it block before transition for visibility
+            usernameContainer.style.display = "block"; 
+            // Add class for transition after a short delay
+            setTimeout(() => usernameContainer.classList.add("visible"), 10); 
+            toggleAuthLink.textContent = "Already have an account? Login here.";
+        }
+        clearStatus(); // Clear any previous status messages
+    }
+
+    // Event listener for toggling between login and register mode
+    toggleAuthLink.onclick = () => {
+        isLoginMode = !isLoginMode;
+        updateAuthMode();
+    };
+
+    // Event listener for the main authentication button (Login/Register)
+    mainAuthBtn.onclick = async () => {
+      clearStatus();
+      const email = emailInput.value.trim();
+      const password = passwordInput.value.trim();
+      const username = usernameInput.value.trim(); // Only used in register mode
+
+      if (isLoginMode) { // Login Mode
+        if (!email || !password) {
+          return showStatus("Email and Password are required for login.");
+        }
+        setFormDisabled(true);
+        showStatus("Attempting login...", "success"); // Provide feedback
+
+        try {
+          await signInWithEmailAndPassword(auth, email, password);
+          // onAuthStateChanged will handle successful login (redirect and loader hiding)
+        } catch (e) {
+          console.error("Login failed:", e);
+          showStatus("Login failed: " + e.message);
+          setFormDisabled(false); // Re-enable form on failure
+        }
+      } else { // Register Mode
+        if (!email || !password || !username) {
+            return showStatus("Email, Password, and Username are required for registration.");
+        }
+        if (password.length < 6) {
+            return showStatus("Password should be at least 6 characters long.");
+        }
+        if (username.length < 3 || username.length > 20) {
+            return showStatus("Username must be between 3 and 20 characters.");
+        }
+        setFormDisabled(true);
+        showStatus("Registering...", "success"); // Provide feedback
+
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            // Store additional user info (username) in Firestore
+            await setDoc(doc(db, 'users', user.uid), {
+                username: username,
+                email: user.email, 
+                createdAt: serverTimestamp(),
+                // Example: distanzuinoSettings: {} 
+            });
+            // onAuthStateChanged will handle successful registration (redirect and loader hiding)
+        } catch (e) {
+            console.error("Registration failed:", e);
+            showStatus("Registration failed: " + e.message);
+            setFormDisabled(false); // Re-enable form on failure
+        }
+      }
+    };
+
+    // Firebase Auth state change listener
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // User is logged in
+        showStatus("Logged in. Redirecting...", "success");
+        setFormDisabled(true); 
+        // Redirect to the main application page after a short delay
+        setTimeout(() => {
+            window.location.href = "/bt/"; 
+        }, 1000);
+        // Loader will be hidden by the redirect itself or by the target page's loader logic
+      } else {
+        // User is not logged in or has logged out
+        setFormDisabled(false); // Ensure form is enabled
+        console.log("User is not logged in. Auth form is active.");
+        // Hide loader and show content
+        if (pageLoadingOverlay) {
+            pageLoadingOverlay.style.display = "none";
+        }
+        document.body.classList.add('loaded'); // Fade in body content
+      }
+    });
+
+    // Initialize the authentication mode view on page load
+    updateAuthMode();
+    // Initial check to hide loader if user is not logged in immediately
+    if (!auth.currentUser && pageLoadingOverlay) {
+        // This might be redundant if onAuthStateChanged fires quickly, but good for initial state
+        // pageLoadingOverlay.style.display = "none";
+        // document.body.classList.add('loaded');
+    }
+  </script>
+</body>
+</html>

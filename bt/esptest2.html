@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>DistanzuinoBT BLE Viewer</title>
+</head>
+<body>
+  <h1>Live BLE Data from ESP32</h1>
+  <button onclick="connectBLE()">Connect to DistanzuinoBT</button>
+  <pre id="log" style="font-size: 1.2em; background: #f4f4f4; padding: 10px; border: 1px solid #ccc;"></pre>
+
+  <script>
+    const serviceUUID = "12345678-1234-1234-1234-1234567890ab";
+    const characteristicUUID = "87654321-4321-4321-4321-abcdefabcdef";
+
+    async function connectBLE() {
+      try {
+        const device = await navigator.bluetooth.requestDevice({
+          filters: [{ name: "DistanzuinoBT" }],
+          optionalServices: [serviceUUID]
+        });
+
+        const server = await device.gatt.connect();
+        const service = await server.getPrimaryService(serviceUUID);
+        const characteristic = await service.getCharacteristic(characteristicUUID);
+
+        await characteristic.startNotifications();
+
+        characteristic.addEventListener('characteristicvaluechanged', (event) => {
+          const value = new TextDecoder().decode(event.target.value);
+          document.getElementById('log').textContent += value + '\n';
+        });
+
+        console.log("Connected to DistanzuinoBT");
+      } catch (error) {
+        console.error("BLE connection failed:", error);
+      }
+    }
+  </script>
+</body>
+</html>

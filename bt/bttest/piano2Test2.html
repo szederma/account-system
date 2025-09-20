@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Piano2 Sound</title>
+    <style>
+        .piano {
+            display: flex;
+            align-items: center;
+            gap: 10px; /* Space between the keys */
+            padding: 20px;
+        }
+        .key {
+            width: 60px;
+            height: 200px;
+            border: 1px solid black;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .key.active {
+            background: lightgray;
+        }
+        .gap {
+            width: 20px; /* Small gap between H1 and C2 */
+        }
+    </style>
+</head>
+<body>
+    <div class="piano">
+        <div class="key" data-tone="C1">C</div>
+        <div class="key" data-tone="D1">D</div>
+        <div class="key" data-tone="E1">E</div>
+        <div class="key" data-tone="F1">F</div>
+        <div class="key" data-tone="G1">G</div>
+        <div class="key" data-tone="A1">A</div>
+        <div class="key" data-tone="H1">H</div>
+
+        <!-- Small gap between H1 and C2 -->
+        <div class="gap"></div>
+
+        <div class="key" data-tone="C2">C</div>
+        <div class="key" data-tone="D2">D</div>
+        <div class="key" data-tone="E2">E</div>
+        <div class="key" data-tone="F2">F</div>
+        <div class="key" data-tone="G2">G</div>
+        <div class="key" data-tone="A2">A</div>
+        <div class="key" data-tone="H2">H</div>
+    </div>
+
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const activeOscillators = {};
+
+        function startPianoTone(frequency, tone, sustained) {
+            if (activeOscillators[tone]) return;
+
+            const harmonics = [1, 2, 3, 4, 5, 6]; // Main frequency + 5 harmonics
+            const maxGains = [0.76, 0.9, 0.4, 0.15, 0.3, 0.15];
+            const oscillators = [];
+            const gainNodes = [];
+            const baseDecayTime = 0.5;
+
+            harmonics.forEach((harmonic, index) => {
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+
+                oscillator.type = index === 0 ? 'triangle' : 'sawtooth';
+                oscillator.frequency.setValueAtTime(frequency * harmonic, audioCtx.currentTime);
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                gainNode.gain.setTargetAtTime(maxGains[index], audioCtx.currentTime, 0.02);
+
+                let fadeTime = baseDecayTime * Math.pow(1.8, 5 - index);
+                if (sustained) {
+                    gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + fadeTime);
+                }
+
+                oscillators.push(oscillator);
+                gainNodes.push(gainNode);
+
+                oscillator.start();
+            });
+
+            activeOscillators[tone] = { oscillators, gainNodes };
+        }
+
+
+        function stopPianoTone(tone) {
+            if (activeOscillators[tone]) {
+                activeOscillators[tone].gainNodes.forEach((gainNode, index) => {
+                    if (index === 0) { // Keep fundamental tone fading longer
+                        gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1);
+                    } else {
+                        gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
+                    }
+                });
+                activeOscillators[tone].oscillators.forEach(osc => osc.stop(audioCtx.currentTime + 1));
+                delete activeOscillators[tone];
+            }
+        }
+
+        document.querySelectorAll('.key').forEach(key => {
+            const tone = key.getAttribute('data-tone');
+            const frequencies = {
+                'C1': 130.81, 'D1': 146.83, 'E1': 164.81, 'F1': 174.61, 'G1': 196.00, 'A1': 220.00, 'H1': 246.94,
+                'C2': 261.63, 'D2': 293.66, 'E2': 329.63, 'F2': 349.23, 'G2': 392.00, 'A2': 440.00, 'H2': 493.88
+            };
+            
+            key.addEventListener('mousedown', () => {
+                key.classList.add('active');
+                if (frequencies[tone]) {
+                    startPianoTone(frequencies[tone], tone, true);
+                }
+            });
+            
+            key.addEventListener('mouseup', () => {
+                key.classList.remove('active');
+                stopPianoTone(tone);
+            });
+            
+            key.addEventListener('mouseleave', () => {
+                key.classList.remove('active');
+                stopPianoTone(tone);
+            });
+            
+            key.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                key.classList.add('active');
+                if (frequencies[tone]) {
+                    startPianoTone(frequencies[tone], tone, true);
+                }
+            }, { passive: false });
+            
+            key.addEventListener('touchend', () => {
+                key.classList.remove('active');
+                stopPianoTone(tone);
+            });
+            
+            key.addEventListener('touchcancel', () => {
+                key.classList.remove('active');
+                stopPianoTone(tone);
+            });
+        });
+    </script>
+</body>
+</html>

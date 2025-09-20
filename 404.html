@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 | Distanzuino</title>
+    <link rel="icon" type="image/jpg" href="/images/icon.png">
+    <link rel="stylesheet" href="/redesign.css">
+    <script type="text/javascript" src="https://app.termly.io/resource-blocker/611984d8-f015-418c-b13f-dc82c88b1907?autoBlock=on"></script>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-3HEL3CR3RW"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-3HEL3CR3RW');
+    </script>
+</head>
+<body>
+    <div id="site-header"></div>
+
+    <div class="error-page">
+        <img src="/images/logo.png" alt="Distanzuino Logo" class="logo">
+        <div class="error-content">
+            <h1 class="error-code">404</h1>
+            <h2 class="error-message">Page Not Found</h2>
+            <p class="error-description">
+                The page you are looking for doesn't exist or has been moved to a different location.
+            </p>
+            <a href="/" class="btn">Back to Home</a>
+        </div>
+    </div>
+
+    <div id="site-footer"></div>
+
+    <script>
+        // --- Load Header & Footer Components (same as index) ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const loadComponent = (url, elementId, callback) => {
+                fetch(url)
+                    .then(res => res.ok ? res.text() : Promise.reject(`Component not found: ${url}`))
+                    .then(data => {
+                        const targetElement = document.getElementById(elementId);
+                        if (targetElement) {
+                            targetElement.innerHTML = data;
+                            if (callback) callback();
+                        }
+                    })
+                    .catch(console.error);
+            };
+
+            loadComponent('/header.html', 'site-header', initializeHeader);
+            loadComponent('/footer.html', 'site-footer');
+        });
+
+        // --- All Header Logic (verbatim from index) ---
+        function initializeHeader() {
+            const header = document.querySelector('#header');
+            const mobileToggle = header.querySelector('.mobile-nav-toggle');
+            const hasSubmenuItems = header.querySelectorAll('.has-submenu > .submenu-toggle');
+
+            // Toggle mobile menu
+            mobileToggle.addEventListener('click', () => {
+                header.classList.toggle('menu-open');
+                document.body.classList.toggle('no-scroll', header.classList.contains('menu-open'));
+            });
+
+            // Toggle submenus
+            hasSubmenuItems.forEach(toggle => {
+                toggle.addEventListener('click', e => {
+                    e.preventDefault();
+                    const parent = toggle.parentElement;
+
+                    // Close other submenus on desktop
+                    if (!header.classList.contains('header-mobile-layout')) {
+                        header.querySelectorAll('.has-submenu.open').forEach(item => {
+                            if (item !== parent) item.classList.remove('open');
+                        });
+                    }
+
+                    parent.classList.toggle('open');
+                });
+            });
+
+            // Close menu when any nav link (except submenu opener) is clicked
+            header.querySelectorAll('nav a').forEach(link => {
+                link.addEventListener('click', e => {
+                    const isSubmenuOpener = link.classList.contains('submenu-toggle');
+                    const parentSubmenu = link.closest('.has-submenu');
+
+                    // MOBILE MODE
+                    if (header.classList.contains('header-mobile-layout')) {
+                        if (isSubmenuOpener) return; // Don't close if submenu toggle
+                        if (header.classList.contains('menu-open')) {
+                            header.classList.remove('menu-open');
+                            document.body.classList.remove('no-scroll');
+                            header.querySelectorAll('.has-submenu.open').forEach(item => {
+                                item.classList.remove('open');
+                            });
+                        }
+                    } 
+                    // DESKTOP MODE
+                    else {
+                        // If this link is inside a submenu, close that submenu
+                        if (parentSubmenu && !isSubmenuOpener) {
+                            parentSubmenu.classList.remove('open');
+                        }
+                    }
+                });
+            });
+
+            // Close submenu when clicking outside (desktop only)
+            document.addEventListener('click', e => {
+                if (!header.classList.contains('header-mobile-layout')) {
+                    const clickedInsideSubmenu = e.target.closest('.has-submenu');
+                    if (!clickedInsideSubmenu) {
+                        header.querySelectorAll('.has-submenu.open').forEach(item => {
+                            item.classList.remove('open');
+                        });
+                    }
+                }
+            });
+
+            // Header scroll effect
+            window.addEventListener('scroll', () => {
+                header.classList.toggle('scrolled', window.scrollY > 50);
+            }, { passive: true });
+
+            // Mobile layout detection
+            const updateLayout = () => {
+                if (window.innerWidth <= 768) {
+                    header.classList.add('header-mobile-layout');
+                } else {
+                    header.classList.remove('header-mobile-layout', 'menu-open');
+                    document.body.classList.remove('no-scroll');
+                }
+            };
+            updateLayout();
+            window.addEventListener('resize', updateLayout);
+        }
+    </script>
+</body>
+</html>

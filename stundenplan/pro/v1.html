@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>School Planner — Timetable · Assignments · Smart Schedule</title>
+<style>
+  :root{
+    --bg:#0b1020; --panel:#0f172a; --text:#e6eaf2; --muted:#9aa3b2;
+    --line:rgba(255,255,255,.08);
+    --accent:#7aa2ff; --accent-soft:rgba(122,162,255,.16); --accent-soft-2:rgba(122,162,255,.10);
+    --ok:#22c55e; --warn:#f59e0b; --danger:#ef4444;
+    --radius:16px; --shadow:0 12px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;background:linear-gradient(180deg,#0a0f1e,#0b1020);
+    color:var(--text);
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial;
+    -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+    padding:20px
+  }
+  .app{max-width:1200px;margin:0 auto}
+
+  /* Appbar */
+  header.appbar{
+    position:sticky;top:0;z-index:50;margin-bottom:18px;
+    background:rgba(15,23,42,.85);backdrop-filter:blur(8px);
+    border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:14px 18px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center
+  }
+  .title{font-size:20px;font-weight:800;letter-spacing:.2px}
+  .subtitle{color:var(--muted);font-size:13px}
+  .chips{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .chip{font-size:12px;padding:8px 10px;border-radius:999px;border:1px solid var(--line);
+        background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
+        font-variant-numeric:tabular-nums}
+  .chip-acc{border-color:rgba(122,162,255,.4)}
+  .btn{
+    display:inline-flex;align-items:center;gap:8px;
+    border:1px solid var(--line);border-radius:12px;padding:10px 12px;
+    background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
+    color:var(--text);cursor:pointer;user-select:none;
+    transition:transform .15s ease,opacity .2s ease,background .2s ease
+  }
+  .btn:hover{transform:translateY(-1px)}
+  .btn:active{transform:translateY(0)}
+  .btn-accent{border-color:rgba(122,162,255,.45);background:linear-gradient(180deg,var(--accent-soft),var(--accent-soft-2))}
+  .btn-ghost{background:transparent}
+  .btn-sm{padding:8px 10px;border-radius:10px;font-size:12px}
+
+  /* Tabs */
+  .tabs{display:flex;gap:8px;flex-wrap:wrap}
+  .tab{
+    padding:10px 12px;border-radius:12px;border:1px solid var(--line);
+    font-weight:700;font-size:13px;cursor:pointer;opacity:.85;
+    background:rgba(255,255,255,.03);transition:background .25s ease, opacity .2s ease, transform .2s ease
+  }
+  .tab:hover{opacity:1;transform:translateY(-1px)}
+  .tab.active{background:linear-gradient(180deg,var(--accent-soft),var(--accent-soft-2));border-color:rgba(122,162,255,.5)}
+
+  /* Cards & layout */
+  .card{
+    background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
+    border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:16px;margin-bottom:16px
+  }
+  h2{margin:0 0 10px;font-size:16px;letter-spacing:.2px}
+  .muted{color:var(--muted);font-size:13px}
+  .grid{display:grid;gap:16px}
+  .grid.cols-2{grid-template-columns:1fr 1fr}
+  .grid.cols-3{grid-template-columns:1fr 1fr 1fr}
+  @media (max-width:980px){ .grid.cols-2,.grid.cols-3{grid-template-columns:1fr} }
+
+  /* Now view highlighters */
+  .now-card .subject{ font-size: clamp(22px, 4vw, 28px); font-weight: 900; letter-spacing: .3px; }
+  .now-card .meta .badge{ font-size: 13px; }
+  .badge{font-size:12px;padding:6px 8px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.03);font-weight:600}
+  .badge-accent{border-color:rgba(122,162,255,.5);background:linear-gradient(180deg, var(--accent-soft), var(--accent-soft-2))}
+  .upnext{ margin-top:8px; font-size:13px; color:var(--muted); }
+  .upnext strong{ color:#eaf0ff; }
+
+  /* Timetable grid */
+  .grid-wrap{overflow:auto;border-radius:calc(var(--radius)-6px);border:1px solid var(--line)}
+  table.timetable{width:100%;border-collapse:separate;border-spacing:0;background:rgba(255,255,255,.02)}
+  thead th{position:sticky;top:0;background:rgba(11,16,32,.96);border-bottom:1px solid var(--line);font-size:13px;text-align:left;padding:10px 12px}
+  thead th:first-child{width:160px}
+  tbody th,tbody td{border-bottom:1px solid var(--line);padding:12px;vertical-align:top;transition:background .35s ease, color .25s ease, transform .25s ease}
+  tbody tr:nth-child(odd) td,tbody tr:nth-child(odd) th{background:rgba(255,255,255,.01)}
+  tbody tr:hover td{background:rgba(255,255,255,.02)}
+  .period{color:var(--muted);font-size:13px}
+  .cell .subject{font-weight:800;letter-spacing:.2px}
+  .cell .details{color:var(--muted);font-size:12px;margin-top:4px}
+  .empty{color:var(--muted);font-style:italic}
+  .cell.current{
+    background: linear-gradient(180deg, var(--accent-soft), var(--accent-soft-2));
+    border-left: 2px solid var(--accent);
+  }
+  .cell.current .subject{ font-weight:900; font-size: clamp(1rem, 0.9rem + 0.3vw, 1.15rem); letter-spacing:.25px; }
+  .cell.current .details{ color:#dbe5ff; font-weight:600; }
+
+  /* Assignments */
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media (max-width:720px){ .row{grid-template-columns:1fr} }
+  .input, select, textarea{
+    width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);
+    background:rgba(255,255,255,.03);color:var(--text);font-size:14px;outline:none
+  }
+  .input::placeholder, textarea::placeholder{color:#9aa3b2}
+  textarea{min-height:80px;resize:vertical}
+  .task{border:1px solid var(--line);border-radius:14px;padding:12px;background:rgba(255,255,255,.02);transition:transform .2s ease}
+  .task:hover{transform:translateY(-1px)}
+  .task-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .task-title{font-weight:800}
+  .progress{height:8px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden;border:1px solid var(--line)}
+  .progress > span{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#9fb8ff);width:0;transition:width .3s ease}
+  .subtasks{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
+  .subtasks .subrow{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+  .subtasks input[type="text"]{flex:1}
+  .tag{font-size:11px;border:1px solid var(--line);border-radius:10px;padding:4px 8px;background:rgba(255,255,255,.03)}
+  .task-footer{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:8px;flex-wrap:wrap}
+  .pill{padding:4px 8px;border-radius:999px;border:1px solid var(--line);font-size:12px;background:rgba(255,255,255,.03)}
+  .pill.deadline-soon{border-color:rgba(245,158,11,.6);background:rgba(245,158,11,.1)}
+  .pill.deadline-urgent{border-color:rgba(239,68,68,.6);background:rgba(239,68,68,.1)}
+
+  /* Study windows & weekly plan */
+  .win{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+  .win input{max-width:110px}
+  .list{display:grid;gap:10px}
+  .session{display:flex;gap:8px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:12px;padding:10px;background:rgba(255,255,255,.02)}
+  .session .left{display:flex;gap:10px;align-items:center}
+  .session .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+
+  /* Toasts */
+  .toasts{position:fixed;right:20px;bottom:20px;display:flex;flex-direction:column;gap:10px;z-index:60}
+  .toast{min-width:240px;max-width:340px;background:#111729;border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:var(--shadow);opacity:.98;
+    animation:slidein .25s ease both}
+  @keyframes slidein{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
+  .fade { transition: opacity .25s ease; opacity: 1; will-change: opacity; }
+  .fade.hide { opacity: 0; }
+
+  /* Tiny helpers */
+  .k{opacity:.75}
+  .spacer{height:6px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="appbar">
+    <div>
+      <div class="title">School Planner <span class="subtitle">— Timetable · Assignments · Smart Schedule</span></div>
+      <div class="subtitle" id="todayStr"></div>
+    </div>
+    <div class="chips">
+      <div class="chip chip-acc">Now: <span id="nowStatus">–</span></div>
+      <div class="chip" id="clock">--:--</div>
+      <button class="btn btn-sm btn-accent" id="notifyBtn">Enable Notifications</button>
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <div class="card">
+    <div class="tabs">
+      <div class="tab active" data-tab="today">Today</div>
+      <div class="tab" data-tab="weekly">Weekly</div>
+      <div class="tab" data-tab="assignments">Assignments</div>
+      <div class="tab" data-tab="windows">Study Windows & Settings</div>
+    </div>
+  </div>
+
+  <!-- TODAY -->
+  <section class="tabpanel" id="tab-today">
+    <div class="grid cols-2">
+      <section class="card now-card">
+        <h2>Current / Up Next</h2>
+        <div id="nowBox" class="fade"><div class="muted">Loading…</div></div>
+        <div id="upnextBox" class="upnext fade"></div>
+      </section>
+
+      <section class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <h2>Study Plan for Today</h2>
+          <div>
+            <button class="btn btn-sm btn-accent" id="genToday">Generate Plan</button>
+            <button class="btn btn-sm btn-ghost" id="clearToday">Clear</button>
+          </div>
+        </div>
+        <div id="todayPlan" class="list muted">No sessions yet. Click “Generate Plan”.</div>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2>Quick Add Assignment</h2>
+      <div class="row" style="margin-bottom:10px">
+        <input class="input" id="qaTitle" placeholder="Assignment title (e.g., Biology worksheet)" />
+        <select class="input" id="qaSubject"></select>
+      </div>
+      <div class="row" style="margin-bottom:10px">
+        <input class="input" id="qaDeadline" type="datetime-local" />
+        <input class="input" id="qaEst" type="number" min="5" step="5" placeholder="Estimated time (min)" />
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+        <label class="tag"><input type="checkbox" id="qaSR" /> Spaced repetition (auto reviews)</label>
+        <select class="input" id="qaPriority" style="max-width:200px">
+          <option value="2">Priority: Normal</option>
+          <option value="3">Priority: High</option>
+          <option value="1">Priority: Low</option>
+        </select>
+      </div>
+      <button class="btn btn-accent" id="qaAdd">Add Assignment</button>
+    </section>
+
+    <section class="card">
+      <h2>Timetable — Today</h2>
+      <div class="grid-wrap">
+        <table class="timetable" id="ttToday"><thead></thead><tbody></tbody></table>
+      </div>
+    </section>
+  </section>
+
+  <!-- WEEKLY -->
+  <section class="tabpanel" id="tab-weekly" style="display:none">
+    <section class="card">
+      <h2>Weekly Timetable</h2>
+      <div class="grid-wrap">
+        <table class="timetable" id="grid"><thead id="thead"></thead><tbody id="tbody"></tbody></table>
+      </div>
+    </section>
+
+    <section class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <h2>Weekly Study Plan</h2>
+        <div>
+          <button class="btn btn-sm btn-accent" id="genWeek">Generate Weekly Plan</button>
+          <button class="btn btn-sm btn-ghost" id="clearWeek">Clear</button>
+        </div>
+      </div>
+      <div id="weekPlan" class="grid cols-3"></div>
+    </section>
+  </section>
+
+  <!-- ASSIGNMENTS -->
+  <section class="tabpanel" id="tab-assignments" style="display:none">
+    <section class="card">
+      <h2>Add Assignment</h2>
+      <div class="row" style="margin-bottom:10px">
+        <input class="input" id="tTitle" placeholder="Title (e.g., Maths problem set 3)" />
+        <select class="input" id="tSubject"></select>
+      </div>
+      <div class="row" style="margin-bottom:10px">
+        <input class="input" id="tDeadline" type="datetime-local" />
+        <input class="input" id="tEst" type="number" min="5" step="5" placeholder="Estimated time (min)" />
+      </div>
+      <div class="row" style="margin-bottom:10px">
+        <select class="input" id="tPriority">
+          <option value="2">Priority: Normal</option>
+          <option value="3">Priority: High</option>
+          <option value="1">Priority: Low</option>
+        </select>
+        <input class="input" id="tNotes" placeholder="Notes (optional)" />
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <label class="tag"><input type="checkbox" id="tSR"/> Spaced repetition (adds 2/6/14 day reviews)</label>
+        <button class="btn btn-accent" id="addTask">Add</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <h2>Assignments</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <select class="input" id="filterSubject" style="max-width:220px">
+            <option value="">All subjects</option>
+          </select>
+          <select class="input" id="sortBy" style="max-width:220px">
+            <option value="due">Sort by Due</option>
+            <option value="priority">Sort by Priority</option>
+            <option value="progress">Sort by Progress</option>
+          </select>
+        </div>
+      </div>
+      <div id="tasks" class="grid"></div>
+    </section>
+  </section>
+
+  <!-- WINDOWS & SETTINGS -->
+  <section class="tabpanel" id="tab-windows" style="display:none">
+    <section class="card">
+      <h2>Study Windows (Daily)</h2>
+      <div class="muted" style="margin-bottom:8px">Set when you’re generally free to study. The planner fills these windows with sessions.</div>
+      <div id="wins"></div>
+      <div class="spacer"></div>
+      <div class="row">
+        <div>
+          <label class="muted k">Default session length (minutes)</label>
+          <input class="input" id="sessionLen" type="number" min="15" step="5" value="30"/>
+        </div>
+        <div>
+          <label class="muted k">Max sessions / day</label>
+          <input class="input" id="maxSessions" type="number" min="1" step="1" value="4"/>
+        </div>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn btn-accent" id="saveWins">Save Settings</button>
+    </section>
+
+    <section class="card">
+      <h2>Notifications</h2>
+      <div class="muted">Get a nudge when a study session should start. Works while this page is open.</div>
+      <div class="spacer"></div>
+      <button class="btn btn-accent" id="reqPerm">Request Permission</button>
+    </section>
+  </section>
+</div>
+
+<!-- Toasts -->
+<div class="toasts" id="toasts"></div>
+
+<script>
+/* =========================
+   YOUR TIMETABLE DATA (from your existing app)
+   Days are in German to match your schedule; UI is in English.
+   ========================= */
+var DATA = {"className": "10b", "schoolYear": "2025/26", "days": ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"], "periods": [{"no": 1, "start": "7:40", "end": "8:25"}, {"no": 2, "start": "8:30", "end": "9:15"}, {"no": 3, "start": "9:35", "end": "10:20"}, {"no": 4, "start": "10:25", "end": "11:10"}, {"no": 5, "start": "11:25", "end": "12:10"}, {"no": 6, "start": "12:15", "end": "13:00"}, {"no": 7, "start": "13:05", "end": "13:50"}, {"no": 8, "start": "13:50", "end": "14:35"}, {"no": 9, "start": "14:45", "end": "15:25"}, {"no": 10, "start": "15:25", "end": "16:05"}], "entries": {"Montag": [{"subject": "Physik", "room": "PhR1", "teacher": "H\u00f6m"}, {"subject": "Physik", "room": "PhR1", "teacher": "H\u00f6m"}, {"subject": "Ungarisch", "room": "R10b", "teacher": "Gor"}, {"subject": "Ungarisch", "room": "R10b", "teacher": "Gor"}, {"subject": "UGeschichte", "room": "R10b", "teacher": "Kua"}, {"subject": "UGeschichte", "room": "R10b", "teacher": "Kua"}, {"subject": "", "room": "", "teacher": ""}, {"subject": "Kunst", "room": "WR", "teacher": "Zee"}, {"subject": "Kunst", "room": "WR", "teacher": "Zee"}, {"subject": "", "room": "", "teacher": ""}], "Dienstag": [{"subject": "DaF", "room": "R10b", "teacher": "Hed"}, {"subject": "Mathe", "room": "R10b", "teacher": "Wam"}, {"subject": "Geschichte", "room": "R10b", "teacher": "Kaz"}, {"subject": "Physik", "room": "PhR1", "teacher": "H\u00f6m"}, {"subject": "UChemie", "room": "ChR", "teacher": "Vaz"}, {"subject": "UChemie", "room": "ChR", "teacher": "Vaz"}, {"subject": "UBiologie", "room": "BioR1", "teacher": "Vaz"}, {"subject": "UBiologie", "room": "BioR1", "teacher": "Vaz"}, {"subject": "", "room": "", "teacher": ""}, {"subject": "", "room": "", "teacher": ""}], "Mittwoch": [{"subject": "Geschichte", "room": "R10b", "teacher": "Kaz"}, {"subject": "Geschichte", "room": "R10b", "teacher": "Kaz"}, {"subject": "Englisch", "room": "R10b", "teacher": "Eij"}, {"subject": "Englisch", "room": "R10b", "teacher": "Eij"}, {"subject": "Ungarisch", "room": "R10b", "teacher": "Gor"}, {"subject": "Mathe", "room": "R10b", "teacher": "Wam"}, {"subject": "Spanisch", "room": "R9a", "teacher": "Csb"}, {"subject": "", "room": "", "teacher": ""}, {"subject": "", "room": "", "teacher": ""}, {"subject": "", "room": "", "teacher": ""}], "Donnerstag": [{"subject": "Deutsch", "room": "R10b", "teacher": "Frt"}, {"subject": "Deutsch", "room": "R10b", "teacher": "Frt"}, {"subject": "Sport", "room": "TH2", "teacher": "Gog"}, {"subject": "Sport", "room": "TH2", "teacher": "Gog"}, {"subject": "Sozialkunde", "room": "R10b", "teacher": "Bau"}, {"subject": "Sozialkunde", "room": "R10b", "teacher": "Bau"}, {"subject": "Ungarisch", "room": "R10b", "teacher": "Gor"}, {"subject": "Spanisch", "room": "R9a", "teacher": "Csb"}, {"subject": "Religion", "room": "R10b", "teacher": "Pak"}, {"subject": "Religion", "room": "R10b", "teacher": "Pak"}], "Freitag": [{"subject": "Spanisch", "room": "R9a", "teacher": "Csb"}, {"subject": "Spanisch", "room": "R9a", "teacher": "Csb"}, {"subject": "Mathe", "room": "R10b", "teacher": "Wam"}, {"subject": "Mathe", "room": "R10b", "teacher": "Wam"}, {"subject": "Deutsch", "room": "R10b", "teacher": "Frt"}, {"subject": "Deutsch", "room": "R10b", "teacher": "Frt"}, {"subject": "Englisch", "room": "R10b", "teacher": "Eij"}, {"subject": "KL", "room": "R10b", "teacher": "Kaz"}, {"subject": "Erdkunde", "room": "R10b", "teacher": "Kaz"}, {"subject": "Erdkunde", "room": "R10b", "teacher": "Kaz"}]}};
+
+const DAYS_DE = ["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
+const DAYS_SHORT = { "Montag":"Mon", "Dienstag":"Tue", "Mittwoch":"Wed", "Donnerstag":"Thu", "Freitag":"Fri", "Samstag":"Sat", "Sonntag":"Sun" };
+
+/* ===== Helpers ===== */
+function pad(n){return String(n).padStart(2,'0');}
+function parseHHMM(s){ const [h,m]=s.split(':').map(Number); return {h:h||0,m:m||0}; }
+function minutes(t){ return t.h*60+t.m; }
+function toHHMM(min){ const h=Math.floor(min/60), m=min%60; return pad(h)+":"+pad(m); }
+function todayNameDE(){ return DAYS_DE[new Date().getDay()]; }
+function getNow(){ const d=new Date(); return {h:d.getHours(), m:d.getMinutes()}; }
+function inRange(now,s,e){ const n=minutes(now), a=minutes(s), b=minutes(e); return n>=a && n<b; }
+function fmtRel(ms){ const m=Math.max(0, Math.round(ms/60000)); return m===1?'1 minute':m+' minutes'; }
+function gentleSwap(el, html){ if(!el) return; if(el.__lastHTML===html) return; el.classList.add('fade','hide'); setTimeout(()=>{ el.innerHTML=html; el.__lastHTML=html; el.classList.remove('hide'); },150); }
+function dayIndexFromDE(day){ return ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag","Sonntag"].indexOf(day); }
+function nextDatesForDE(day,deOffset=0){
+  // Get next occurrence date for a German weekday name
+  const target = dayIndexFromDE(day); const now=new Date();
+  let diff = target - (now.getDay()===0?7:now.getDay()); // JS: Sun=0
+  if(diff<0) diff+=7;
+  const dt=new Date(now); dt.setHours(0,0,0,0); dt.setDate(now.getDate()+diff+deOffset*7);
+  return dt;
+}
+function addMinutes(date,mins){ const d=new Date(date); d.setMinutes(d.getMinutes()+mins); return d; }
+
+/* ===== Timetable logic ===== */
+function getEntry(day,idx){ const arr=(DATA.entries&&DATA.entries[day])? DATA.entries[day] : []; return (idx>=0&&idx<arr.length)? arr[idx] : null; }
+function buildPeriods(){ return (DATA.periods||[]).map(p=>({no:p.no, startObj:parseHHMM(p.start), endObj:parseHHMM(p.end), start:p.start, end:p.end})); }
+function buildTimeline(day){
+  const periods=buildPeriods(), segs=[];
+  for(let i=0;i<periods.length;i++){
+    const entry=getEntry(day,i), ok=entry && entry.subject && entry.subject.trim()!=='';
+    if(ok) segs.push({type:'class', start:periods[i].startObj, end:periods[i].endObj, p:periods[i], entry});
+  }
+  for(let j=0;j<periods.length-1;j++){
+    const cur=periods[j], nxt=periods[j+1], gap=minutes(nxt.startObj)-minutes(cur.endObj);
+    if(gap>0) segs.push({type:'break', start:cur.endObj, end:nxt.startObj, minutes:gap});
+  }
+  segs.sort((a,b)=>minutes(a.start)-minutes(b.start));
+  return segs;
+}
+function findCurrentThing(day){
+  const now=getNow(), timeline=buildTimeline(day);
+  for(const seg of timeline){ if(inRange(now, seg.start, seg.end)) return seg; }
+  return null;
+}
+function findNextThing(day){
+  const now=getNow(), timeline=buildTimeline(day);
+  for(const seg of timeline){ if(minutes(seg.start)>minutes(now)) return seg; }
+  return null;
+}
+function findNextClass(day){
+  const now=getNow(), timeline=buildTimeline(day);
+  for(const seg of timeline){ if(seg.type==='class' && minutes(seg.start)>minutes(now)) return seg; }
+  return null;
+}
+
+/* ===== State (localStorage) ===== */
+const storage = {
+  get(k,def){ try{ return JSON.parse(localStorage.getItem(k) || JSON.stringify(def)); }catch{ return def; } },
+  set(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
+};
+let tasks = storage.get('tasks', []);             // {id,title,subject,deadline,estMin,progress,subtasks[],priority,notes,createdAt,done}
+let studyWins = storage.get('studyWins', {        // {Mon:[["16:00","19:00"]], Tue:[], ...}
+  Montag:[["16:00","19:00"]], Dienstag:[["16:00","19:00"]], Mittwoch:[["16:00","19:00"]],
+  Donnerstag:[["16:00","19:00"]], Freitag:[["16:00","19:00"]], Samstag:[["10:00","12:00"],["16:00","18:00"]], Sonntag:[["10:00","12:00"],["16:00","18:00"]]
+});
+let settings = storage.get('settings', {sessionLen:30, maxSessions:4});
+let planned = storage.get('planned', { today:[], week:[] }); // sessions: {id, dayDE, dateISO, start, end, subject, taskId}
+
+/* ===== UI Wiring ===== */
+const el = sel => document.querySelector(sel);
+const els = sel => Array.from(document.querySelectorAll(sel));
+
+const todayStr = el('#todayStr');
+const clock = el('#clock');
+const nowStatus = el('#nowStatus');
+const nowBox = el('#nowBox');
+const upnextBox = el('#upnextBox');
+const ttTodayHead = el('#ttToday thead');
+const ttTodayBody = el('#ttToday tbody');
+
+function updateClock(){
+  const d=new Date();
+  if(clock) clock.textContent = pad(d.getHours())+":"+pad(d.getMinutes());
+  if(todayStr) todayStr.textContent = d.toLocaleDateString('en-GB',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'});
+}
+
+function renderTodayTimetable(){
+  const day = todayNameDE();
+  ttTodayHead.innerHTML=''; ttTodayBody.innerHTML='';
+  const trh=document.createElement('tr');
+  const th0=document.createElement('th'); th0.textContent='Period'; trh.appendChild(th0);
+  const th1=document.createElement('th'); th1.textContent=day; trh.appendChild(th1);
+  ttTodayHead.appendChild(trh);
+  const periods=buildPeriods();
+  const now=getNow();
+  for(const p of periods){
+    const tr=document.createElement('tr');
+    const th=document.createElement('th'); th.className='period'; th.innerHTML='<strong>'+p.no+'.</strong> <span class="muted">'+p.start+'–'+p.end+'</span>'; tr.appendChild(th);
+    const td=document.createElement('td'); td.className='cell'; 
+    const entry=getEntry(day,p.no-1);
+    if(inRange(now,p.startObj,p.endObj)) td.classList.add('current');
+    if(entry && entry.subject){
+      td.innerHTML = '<div class="subject">'+entry.subject+'</div><div class="details">'+(entry.room||'')+((entry.room && entry.teacher)?' · ':'')+(entry.teacher||'')+'</div>';
+    }else{
+      td.innerHTML = '<span class="empty">– frei –</span>';
+    }
+    tr.appendChild(td);
+    ttTodayBody.appendChild(tr);
+  }
+}
+
+function updateNow(){
+  const dayName=todayNameDE();
+  const cells=document.querySelectorAll('.current'); cells.forEach(c=>c.classList.remove('current'));
+  // highlight current in weekly grid as well
+  highlightCurrentCell(dayName);
+
+  if(!(DATA.days||[]).includes(dayName)){
+    gentleSwap(nowBox, '<div class="muted">No school today.</div>');
+    gentleSwap(upnextBox, '');
+    nowStatus.textContent='Free'; return;
+  }
+
+  const now=getNow(); const periods=buildPeriods();
+  for(const p of periods){ if(inRange(now,p.startObj,p.endObj)){
+      const selector='.timetable .cell[data-day="'+dayName+'"][data-period="'+p.no+'"]';
+      const cell=document.querySelector(selector); if(cell) cell.classList.add('current');
+    } }
+
+  const currentThing=findCurrentThing(dayName);
+  const nextThing=findNextThing(dayName);
+  const nextClass=findNextClass(dayName);
+
+  if(!currentThing){
+    if(nextThing){
+      const mins = minutes(nextThing.start)-minutes(now);
+      const label=(nextThing.type==='class')?(nextThing.entry?.subject || 'Class'):'Break';
+      gentleSwap(nowBox, '<div class="subject">No class right now</div><div class="meta"><span class="badge">Day: '+dayName+'</span></div>');
+      let extra='';
+      if(nextThing.type==='break' && nextClass){
+        const mins2 = minutes(nextClass.start)-minutes(now);
+        extra='<br/><span class="muted">Then: <strong>'+(nextClass.entry?.subject||'Class')+'</strong> in '+mins2+' min</span>';
+      }
+      gentleSwap(upnextBox, 'Up next: <strong>'+label+'</strong> in '+mins+' min'+extra);
+      nowStatus.textContent='Free';
+    } else {
+      gentleSwap(nowBox, '<div class="muted">Nothing else today</div>');
+      gentleSwap(upnextBox, '');
+      nowStatus.textContent='Free';
+    }
+    return;
+  }
+
+  if(currentThing.type==='class'){
+    const e=currentThing.entry||{}, room=e.room||'', teacher=e.teacher||'';
+    const html='<div class="subject">'+(e.subject||'—')+'</div>'
+      + '<div class="meta">'
+      + '<span class="badge badge-accent">Time: '+currentThing.p.start+'–'+currentThing.p.end+'</span>'
+      + (room?'<span class="badge badge-accent">Room: '+room+'</span>':'')
+      + (teacher?'<span class="badge badge-accent">Teacher: '+teacher+'</span>':'')
+      + '</div>';
+    gentleSwap(nowBox, html);
+    nowStatus.textContent=e.subject||'Class';
+  } else {
+    const end=currentThing.end, minutesLeft=Math.max(0, minutes(end)-minutes(getNow()));
+    const html='<div class="subject">Break</div>'
+      + '<div class="meta">'
+      + '<span class="badge badge-accent">Ends: '+pad(end.h)+':'+pad(end.m)+'</span>'
+      + '<span class="badge">~'+minutesLeft+' min</span>'
+      + '</div>';
+    gentleSwap(nowBox, html);
+    nowStatus.textContent='Break';
+  }
+
+  if(nextThing){
+    const minsN = minutes(nextThing.start)-minutes(getNow());
+    const labelN=(nextThing.type==='class')?(nextThing.entry?.subject||'Class'):'Break';
+    let extraN='';
+    if(nextThing.type==='break' && nextClass){
+      const mins2 = minutes(nextClass.start)-minutes(getNow());
+      extraN='<br/><span class="muted">Then: <strong>'+(nextClass.entry?.subject||'Class')+'</strong> in '+mins2+' min</span>';
+    }
+    gentleSwap(upnextBox, 'Up next: <strong>'+labelN+'</strong> in '+minsN+' min'+extraN);
+  } else gentleSwap(upnextBox, '');
+}
+
+/* ===== Weekly Timetable Grid ===== */
+function buildGrid(){
+  const thead=el('#thead'), tbody=el('#tbody');
+  thead.innerHTML=''; tbody.innerHTML='';
+  const trh=document.createElement('tr'), th0=document.createElement('th'); th0.textContent='Period'; trh.appendChild(th0);
+  (DATA.days||[]).forEach(day=>{ const th=document.createElement('th'); th.textContent=day; trh.appendChild(th); });
+  thead.appendChild(trh);
+
+  const periods=buildPeriods();
+  for(const p of periods){
+    const tr=document.createElement('tr');
+    const th=document.createElement('th'); th.className='period'; th.innerHTML='<strong>'+p.no+'.</strong> <span class="muted">'+p.start+'–'+p.end+'</span>'; tr.appendChild(th);
+    (DATA.days||[]).forEach(day=>{
+      const td=document.createElement('td'); td.className='cell'; td.setAttribute('data-day',day); td.setAttribute('data-period',p.no);
+      const e=getEntry(day,p.no-1), subj=e?.subject||'', room=e?.room?.trim()||'', teacher=e?.teacher?.trim()||'';
+      td.innerHTML = subj ? '<div class="subject">'+subj+'</div><div class="details">'+room+(room&&teacher?' · ':'')+teacher+'</div>' : '<span class="empty">– frei –</span>';
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  }
+}
+function highlightCurrentCell(dayName){
+  const now=getNow(), periods=buildPeriods();
+  for(const p of periods){ if(inRange(now,p.startObj,p.endObj)){
+    const sel='.cell[data-day="'+dayName+'"][data-period="'+p.no+'"]';
+    const cell=document.querySelector(sel); if(cell) cell.classList.add('current');
+  }}
+}
+
+/* ===== Subjects dropdown from timetable ===== */
+function allSubjects(){
+  const set=new Set();
+  Object.keys(DATA.entries).forEach(day=>{
+    DATA.entries[day].forEach(e=>{ if(e.subject && e.subject.trim()) set.add(e.subject.trim()); });
+  });
+  return Array.from(set).sort();
+}
+function fillSubjectSelects(){
+  const subs=allSubjects();
+  const s1=el('#tSubject'), s2=el('#qaSubject'), f=el('#filterSubject');
+  const addOpts=(sel, includeAll=false)=>{
+    sel.innerHTML='';
+    if(includeAll){ const o=document.createElement('option'); o.value=''; o.textContent='All subjects'; sel.appendChild(o); }
+    subs.forEach(s=>{ const o=document.createElement('option'); o.value=s; o.textContent=s; sel.appendChild(o); });
+    const other=document.createElement('option'); other.value='Other'; other.textContent='Other'; sel.appendChild(other);
+  };
+  addOpts(s1); addOpts(s2); addOpts(f,true);
+}
+
+/* ===== Assignments CRUD ===== */
+function uid(){ return Math.random().toString(36).slice(2,10); }
+function addTaskFromForm(prefix){
+  const title = el('#'+prefix+'Title').value.trim();
+  let subject = el('#'+prefix+'Subject').value;
+  const deadline = el('#'+prefix+'Deadline').value;
+  const est = parseInt(el('#'+prefix+'Est').value||'0',10);
+  const prio = parseInt((el('#'+prefix+'Priority')?.value)||'2',10);
+  const notes = (el('#'+prefix+'Notes')?.value||'').trim();
+  const sr = !!(el('#'+prefix+'SR')?.checked);
+
+  if(!title || !deadline || est<=0){
+    toast('Please add title, deadline and estimated time.', 'warn'); return;
+  }
+  if(subject==='Other') subject='(Other)';
+
+  const t = {id:uid(), title, subject, deadline:new Date(deadline).toISOString(),
+             estMin:est, progress:0, subtasks:[], priority:prio, notes, createdAt:new Date().toISOString(), done:false};
+  tasks.push(t);
+
+  // spaced repetition: schedule 2/6/14 day reviews as light tasks
+  if(sr){
+    [2,6,14].forEach(d=>{
+      const copy={...t, id:uid(), title:`Review: ${title}`, estMin:Math.max(10, Math.round(est*0.4)), deadline:new Date(Date.now()+d*86400000).toISOString(), priority:2, notes:'(Auto SR)'};
+      copy.subtasks=[{id:uid(), text:'Review once', done:false}];
+      tasks.push(copy);
+    });
+  }
+  storage.set('tasks', tasks);
+  renderTasks(); clearTaskForm(prefix);
+  toast('Assignment added.');
+}
+function clearTaskForm(prefix){
+  ['Title','Deadline','Est','Notes'].forEach(k=>{ const x=el('#'+prefix+k); if(x) x.value=''; });
+  const subj=el('#'+prefix+'Subject'); if(subj) subj.selectedIndex=0;
+  const pr=el('#'+prefix+'Priority'); if(pr) pr.value='2';
+  const sr=el('#'+prefix+'SR'); if(sr) sr.checked=false;
+}
+function taskProgress(t){
+  if(!t.subtasks || t.subtasks.length===0) return t.progress||0;
+  const done=t.subtasks.filter(s=>s.done).length; return Math.round((done/t.subtasks.length)*100);
+}
+function dueBadge(t){
+  const now=Date.now(), due=new Date(t.deadline).getTime();
+  const diff = Math.floor((due-now)/86400000);
+  const cls = diff<0?'deadline-urgent': diff<=2?'deadline-soon':'';
+  const txt = diff<0? 'Overdue' : (diff===0?'Due today': (diff===1?'Due tomorrow':`Due in ${diff} days`));
+  return `<span class="pill ${cls}">${txt}</span>`;
+}
+function renderTasks(){
+  const list=el('#tasks'); const subjectFilter=el('#filterSubject').value; const sortBy=el('#sortBy').value;
+  let arr=[...tasks];
+  if(subjectFilter) arr=arr.filter(t=>t.subject===subjectFilter);
+  arr.sort((a,b)=>{
+    if(sortBy==='priority') return (b.priority||2)-(a.priority||2);
+    if(sortBy==='progress') return taskProgress(b)-taskProgress(a);
+    return new Date(a.deadline)-new Date(b.deadline);
+  });
+  if(arr.length===0){ list.innerHTML='<div class="muted">No assignments yet.</div>'; return; }
+
+  list.innerHTML='';
+  arr.forEach(t=>{
+    const p=taskProgress(t);
+    const card=document.createElement('div'); card.className='task';
+    card.innerHTML=`
+      <div class="task-head">
+        <div class="task-title">${t.title}</div>
+        <div class="tag">${t.subject}</div>
+      </div>
+      <div class="muted" style="margin:6px 0">${t.notes? t.notes:''}</div>
+      <div class="progress" title="${p}%"><span style="width:${p}%"></span></div>
+      <div class="task-footer">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          ${dueBadge(t)}
+          <span class="pill">~${t.estMin} min</span>
+          <span class="pill">Priority: ${t.priority===3?'High':t.priority===1?'Low':'Normal'}</span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-sm btn-accent" data-act="add-sub" data-id="${t.id}">Add subtask</button>
+          <button class="btn btn-sm btn-ghost" data-act="start" data-id="${t.id}">Start ${Math.min(30, Math.max(15, settings.sessionLen))}m</button>
+          <button class="btn btn-sm btn-ghost" data-act="done" data-id="${t.id}">Mark done</button>
+          <button class="btn btn-sm btn-ghost" data-act="del" data-id="${t.id}">Delete</button>
+        </div>
+      </div>
+      <div class="subtasks" id="subs-${t.id}">
+        ${ (t.subtasks||[]).map(s=>`
+          <div class="subrow">
+            <input type="checkbox" data-act="toggle-sub" data-id="${t.id}" data-sid="${s.id}" ${s.done?'checked':''}/>
+            <input type="text" class="input" value="${s.text}" data-act="edit-sub" data-id="${t.id}" data-sid="${s.id}"/>
+            <button class="btn btn-sm" data-act="del-sub" data-id="${t.id}" data-sid="${s.id}">Remove</button>
+          </div>
+        `).join('') }
+      </div>
+    `;
+    list.appendChild(card);
+  });
+}
+el('#tasks').addEventListener('click', (e)=>{
+  const btn=e.target.closest('button'); if(!btn) return;
+  const id=btn.getAttribute('data-id'); const act=btn.getAttribute('data-act');
+  const t = tasks.find(x=>x.id===id); if(!t) return;
+
+  if(act==='del'){ tasks=tasks.filter(x=>x.id!==id); storage.set('tasks',tasks); renderTasks(); toast('Assignment deleted.'); return; }
+  if(act==='done'){ t.progress=100; t.done=true; t.subtasks?.forEach(s=>s.done=true); storage.set('tasks',tasks); renderTasks(); toast('Nice work! ✅'); return; }
+  if(act==='add-sub'){
+    t.subtasks=t.subtasks||[]; t.subtasks.push({id:uid(), text:'', done:false});
+    storage.set('tasks',tasks); renderTasks(); return;
+  }
+  if(act==='start'){
+    // create a "now" session for this task for sessionLen minutes
+    const start = new Date(); const end = addMinutes(start, Math.min(30, Math.max(15, settings.sessionLen)));
+    const s = {id:uid(), dayDE: todayNameDE(), dateISO: start.toISOString(), start: pad(start.getHours())+':'+pad(start.getMinutes()),
+               end: pad(end.getHours())+':'+pad(end.getMinutes()), subject:t.subject, taskId:t.id};
+    planned.today.push(s); storage.set('planned', planned); renderTodayPlan(); notify(`Start ${t.subject}: ${t.title}`, `Study until ${s.end}`);
+  }
+});
+el('#tasks').addEventListener('change',(e)=>{
+  const cb = e.target.closest('input[type="checkbox"][data-act="toggle-sub"]');
+  if(cb){
+    const id=cb.getAttribute('data-id'), sid=cb.getAttribute('data-sid');
+    const t=tasks.find(x=>x.id===id); if(!t) return;
+    const sub=t.subtasks.find(s=>s.id===sid); if(!sub) return;
+    sub.done = cb.checked; t.progress = taskProgress(t);
+    storage.set('tasks',tasks); renderTasks();
+  }
+});
+el('#tasks').addEventListener('input',(e)=>{
+  const tx = e.target.closest('input[type="text"][data-act="edit-sub"]');
+  if(tx){
+    const id=tx.getAttribute('data-id'), sid=tx.getAttribute('data-sid');
+    const t=tasks.find(x=>x.id===id); if(!t) return;
+    const sub=t.subtasks.find(s=>s.id===sid); if(!sub) return;
+    sub.text = tx.value; storage.set('tasks',tasks);
+  }
+});
+el('#tasks').addEventListener('click',(e)=>{
+  const btn=e.target.closest('button[data-act="del-sub"]'); if(!btn) return;
+  const id=btn.getAttribute('data-id'), sid=btn.getAttribute('data-sid');
+  const t=tasks.find(x=>x.id===id); if(!t) return;
+  t.subtasks = (t.subtasks||[]).filter(s=>s.id!==sid);
+  storage.set('tasks',tasks); renderTasks();
+});
+
+/* ===== Study Windows UI ===== */
+const weekDE = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag","Sonntag"];
+function renderWins(){
+  const box=el('#wins'); box.innerHTML='';
+  weekDE.forEach(day=>{
+    const group=document.createElement('div'); group.className='card';
+    group.innerHTML=`<h3 style="margin:0 0 8px;font-size:14px">${day} <span class="muted">(study windows)</span></h3>`;
+    const wins=studyWins[day]||[];
+    const wrap=document.createElement('div'); group.appendChild(wrap);
+    wins.forEach((w,i)=>{ wrap.appendChild(winRow(day, w[0], w[1], i)); });
+    const add=document.createElement('button'); add.className='btn btn-sm'; add.textContent='Add window';
+    add.onclick=()=>{ (studyWins[day]=studyWins[day]||[]).push(["16:00","18:00"]); storage.set('studyWins',studyWins); renderWins(); };
+    group.appendChild(add);
+    box.appendChild(group);
+  });
+}
+function winRow(day,from,to,idx){
+  const d=document.createElement('div'); d.className='win';
+  d.innerHTML=`
+    <input class="input" type="time" value="${from}" data-day="${day}" data-idx="${idx}" data-k="from"/>
+    <span class="muted">to</span>
+    <input class="input" type="time" value="${to}" data-day="${day}" data-idx="${idx}" data-k="to"/>
+    <button class="btn btn-sm" data-day="${day}" data-idx="${idx}">Remove</button>
+  `;
+  d.querySelectorAll('input').forEach(inp=>{
+    inp.onchange=()=>{
+      const day=inp.getAttribute('data-day'), i=+inp.getAttribute('data-idx'), k=inp.getAttribute('data-k');
+      if(k==='from') studyWins[day][i][0]=inp.value; else studyWins[day][i][1]=inp.value;
+      storage.set('studyWins',studyWins);
+    };
+  });
+  d.querySelector('button').onclick=(ev)=>{
+    const day=ev.target.getAttribute('data-day'), i=+ev.target.getAttribute('data-idx');
+    studyWins[day].splice(i,1); storage.set('studyWins',studyWins); renderWins();
+  };
+  return d;
+}
+el('#saveWins').onclick=()=>{
+  settings.sessionLen = Math.max(15, parseInt(el('#sessionLen').value||'30',10));
+  settings.maxSessions = Math.max(1, parseInt(el('#maxSessions').value||'4',10));
+  storage.set('settings', settings);
+  toast('Settings saved.');
+};
+
+/* ===== Planning Engine =====
+   Strategy: Greedy by (deadline, priority desc, remaining time).
+   Fill each day’s windows with fixed-length sessions until you hit maxSessions/day.
+*/
+function sessionsForDay(date, dayDE){
+  const wins=(studyWins[dayDE]||[]).map(w=>({start:parseHHMM(w[0]), end:parseHHMM(w[1])}));
+  const blocks=[];
+  wins.forEach(w=>{
+    let cur=minutes(w.start), end=minutes(w.end);
+    while(cur+settings.sessionLen<=end && blocks.length<settings.maxSessions){
+      const sMin=cur, eMin=cur+settings.sessionLen;
+      blocks.push({start:toHHMM(sMin), end:toHHMM(eMin)});
+      cur=eMin;
+    }
+  });
+  return blocks.map(b=>({dateISO:date.toISOString(), dayDE, start:b.start, end:b.end}));
+}
+
+function planForRange(days=7){
+  const now=new Date(); const subjectDefault = '(Study)';
+  // Build candidate tasks: not done, with remaining time > 0
+  const candidates = tasks.filter(t=>!t.done && (t.estMin>0)).map(t=>({...t, remaining:t.estMin*(1-taskProgress(t)/100)}));
+  candidates.sort((a,b)=>{
+    const dA=new Date(a.deadline), dB=new Date(b.deadline);
+    if(dA.getTime()!==dB.getTime()) return dA-dB;
+    return (b.priority||2)-(a.priority||2);
+  });
+
+  const sessions=[];
+  for(let d=0; d<days; d++){
+    const date=new Date(now); date.setHours(0,0,0,0); date.setDate(now.getDate()+d);
+    const dayDE = DAYS_DE[date.getDay()] || 'Montag';
+    const blocks = sessionsForDay(date, dayDE);
+    blocks.forEach(b=>{
+      // pick best task to fill this block: earliest due first, then highest priority
+      const task = candidates.find(x=>x.remaining>0 && new Date(x.deadline)>=date);
+      if(task){
+        task.remaining = Math.max(0, task.remaining - settings.sessionLen);
+        sessions.push({id:uid(), ...b, subject:task.subject || subjectDefault, taskId:task.id});
+      }
+    });
+  }
+  return sessions;
+}
+
+/* ===== Today & Week Plan Rendering ===== */
+function renderTodayPlan(){
+  const box=el('#todayPlan');
+  const todayISO=new Date().toISOString().slice(0,10);
+  const items = planned.today.filter(s=> (s.dateISO||'').slice(0,10)===todayISO);
+  if(items.length===0){ box.classList.add('muted'); box.innerHTML='No sessions yet. Click “Generate Plan”.'; return; }
+  box.classList.remove('muted');
+  box.innerHTML='';
+  items.forEach(s=>{
+    const t = tasks.find(x=>x.id===s.taskId);
+    const row=document.createElement('div'); row.className='session';
+    row.innerHTML=`
+      <div class="left">
+        <div class="dot"></div>
+        <div>
+          <div><strong>${s.start}–${s.end}</strong> · ${s.subject}</div>
+          <div class="muted">${t? t.title : '(unlinked)'}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" data-sid="${s.id}" data-act="bing">Notify at start</button>
+        <button class="btn btn-sm btn-ghost" data-sid="${s.id}" data-act="del-sess">Remove</button>
+      </div>
+    `;
+    box.appendChild(row);
+  });
+}
+el('#todayPlan').addEventListener('click',(e)=>{
+  const btn=e.target.closest('button'); if(!btn) return;
+  const id=btn.getAttribute('data-sid'); const act=btn.getAttribute('data-act');
+  if(act==='del-sess'){
+    planned.today = planned.today.filter(x=>x.id!==id); storage.set('planned',planned); renderTodayPlan();
+  }
+  if(act==='bing'){
+    const s = planned.today.find(x=>x.id===id); if(!s) return;
+    scheduleNotificationForSession(s); toast('We will remind you.');
+  }
+});
+
+function renderWeekPlan(){
+  const box=el('#weekPlan'); box.innerHTML='';
+  // group by day
+  const group = {};
+  planned.week.forEach(s=>{ const k=(s.dateISO||'').slice(0,10); group[k]=group[k]||[]; group[k].push(s); });
+  // show next 7 days
+  for(let i=0;i<7;i++){
+    const d=new Date(); d.setDate(d.getDate()+i);
+    const key=d.toISOString().slice(0,10);
+    const dayDE=DAYS_DE[d.getDay()];
+    const col=document.createElement('div'); col.className='card';
+    col.innerHTML=`<h3 style="margin:0 0 8px;font-size:14px">${dayDE} <span class="muted">(${d.toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit'})})</span></h3>`;
+    const list=document.createElement('div'); list.className='list';
+    (group[key]||[]).forEach(s=>{
+      const t = tasks.find(x=>x.id===s.taskId);
+      const row=document.createElement('div'); row.className='session';
+      row.innerHTML=`
+        <div class="left">
+          <div class="dot"></div>
+          <div><strong>${s.start}–${s.end}</strong> · ${s.subject} <span class="muted">— ${t? t.title:''}</span></div>
+        </div>
+        <button class="btn btn-sm btn-ghost" data-sid="${s.id}" data-act="del-week">Remove</button>
+      `;
+      list.appendChild(row);
+    });
+    if((group[key]||[]).length===0) list.innerHTML='<div class="muted">No sessions planned.</div>';
+    col.appendChild(list);
+    box.appendChild(col);
+  }
+}
+el('#weekPlan').addEventListener('click',(e)=>{
+  const btn=e.target.closest('button'); if(!btn) return;
+  if(btn.getAttribute('data-act')==='del-week'){
+    const id=btn.getAttribute('data-sid');
+    planned.week = planned.week.filter(x=>x.id!==id); storage.set('planned',planned); renderWeekPlan();
+  }
+});
+
+/* ===== Notifications ===== */
+function notify(title, body){ try{
+  if(Notification?.permission==='granted'){ new Notification(title, { body }); }
+  toast(`${title}<br/><span class="muted">${body}</span>`);
+}catch{}}
+el('#notifyBtn').onclick=()=>{ Notification?.requestPermission().then(p=>toast('Permission: '+p)); };
+el('#reqPerm').onclick=()=>{ Notification?.requestPermission().then(p=>toast('Permission: '+p)); };
+
+function scheduleNotificationForSession(s){
+  // If session is today, set a timeout until its start
+  try{
+    const [h,m]=s.start.split(':').map(Number);
+    const d=new Date(s.dateISO); d.setHours(h,m,0,0);
+    const delay = d.getTime() - Date.now();
+    if(delay>0 && delay<6*3600*1000){
+      setTimeout(()=>{ 
+        const t=tasks.find(x=>x.id===s.taskId);
+        notify(`Start ${s.subject}`, t? t.title : 'Study session');
+      }, delay);
+    }
+  }catch{}
+}
+
+/* ===== Toasts ===== */
+function toast(msg, kind='info'){
+  const box=el('#toasts'); const t=document.createElement('div'); t.className='toast';
+  t.innerHTML = `<div style="font-weight:700;margin-bottom:4px">${ kind==='warn'?'Heads up': (kind==='err'?'Error':'Notice') }</div><div>${msg}</div>`;
+  box.appendChild(t);
+  setTimeout(()=>{ t.style.opacity='0'; setTimeout(()=>t.remove(),300); }, 3500);
+}
+
+/* ===== Generate Plans ===== */
+el('#genToday').onclick=()=>{
+  const d=new Date(); d.setHours(0,0,0,0);
+  const dayDE = DAYS_DE[d.getDay()];
+  const blocks = sessionsForDay(d, dayDE);
+  if(blocks.length===0){ toast('No study windows set for today.', 'warn'); return; }
+
+  // prepare candidate tasks for today only (due today or soonest)
+  const cands=[...tasks].filter(t=>!t.done && t.estMin>0).map(t=>({...t, remaining:t.estMin*(1-taskProgress(t)/100)}))
+    .sort((a,b)=> new Date(a.deadline)-new Date(b.deadline) || (b.priority||2)-(a.priority||2));
+
+  planned.today = [];
+  blocks.forEach(b=>{
+    const t = cands.find(x=>x.remaining>0 && new Date(x.deadline)>=d);
+    if(t){
+      t.remaining=Math.max(0, t.remaining-settings.sessionLen);
+      planned.today.push({id:uid(), dayDE, dateISO:d.toISOString(), start:b.start, end:b.end, subject:t.subject||'(Study)', taskId:t.id});
+    }
+  });
+  storage.set('planned', planned); renderTodayPlan(); toast('Today plan generated.');
+  // schedule notifications
+  planned.today.forEach(scheduleNotificationForSession);
+};
+el('#clearToday').onclick=()=>{ planned.today=[]; storage.set('planned', planned); renderTodayPlan(); };
+
+el('#genWeek').onclick=()=>{
+  planned.week = planForRange(7);
+  storage.set('planned', planned); renderWeekPlan();
+  toast('Weekly plan generated.');
+};
+el('#clearWeek').onclick=()=>{ planned.week=[]; storage.set('planned', planned); renderWeekPlan(); };
+
+/* ===== Tabs ===== */
+els('.tab').forEach(t=>{
+  t.onclick=()=>{
+    els('.tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    const id=t.getAttribute('data-tab');
+    els('.tabpanel').forEach(p=>p.style.display='none');
+    el('#tab-'+id).style.display='';
+  };
+});
+
+/* ===== Build Weekly Timetable once ===== */
+function buildWeeklyTimetable(){ buildGrid(); }
+
+/* ===== INIT ===== */
+function init(){
+  updateClock();
+  setInterval(updateClock, 1000);
+  buildWeeklyTimetable();
+  renderTodayTimetable();
+  fillSubjectSelects();
+  renderTasks();
+  renderWins();
+  // settings controls
+  el('#sessionLen').value=settings.sessionLen;
+  el('#maxSessions').value=settings.maxSessions;
+  renderTodayPlan();
+  renderWeekPlan();
+  updateNow();
+  setInterval(()=>{ updateNow(); }, 1000);
+
+  // Hook filters / sort
+  el('#filterSubject').onchange=renderTasks;
+  el('#sortBy').onchange=renderTasks;
+
+  // Add handlers
+  el('#addTask').onclick=()=>addTaskFromForm('t');
+  el('#qaAdd').onclick=()=>addTaskFromForm('qa');
+}
+init();
+</script>
+</body>
+</html>

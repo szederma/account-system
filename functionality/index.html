@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Functionality | Distanzuino</title>
+    <link rel="icon" type="image/jpg" href="/images/icon.png">
+    <link rel="stylesheet" href="/redesign.css">
+    <script type="text/javascript" src="https://app.termly.io/resource-blocker/611984d8-f015-418c-b13f-dc82c88b1907?autoBlock=on"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-3HEL3CR3RW"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-3HEL3CR3RW');
+    </script>
+</head>
+<body>
+
+    <div id="site-header"></div>
+
+    <main>
+        <section id="how-it-works-hero" class="hero-reimagined" style="height: 60vh;">
+            <div class="hero-content">
+                <div class="hero-text-overlay" style="bottom: 15vh;">
+                    <h1>From Gesture to Music</h1>
+                    <p class="section-title" style="border-top: none; max-width: 600px; margin: 0 auto;">Discover the seamless journey from a simple hand movement to a rich, expressive musical note. Here’s the magic behind Distanzuino.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="how-it-works" class="how-it-works">
+            <div class="timeline-container">
+                <div class="timeline-step reveal-on-scroll">
+                    <div class="step-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"></polyline><polyline points="9 5 12 2 15 5"></polyline><polyline points="15 19 12 22 9 19"></polyline><polyline points="19 9 22 12 19 15"></polyline><line x1="2" y1="12" x2="22" y2="12"></line><line x1="12" y1="2" x2="12" y2="22"></line></svg>
+                    </div>
+                    <div class="step-content">
+                        <h3>1. Gesture Detection</h3>
+                        <p>You place your hand over a note area on either side of the device. The <strong>VL53L1X laser sensors</strong> measure the exact distance from your hand in real time.</p>
+                    </div>
+                </div>
+                <div class="timeline-step reveal-on-scroll">
+                    <div class="step-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 7 10 10-5 5V2l5 5L7 17"></path></svg>
+                    </div>
+                    <div class="step-content">
+                        <h3>2. Bluetooth Transmission</h3>
+                        <p>An <strong>Arduino Nano</strong> reads the distance values and sends them via <strong>HM-10 Bluetooth module</strong> to your phone, tablet, or PC using <strong>Bluetooth Low Energy (BLE)</strong>.</p>
+                    </div>
+                </div>
+                <div class="timeline-step reveal-on-scroll">
+                    <div class="step-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                    </div>
+                    <div class="step-content">
+                        <h3>3. Web App Interpretation</h3>
+                        <p>The <a href="https://distanzuino.com/bt" target="_blank">Distanzuino web application</a> receives the distances and converts them into tones based on pre-defined tone maps and instrument profiles.</p>
+                    </div>
+                </div>
+                <div class="timeline-step reveal-on-scroll">
+                    <div class="step-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                    </div>
+                    <div class="step-content">
+                        <h3>4. Realistic Sound Generation</h3>
+                        <p>The web app plays tones using <strong>measured harmonics and attack-phase timing</strong> to match real instruments like the piano, flute, or cello. You hear the result through your device or other connected speakers.</p>
+                    </div>
+                </div>
+                <div class="timeline-step reveal-on-scroll">
+                    <div class="step-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
+                    </div>
+                    <div class="step-content">
+                        <h3>5. Customization</h3>
+                        <p>You can adjust tones, volume, and instruments right in the browser. The app also shows which notes are playing real-time.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="site-footer"></div>
+
+    <a href="#" class="back-to-top" aria-label="Back to Top">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+    </a>
+
+    <script>
+        // --- Load Header & Footer Components (with header callback) ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const loadComponent = (url, elementId, callback) => {
+                fetch(url)
+                    .then(res => res.ok ? res.text() : Promise.reject(`Component not found: ${url}`))
+                    .then(data => {
+                        const targetElement = document.getElementById(elementId);
+                        if (targetElement) {
+                            targetElement.innerHTML = data;
+                            if (callback) callback();
+                        }
+                    })
+                    .catch(console.error);
+            };
+
+            loadComponent('/header.html', 'site-header', initializeHeader);
+            loadComponent('/footer.html', 'site-footer');
+
+            // Back to Top Button Logic (unchanged)
+            const backToTopButton = document.querySelector('.back-to-top');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 300) {
+                    backToTopButton.classList.add('visible');
+                } else {
+                    backToTopButton.classList.remove('visible');
+                }
+            }, { passive: true });
+        });
+
+        // --- Header Logic (same behavior as 404 page) ---
+        function initializeHeader() {
+            const header = document.querySelector('#header');
+            if (!header) return;
+            const mobileToggle = header.querySelector('.mobile-nav-toggle');
+            const hasSubmenuItems = header.querySelectorAll('.has-submenu > .submenu-toggle');
+
+            // Toggle mobile menu
+            if (mobileToggle) {
+                mobileToggle.addEventListener('click', () => {
+                    header.classList.toggle('menu-open');
+                    document.body.classList.toggle('no-scroll', header.classList.contains('menu-open'));
+                });
+            }
+
+            // Toggle submenus
+            hasSubmenuItems.forEach(toggle => {
+                toggle.addEventListener('click', e => {
+                    e.preventDefault();
+                    const parent = toggle.parentElement;
+
+                    // Close other submenus on desktop
+                    if (!header.classList.contains('header-mobile-layout')) {
+                        header.querySelectorAll('.has-submenu.open').forEach(item => {
+                            if (item !== parent) item.classList.remove('open');
+                        });
+                    }
+
+                    parent.classList.toggle('open');
+                });
+            });
+
+            // Close menu when any nav link (except submenu opener) is clicked
+            header.querySelectorAll('nav a').forEach(link => {
+                link.addEventListener('click', e => {
+                    const isSubmenuOpener = link.classList.contains('submenu-toggle');
+                    const parentSubmenu = link.closest('.has-submenu');
+
+                    // MOBILE MODE
+                    if (header.classList.contains('header-mobile-layout')) {
+                        if (isSubmenuOpener) return; // Don't close if submenu toggle
+                        if (header.classList.contains('menu-open')) {
+                            header.classList.remove('menu-open');
+                            document.body.classList.remove('no-scroll');
+                            header.querySelectorAll('.has-submenu.open').forEach(item => {
+                                item.classList.remove('open');
+                            });
+                        }
+                    } 
+                    // DESKTOP MODE
+                    else {
+                        // If this link is inside a submenu, close that submenu
+                        if (parentSubmenu && !isSubmenuOpener) {
+                            parentSubmenu.classList.remove('open');
+                        }
+                    }
+                });
+            });
+
+            // Close submenu when clicking outside (desktop only)
+            document.addEventListener('click', e => {
+                if (!header.classList.contains('header-mobile-layout')) {
+                    const clickedInsideSubmenu = e.target.closest('.has-submenu');
+                    if (!clickedInsideSubmenu) {
+                        header.querySelectorAll('.has-submenu.open').forEach(item => {
+                            item.classList.remove('open');
+                        });
+                    }
+                }
+            });
+
+            // Header scroll effect
+            window.addEventListener('scroll', () => {
+                header.classList.toggle('scrolled', window.scrollY > 50);
+            }, { passive: true });
+
+            // Mobile layout detection
+            const updateLayout = () => {
+                if (window.innerWidth <= 768) {
+                    header.classList.add('header-mobile-layout');
+                } else {
+                    header.classList.remove('header-mobile-layout', 'menu-open');
+                    document.body.classList.remove('no-scroll');
+                }
+            };
+            updateLayout();
+            window.addEventListener('resize', updateLayout);
+        }
+
+        // Reveal animations on scroll (unchanged)
+        const revealOnScroll = () => {
+            const elementsToReveal = document.querySelectorAll('.reveal-on-scroll');
+            const triggerBottom = window.innerHeight * 0.9;
+
+            elementsToReveal.forEach(el => {
+                const elTop = el.getBoundingClientRect().top;
+                if (elTop < triggerBottom) {
+                    el.classList.add('visible');
+                }
+            });
+        };
+        
+        window.addEventListener('scroll', revealOnScroll, { passive: true });
+        window.addEventListener('load', revealOnScroll);
+    </script>
+</body>
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Frequency Mixer</title>
+</head>
+<body>
+  <h1>Frequency Mixer</h1>
+  <label for="distance1">Select Distance 1:</label>
+  <select id="distance1">
+    <option value="">Select</option>
+    <!-- Options for distances 1 to 50 -->
+    <script>
+      for (let i = 1; i <= 50; i++) {
+        document.write(`<option value="${i}">${i}</option>`);
+      }
+    </script>
+  </select>
+
+  <label for="distance2">Select Distance 2:</label>
+  <select id="distance2">
+    <option value="">Select</option>
+    <!-- Options for distances 1 to 50 -->
+    <script>
+      for (let i = 1; i <= 50; i++) {
+        document.write(`<option value="${i}">${i}</option>`);
+      }
+    </script>
+  </select>
+
+  <button id="play">Play</button>
+  <button id="stop">Stop</button>
+
+  <script>
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillators = [];
+    let isPlaying = false;
+
+    // Intensity mapping for frequencies
+    const intensityMap = {
+      133: 0.0045, 258: 0.0041, 391: 0.012,
+      150: 0.04, 291: 0.06, 441: 0.045,
+      166: 0.0175, 333: 0.015, 492: 0.022
+      // Add more frequencies and intensities here later
+    };
+
+    function getFrequencies(distanceLabel, distance) {
+      if (distance < 3 || distance > 45) return [];
+
+      if (distanceLabel === "1") {
+        if (distance >= 3 && distance < 8.99) return [250, 491, 747];
+        else if (distance >= 9 && distance < 14.99) return [216, 441, 657];
+        else if (distance >= 15 && distance < 20.99) return [200, 391, 591];
+        else if (distance >= 21 && distance < 26.99) return [175, 350, 525];
+        else if (distance >= 27 && distance < 32.99) return [166, 333, 492];
+        else if (distance >= 33 && distance < 38.99) return [150, 291, 441];
+        else if (distance >= 39 && distance < 45) return [133, 258, 391];
+      } else if (distanceLabel === "2") {
+        if (distance >= 3 && distance < 8.99) return [258, 524, 782];
+        else if (distance >= 9 && distance < 14.99) return [292, 582, 883];
+        else if (distance >= 15 && distance < 20.99) return [324, 658, 987];
+        else if (distance >= 21 && distance < 26.99) return [350, 692, 1040];
+        else if (distance >= 27 && distance < 32.99) return [391, 782, 1174];
+        else if (distance >= 33 && distance < 38.99) return [440, 877, 1318];
+        else if (distance >= 39 && distance < 45) return [492, 989, 1483];
+      }
+
+      return [];
+    }
+
+    function playFrequencies(frequencies) {
+      frequencies.forEach(freq => {
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        oscillator.type = 'sine'; // Smooth wave type
+        oscillator.frequency.value = freq;
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        const intensity = intensityMap[freq] || 0.1; // Default intensity if none is provided
+
+        // Smooth fade-in and fade-out
+        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(intensity, audioCtx.currentTime + 1.5); // Increased fade-in time
+
+        // Detune slightly to reduce harshness
+        oscillator.detune.setValueAtTime(-10, audioCtx.currentTime); // Minor detune for smoother tone
+
+        oscillator.start(); // Keep playing until stop is clicked
+
+        // Add the oscillator to the array
+        oscillators.push({ oscillator, gainNode });
+      });
+    }
+
+    function stopFrequencies() {
+      oscillators.forEach(({ oscillator, gainNode }) => {
+        // Smooth fade-out in 0.5 seconds
+        gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
+        oscillator.stop(audioCtx.currentTime + 0.5); // Stop the oscillator after the fade-out
+      });
+      oscillators.length = 0; // Clear the oscillators array
+    }
+
+    // Listen for changes in the distance select boxes
+    function handleDistanceChange() {
+      if (isPlaying) {
+        stopFrequencies(); // Stop any currently playing sounds
+
+        const distance1 = parseFloat(document.getElementById("distance1").value);
+        const distance2 = parseFloat(document.getElementById("distance2").value);
+
+        const frequencies1 = distance1 ? getFrequencies("1", distance1) : [];
+        const frequencies2 = distance2 ? getFrequencies("2", distance2) : [];
+
+        const allFrequencies = [...frequencies1, ...frequencies2];
+
+        if (allFrequencies.length > 0) {
+          playFrequencies(allFrequencies); // Immediately start new frequencies
+        }
+      }
+    }
+
+    // Play button click listener
+    document.getElementById("play").addEventListener("click", () => {
+      stopFrequencies(); // Stop any currently playing sounds before starting new ones
+
+      const distance1 = parseFloat(document.getElementById("distance1").value);
+      const distance2 = parseFloat(document.getElementById("distance2").value);
+
+      const frequencies1 = distance1 ? getFrequencies("1", distance1) : [];
+      const frequencies2 = distance2 ? getFrequencies("2", distance2) : [];
+
+      const allFrequencies = [...frequencies1, ...frequencies2];
+
+      if (allFrequencies.length > 0) {
+        isPlaying = true;
+        playFrequencies(allFrequencies); // Start playing frequencies
+      } else {
+        alert("No valid frequencies selected");
+      }
+    });
+
+    // Stop button click listener
+    document.getElementById("stop").addEventListener("click", () => {
+      stopFrequencies();
+      isPlaying = false;
+    });
+
+    // Add event listeners to distance dropdowns to trigger playback changes
+    document.getElementById("distance1").addEventListener("change", handleDistanceChange);
+    document.getElementById("distance2").addEventListener("change", handleDistanceChange);
+  </script>
+</body>
+</html>

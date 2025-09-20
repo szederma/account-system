@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Modern Dark Chat</title>
+  <style>
+    :root {
+      --dark-bg: #1a1a2e; /* Dark Navy Blue */
+      --darker-bg: #162447; /* Slightly Darker Navy Blue for containers */
+      --accent-primary: #e94560; /* Vibrant Pink/Red */
+      --text-primary: #f0f0f0; /* Light Gray/Off-White */
+      --text-secondary: #a0a0c0; /* Lighter Purple/Gray */
+      --input-bg: rgba(255, 255, 255, 0.08);
+      --border-color: rgba(233, 69, 96, 0.3);
+      --message-bg-own: #1f4068; /* Darker Blue for own messages */
+      --message-bg-other: #2c3e50; /* Slightly lighter gray-blue for other messages */
+      --scrollbar-thumb-bg: var(--accent-primary);
+      --scrollbar-track-bg: var(--darker-bg);
+    }
+
+    @font-face {
+      font-family: 'Caros';
+      /* Define src if you have a local font file, otherwise it relies on system availability */
+      src: local('Caros'), local('Caros-Regular'); /* Example */
+    }
+
+    body {
+      background-color: var(--dark-bg);
+      color: var(--text-primary);
+      font-family: 'Caros', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      line-height: 1.6;
+    }
+
+    #loading {
+      position: fixed;
+      inset: 0;
+      background: var(--dark-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+    }
+
+    .chat-container {
+      max-width: 800px;
+      margin: 30px auto;
+      background: var(--darker-bg);
+      border-radius: 12px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 60px); /* Adjust height dynamically */
+      max-height: 700px; /* Max height for larger screens */
+    }
+
+    header {
+      padding: 20px;
+      background: rgba(0,0,0,0.2);
+      border-bottom: 1px solid var(--border-color);
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      color: var(--accent-primary);
+      margin: 0 0 5px 0;
+    }
+
+    header a {
+      color: var(--accent-primary);
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+    header a:hover {
+      text-decoration: underline;
+    }
+
+    header #userIdDisplay {
+        font-weight: bold;
+    }
+
+    #chat-messages {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 20px;
+      gap: 12px;
+      display: flex;
+      flex-direction: column;
+      scrollbar-width: thin;
+      scrollbar-color: var(--scrollbar-thumb-bg) var(--scrollbar-track-bg);
+    }
+
+    #chat-messages::-webkit-scrollbar {
+      width: 8px;
+    }
+    #chat-messages::-webkit-scrollbar-track {
+      background: var(--scrollbar-track-bg);
+    }
+    #chat-messages::-webkit-scrollbar-thumb {
+      background-color: var(--scrollbar-thumb-bg);
+      border-radius: 10px;
+      border: 2px solid var(--scrollbar-track-bg);
+    }
+
+    .message-bubble {
+      padding: 12px 15px;
+      border-radius: 18px;
+      max-width: 75%;
+      word-wrap: break-word;
+    }
+
+    .message-bubble.own {
+      background: var(--message-bg-own);
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+
+    .message-bubble.other {
+      background: var(--message-bg-other);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+    
+    .message-file-link {
+        display: inline-block;
+        background-color: rgba(0,0,0,0.2);
+        padding: 5px 10px;
+        border-radius: 5px;
+        margin-top: 5px;
+        color: var(--accent-primary);
+        text-decoration: none;
+    }
+    .message-file-link:hover {
+        background-color: rgba(0,0,0,0.4);
+    }
+
+    .message-info {
+      font-size: 0.75rem;
+      opacity: 0.7;
+      margin-top: 5px;
+    }
+
+    #message-form {
+      display: flex;
+      padding: 15px 20px;
+      border-top: 1px solid var(--border-color);
+      gap: 10px;
+      background: rgba(0,0,0,0.2);
+    }
+
+    #message-input {
+      flex: 1;
+      padding: 12px 15px;
+      border-radius: 20px;
+      border: 1px solid var(--border-color);
+      background: var(--input-bg);
+      color: var(--text-primary);
+      outline: none;
+    }
+    #message-input:focus {
+        border-color: var(--accent-primary);
+    }
+
+    #file-input {
+      display: none; /* Hidden, triggered by a label */
+    }
+    
+    .file-input-label {
+      padding: 10px 15px;
+      background: var(--message-bg-other);
+      border: none;
+      color: var(--text-primary);
+      border-radius: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.3s;
+    }
+    .file-input-label:hover {
+        background: var(--accent-primary);
+        color: white;
+    }
+
+
+    #send-button {
+      padding: 10px 20px;
+      background: var(--accent-primary);
+      border: none;
+      color: white;
+      border-radius: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    #send-button:hover {
+      background: #d6304b; /* Darker accent */
+    }
+    #send-button:disabled, #message-input:disabled, .file-input-label.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+
+    <div id="loading">
+        <p>Initializing Chat...</p>
+    </div>
+      
+    <div class="chat-container">
+        <header>
+            <h1>Chat Sphere</h1>
+            <p>
+                <a href="profile">Profile Settings</a>
+            </p>      
+            <p style="font-size: 0.9rem; color: var(--text-secondary);">Welcome, <span id="userIdDisplay">...</span>!</p>
+        </header>
+
+        <div id="chat-messages"></div>
+
+        <form id="message-form">
+            <label for="file-input" class="file-input-label" id="file-input-label" title="Attach file">📎</label>
+            <input type="file" id="file-input" accept="image/*,application/pdf,.doc,.docx,.txt,.zip" />
+            <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off" disabled />
+            <button type="submit" id="send-button" disabled>Send</button>
+        </form>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, serverTimestamp, query, onSnapshot, doc, getDoc, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAddXTzBxZk1Su6fNnsgRuNnWqFrq_ZjCY", // Replace with your actual API key
+            authDomain: "distanzuino-project.firebaseapp.com",
+            projectId: "distanzuino-project",
+            storageBucket: "distanzuino-project.appspot.com",
+            messagingSenderId: "584745723160",
+            appId: "1:584745723160:web:97387a22f4b4b9fb9c6a6d"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        const messagesRef = collection(db, "artifacts/default-chat-app/public/data/messages");
+
+        const messageForm = document.getElementById("message-form");
+        const messageInput = document.getElementById("message-input");
+        const sendButton = document.getElementById("send-button");
+        const chatMessages = document.getElementById("chat-messages");
+        const userIdDisplay = document.getElementById("userIdDisplay");
+        const fileInput = document.getElementById("file-input");
+        const fileInputLabel = document.getElementById("file-input-label");
+        const loadingDiv = document.getElementById("loading");
+
+        let currentUsername = "Anonymous";
+
+        onAuthStateChanged(auth, async (user) => {
+            console.log("Auth state changed. User:", user);
+
+            if (!user) {
+                console.warn("No user logged in. Redirecting to login...");
+                loadingDiv.textContent = "Redirecting to login...";
+                window.location.replace("login");
+                return;
+            }
+
+            loadingDiv.textContent = "Fetching user data...";
+            let userDocSnapshot;
+            let userExistsInDb = false;
+            try {
+                for (let i = 0; i < 3; i++) { // Retry fetching user doc
+                    userDocSnapshot = await getDoc(doc(db, "users", user.uid));
+                    if (userDocSnapshot.exists()) {
+                        userExistsInDb = true;
+                        break;
+                    }
+                    await new Promise(r => setTimeout(r, 500));
+                }
+
+                if (!userExistsInDb) {
+                    console.error(`User document for UID ${user.uid} not found in Firestore. Chat access denied.`);
+                    loadingDiv.innerHTML = `<p style="color:var(--accent-primary); padding: 20px; text-align: center;">Your user data could not be found.<br/>You will not be able to use the chat.<br/>Please try logging out and back in, or contact support if the issue persists.<br/><button id="logout-on-fail" style="margin-top:10px; padding: 8px 15px; background: var(--accent-primary); color:white; border:none; border-radius:5px; cursor:pointer;">Logout</button></p>`;
+                    document.getElementById("logout-on-fail")?.addEventListener('click', () => {
+                        signOut(auth).then(() => window.location.replace("login"));
+                    });
+                    messageInput.disabled = true;
+                    sendButton.disabled = true;
+                    fileInput.disabled = true;
+                    fileInputLabel.classList.add("disabled");
+                    return;
+                }
+
+                const userData = userDocSnapshot.data();
+                console.log("Fetched Firestore user doc:", userData);
+                currentUsername = (userData && userData.username && userData.username.trim()) 
+                                ? userData.username.trim() 
+                                : `User-${user.uid.slice(0, 6)}`;
+                userIdDisplay.textContent = currentUsername;
+
+                messageInput.disabled = false;
+                sendButton.disabled = false;
+                fileInput.disabled = false;
+                fileInputLabel.classList.remove("disabled");
+                loadingDiv?.remove();
+
+                const q = query(messagesRef, orderBy("timestamp", "asc"));
+                onSnapshot(q, (snapshot) => {
+                    const initialLoad = chatMessages.innerHTML === "";
+                    chatMessages.innerHTML = ""; // Clear existing messages
+                    snapshot.forEach(docSnap => { // docSnap instead of doc to avoid conflict
+                        const msg = docSnap.data();
+                        const div = document.createElement("div");
+                        div.classList.add("message-bubble");
+                        div.classList.add(msg.userId === user.uid ? "own" : "other");
+                        
+                        let fileLinkHTML = "";
+                        if (msg.fileUrl) {
+                            fileLinkHTML = `<br/><a href="${msg.fileUrl}" target="_blank" class="message-file-link">📎 ${msg.fileName || "View Attached File"}</a>`;
+                        }
+
+                        div.innerHTML = `
+                            <div>${msg.text || ""}${fileLinkHTML}</div>
+                            <div class="message-info">
+                                ${msg.userName || `User-${msg.userId?.substring(0, 6) || "?"}`} • ${msg.timestamp?.toDate?.().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || "sending..."}
+                            </div>`;
+                        chatMessages.appendChild(div);
+                    });
+                    // Scroll to bottom, only auto-scroll if near bottom or initial load
+                    const isScrolledToBottom = chatMessages.scrollHeight - chatMessages.clientHeight <= chatMessages.scrollTop + chatMessages.lastChild.offsetHeight;
+                    if (initialLoad || isScrolledToBottom) {
+                         chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }
+                });
+
+            } catch (err) {
+                console.error("Error during auth state handling or Firestore fetch:", err);
+                loadingDiv.innerHTML = `<p style="color:var(--accent-primary); padding: 20px; text-align: center;">Critical error initializing chat: ${err.message}.<br/>Try refreshing or logging out and back in.</p>`;
+                messageInput.disabled = true;
+                sendButton.disabled = true;
+                fileInput.disabled = true;
+                fileInputLabel.classList.add("disabled");
+            }
+        });
+
+
+    messageForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const user = auth.currentUser;
+        if (!user) {
+            alert("You must be logged in to send messages.");
+            return;
+        }
+
+        const file = fileInput.files[0];
+        const messageText = messageInput.value.trim();
+
+        if (!messageText && !file) {
+            // No alert for empty, just don't send
+            return;
+        }
+
+        sendButton.disabled = true;
+        messageInput.disabled = true;
+        // Visually indicate that the file input label is also part of the "disabled" form state during submission
+        if (fileInputLabel) fileInputLabel.classList.add("disabled");
+
+
+        try {
+            let fileUrl = null;
+            let fileName = null;
+
+            if (file) {
+                // ADDED CONSOLE LOG FOR DEBUGGING:
+                console.log("File selected for upload:", {
+                    name: file.name,
+                    size: file.size,
+                    type: file.type
+                });
+
+                const uniqueFileName = `${Date.now()}_${file.name}`;
+                // Ensure your storage path is what you intend.
+                // This path means files will be in a top-level folder `chat_uploads`, then a subfolder per user UID.
+                const storageFileRef = ref(storage, `chat_uploads/${user.uid}/${uniqueFileName}`);
+                
+                console.log(`Attempting to upload to: ${storageFileRef.toString()}`); // Log the destination path
+
+                const uploadTask = await uploadBytes(storageFileRef, file);
+                fileUrl = await getDownloadURL(uploadTask.ref);
+                fileName = file.name;
+                console.log("File uploaded successfully. URL:", fileUrl);
+            }
+
+            await addDoc(messagesRef, {
+                text: messageText || null,
+                fileUrl: fileUrl || null,
+                fileName: fileName || null,
+                userId: user.uid,
+                userName: currentUsername, // Use the fetched username
+                timestamp: serverTimestamp()
+            });
+
+            messageInput.value = "";
+            fileInput.value = ""; // Reset file input
+
+        } catch (err) {
+            console.error("Failed to send message or file:", err);
+            // This alert is crucial. Note down the exact error message.
+            alert("Failed to send message or file: " + err.message + "\nCheck console for more details.");
+        } finally {
+            // Re-enable form elements if the user is still in a valid state
+            // (i.e., not kicked out due to auth/user data issues)
+            const userStillValid = !document.getElementById("loading") && (!fileInputLabel || !fileInputLabel.classList.contains("disabled_permanently")); // Assuming you might add a more permanent disabled class elsewhere
+
+            if (userStillValid) {
+                sendButton.disabled = false;
+                messageInput.disabled = false;
+                if (fileInputLabel) fileInputLabel.classList.remove("disabled"); // Re-enable label interaction
+            }
+        }
+      };
+
+    </script>
+</body>
+</html>

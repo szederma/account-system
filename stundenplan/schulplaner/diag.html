@@ -1,0 +1,32 @@
+<!doctype html><meta charset="utf-8"><title>Firestore Diagnose</title>
+<pre id="out" style="font:14px system-ui;white-space:pre-wrap"></pre>
+<script type="module">
+const log = (m)=> out.textContent += m + "\n";
+try {
+  const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
+  const { getAuth, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
+  const { getFirestore, doc, setDoc, updateDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+  const { firebaseConfig } = await import("./firebase-config.js");
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+
+  onAuthStateChanged(auth, async (user)=>{
+    if(!user){ log("❌ Not logged in."); return; }
+    log("User: " + user.email + " (" + user.uid + ")");
+
+    try {
+      // 1) write sanitized payload (small)
+      await setDoc(doc(db, "users", user.uid), { diag: { ok: true } }, { merge:true });
+      // 2) set timestamp separately
+      await updateDoc(doc(db, "users", user.uid), { updatedAt: serverTimestamp() });
+      log("✔ Firestore write succeeded.");
+    } catch(e) {
+      log("❌ Firestore write FAILED:\n" + (e?.message || e));
+    }
+  });
+} catch(e) {
+  log("❌ SDK load failed:\n" + e);
+}
+</script>

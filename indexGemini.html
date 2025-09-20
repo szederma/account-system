@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distanzuino - The Future of Music, In Your Hands</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --dark-bg: #121212;
+            --darker-bg: #0a0a0a;
+            --accent-red: #ff3a3a;
+            --accent-red-dark: #c01e1e;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --transition-smooth: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+            --transition-fast: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+            --font-main: 'Inter', sans-serif;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--dark-bg);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--darker-bg);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-red);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-red-dark);
+        }
+
+        /* Navigation */
+        #navbar {
+            background-color: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(10px);
+            transition: padding 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        #navbar.scrolled {
+            background-color: rgba(10, 10, 10, 0.95);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.4);
+        }
+        .logo-text {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .logo-text .accent {
+            color: var(--accent-red);
+        }
+        .nav-link {
+            color: var(--text-secondary);
+            padding: 8px 0;
+            position: relative;
+            transition: var(--transition-smooth);
+            font-weight: 500;
+        }
+        .nav-link:hover {
+            color: var(--text-primary);
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: var(--accent-red);
+            transition: var(--transition-smooth);
+        }
+        .nav-link:hover::after {
+            width: 100%;
+        }
+        .mobile-nav-toggle {
+            color: var(--text-primary);
+        }
+
+        /* Hero Section */
+        #hero {
+            background-color: var(--darker-bg);
+            position: relative; /* For potential pseudo-elements or absolute positioned animations */
+        }
+        .hero-content-wrapper { /* Added wrapper for animation */
+            opacity: 0;
+            animation: fadeInHeroContent 1s ease-out 0.5s forwards;
+        }
+        @keyframes fadeInHeroContent {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .hero-title {
+            font-size: clamp(3rem, 10vw, 5.5rem);
+            font-weight: 900;
+            line-height: 1.1;
+        }
+        .hero-title .char { /* For character animation */
+            display: inline-block;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: revealChar 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+        }
+        @keyframes revealChar {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .hero-title .accent {
+            color: var(--accent-red);
+        }
+        .hero-subtitle {
+            font-size: clamp(1.25rem, 4vw, 1.75rem);
+            color: var(--text-secondary);
+            font-weight: 400;
+            opacity: 0;
+            transform: translateY(15px);
+            animation: fadeInUpDelayed 0.8s ease-out 1.2s forwards;
+        }
+        .hero-description {
+            color: var(--text-secondary);
+            font-weight: 300;
+            opacity: 0;
+            transform: translateY(15px);
+            animation: fadeInUpDelayed 0.8s ease-out 1.5s forwards;
+        }
+        .hero-buttons {
+            opacity: 0;
+            transform: translateY(15px);
+            animation: fadeInUpDelayed 0.8s ease-out 1.8s forwards;
+        }
+        @keyframes fadeInUpDelayed {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+
+        /* Buttons */
+        .btn {
+            padding: 12px 30px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: var(--transition-fast); /* Faster transition for buttons */
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden; /* For shimmer effect */
+        }
+        .btn-red {
+            background-color: var(--accent-red);
+            color: white;
+            box-shadow: 0 5px 15px rgba(255, 58, 58, 0.3);
+        }
+        .btn-red:hover {
+            background-color: var(--accent-red-dark);
+            transform: translateY(-3px) scale(1.03);
+            box-shadow: 0 8px 25px rgba(255, 58, 58, 0.4);
+        }
+        .btn-outline-red {
+            background-color: transparent;
+            color: var(--accent-red);
+            border-color: var(--accent-red);
+        }
+        .btn-outline-red:hover {
+            background-color: var(--accent-red);
+            color: white;
+            transform: translateY(-3px) scale(1.03);
+        }
+        /* Shimmer effect for buttons */
+        .btn::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+            transition: left 0.6s ease;
+        }
+        .btn:hover::before {
+            left: 120%;
+        }
+
+
+        /* Section Styles */
+        .section-title-container {
+            margin-bottom: 60px;
+            text-align: center;
+        }
+        .section-title {
+            font-size: clamp(2rem, 6vw, 2.75rem);
+            font-weight: 700;
+            margin-bottom: 15px;
+            position: relative;
+            display: inline-block;
+            color: var(--text-primary);
+        }
+        .section-title .accent {
+            color: var(--accent-red);
+        }
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 3px;
+            background-color: var(--accent-red);
+            border-radius: 2px;
+        }
+        .section-subtitle {
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto;
+            font-size: clamp(1rem, 2.5vw, 1.15rem);
+            line-height: 1.7;
+            font-weight: 300;
+        }
+
+        /* Custom Card (Features, Achievements, How-it-works, Vision, Gallery) */
+        .custom-card {
+            background-color: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-left: 5px solid var(--accent-red);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: var(--transition-smooth);
+            position: relative;
+            overflow: hidden; /* Important for pseudo-elements */
+        }
+        .custom-card::after { /* Subtle glow effect on hover */
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 58, 58, 0.15) 0%, transparent 70%);
+            opacity: 0;
+            transform: scale(0.5);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .custom-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3), 0 0 20px rgba(255, 58, 58, 0.1);
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        .custom-card:hover::after {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .custom-card-content { /* To ensure content is above the glow */
+            position: relative;
+            z-index: 1;
+        }
+        .custom-card-icon-wrapper {
+            font-size: 1.5rem; /* Adjusted for SVGs */
+            color: var(--accent-red);
+            background-color: rgba(255, 58, 58, 0.1);
+            width: 50px; /* Slightly smaller */
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            margin-bottom: 15px;
+            transition: var(--transition-smooth);
+        }
+        .custom-card:hover .custom-card-icon-wrapper {
+            transform: scale(1.15) rotate(8deg);
+            background-color: var(--accent-red);
+            color: white;
+        }
+        .custom-card-icon-wrapper svg {
+            width: 24px;
+            height: 24px;
+        }
+        .custom-card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+        .custom-card-text {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            font-size: 0.95rem;
+            font-weight: 300;
+        }
+        
+        /* Team Card */
+        .team-card {
+            background-color: var(--darker-bg);
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+            text-align: center;
+            transition: var(--transition-smooth);
+        }
+        .team-card:hover {
+            transform: translateY(-8px); /* Increased lift */
+            box-shadow: 0 18px 40px rgba(0,0,0,0.35);
+        }
+        .team-photo-placeholder {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background-color: rgba(255,255,255,0.08); /* Slightly lighter */
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            border: 3px solid var(--accent-red);
+            transition: transform 0.3s ease;
+        }
+        .team-card:hover .team-photo-placeholder {
+            transform: scale(1.05);
+        }
+        .team-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+        }
+        .team-role {
+            color: var(--accent-red);
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+        .team-bio {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+        }
+
+        /* Footer */
+        footer {
+            background-color: var(--darker-bg);
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .footer-title {
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        .footer-title .accent {
+            color: var(--accent-red);
+        }
+        .footer-text {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            font-weight: 300;
+        }
+        .social-icon {
+            color: var(--text-secondary);
+            transition: var(--transition-fast);
+        }
+        .social-icon:hover {
+            color: var(--accent-red);
+            transform: scale(1.15) translateY(-2px); /* Added Y transform */
+        }
+        .copyright-text {
+            color: rgba(255,255,255,0.4);
+            font-size: 0.85rem;
+            font-weight: 300;
+        }
+        .design-credit {
+            color: rgba(255,255,255,0.3);
+            font-size: 0.75rem;
+            font-weight: 300;
+        }
+
+        /* Fade-in animation */
+        .fade-in-section {
+            opacity: 0;
+            transform: translateY(40px); /* Slightly more pronounced */
+            transition: opacity 0.9s cubic-bezier(0.175, 0.885, 0.32, 1.275), transform 0.9s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .fade-in-section.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Staggered animation for card children */
+        .stagger-children > * {
+            opacity: 0;
+            transform: translateY(25px); /* Slightly more pronounced */
+            transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+        }
+        .is-visible .stagger-children > * {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Add delays for children */
+        .is-visible .stagger-children > *:nth-child(1) { transition-delay: 0.1s; }
+        .is-visible .stagger-children > *:nth-child(2) { transition-delay: 0.2s; }
+        .is-visible .stagger-children > *:nth-child(3) { transition-delay: 0.3s; }
+        .is-visible .stagger-children > *:nth-child(4) { transition-delay: 0.4s; }
+        .is-visible .stagger-children > *:nth-child(5) { transition-delay: 0.5s; }
+        .is-visible .stagger-children > *:nth-child(6) { transition-delay: 0.6s; }
+        .is-visible .stagger-children > *:nth-child(7) { transition-delay: 0.7s; }
+        .is-visible .stagger-children > *:nth-child(8) { transition-delay: 0.8s; }
+
+
+        /* Placeholder styling */
+        .placeholder-visual {
+            background-color: rgba(255,255,255,0.05);
+            border: 1px dashed rgba(255,255,255,0.2);
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-style: italic;
+            text-align: center;
+            padding: 1rem;
+        }
+        
+        /* Gallery Item Placeholder */
+        .gallery-item-placeholder {
+            aspect-ratio: 16 / 9; /* Common aspect ratio for media */
+            background-color: rgba(255,255,255,0.07);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            font-style: italic;
+            transition: var(--transition-smooth);
+        }
+        .gallery-item-placeholder:hover {
+            background-color: rgba(255,255,255,0.1);
+            transform: scale(1.03);
+        }
+
+    </style>
+</head>
+<body class="antialiased">
+
+    <nav id="navbar" class="fixed w-full z-50 top-0">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <div class="flex items-center">
+                    <a href="#hero" class="flex-shrink-0 logo-text">
+                        Distanz<span class="accent">uino</span>
+                    </a>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-6">
+                        <a href="#hero" class="nav-link px-2">Home</a>
+                        <a href="#about" class="nav-link px-2">About</a>
+                        <a href="#features" class="nav-link px-2">Features</a>
+                        <a href="#howitworks" class="nav-link px-2">How It Works</a>
+                        <a href="#gallery" class="nav-link px-2">Gallery</a>
+                        <a href="#team" class="nav-link px-2">Team</a>
+                        <a href="#competitions" class="nav-link px-2">Achievements</a>
+                        <a href="#contact" class="nav-link px-2">Contact</a>
+                    </div>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="mobile-nav-toggle p-2 rounded-md hover:bg-gray-700 focus:outline-none">
+                        <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="mobile-menu" class="md:hidden hidden bg-darker-bg shadow-lg">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#hero" class="block nav-link text-base px-3 py-3 rounded-md">Home</a>
+                <a href="#about" class="block nav-link text-base px-3 py-3 rounded-md">About</a>
+                <a href="#features" class="block nav-link text-base px-3 py-3 rounded-md">Features</a>
+                <a href="#howitworks" class="block nav-link text-base px-3 py-3 rounded-md">How It Works</a>
+                <a href="#gallery" class="block nav-link text-base px-3 py-3 rounded-md">Gallery</a>
+                <a href="#team" class="block nav-link text-base px-3 py-3 rounded-md">Team</a>
+                <a href="#competitions" class="block nav-link text-base px-3 py-3 rounded-md">Achievements</a>
+                <a href="#contact" class="block nav-link text-base px-3 py-3 rounded-md">Contact</a>
+            </div>
+        </div>
+    </nav>
+
+    <section id="hero" class="min-h-screen flex items-center justify-center pt-20 fade-in-section">
+        <div class="text-center p-6 max-w-4xl mx-auto hero-content-wrapper" style="transform: translateY(20px);">
+            <h1 class="hero-title mb-6">
+                Distanz<span class="accent">uino</span>
+            </h1>
+            <p class="hero-subtitle mb-8">
+                The Future of Music, <span class="text-white font-medium">Shaped by Your Motion.</span>
+            </p>
+            <p class="hero-description text-lg mb-10 max-w-2xl mx-auto">
+                An innovative touchless instrument that transforms movement into music, powered by precision sensors and limitless creativity.
+            </p>
+            <div class="space-x-4 hero-buttons">
+                <a href="#features" class="btn btn-red text-lg">Explore Features</a>
+                <a href="#howitworks" class="btn btn-outline-red text-lg">How It Works</a>
+            </div>
+            <div class="mt-16 w-full max-w-lg mx-auto h-72 rounded-xl placeholder-visual shadow-2xl hero-buttons">
+                [Interactive 3D Model or Animated Visual of Distanzuino]
+            </div>
+        </div>
+    </section>
+
+    <section id="about" class="py-20 sm:py-28 fade-in-section">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="section-title-container">
+                <h2 class="section-title">Redefining <span class="accent">Musical Interaction</span></h2>
+                <p class="section-subtitle">
+                    Distanzuino is more than just an instrument; it's an experience. Born from a passion for music and technology, it invites you to play, learn, and create in a completely new way.
+                </p>
+            </div>
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+                <div class="space-y-6 text-lg text-gray-300 font-light leading-relaxed custom-card-content">
+                    <p>
+                        Imagine conducting an orchestra with the wave of your hand, or composing melodies by simply moving through space. Distanzuino makes this a reality. Using high-precision laser sensors, it detects your hand movements, translating them into rich, expressive musical tones.
+                    </p>
+                    <p>
+                        It's designed to be intuitive for beginners yet powerful for experienced musicians. Beyond performance, Distanzuino is an educational tool, offering a hands-on approach to understanding programming, sensor technology, and the fundamentals of music.
+                    </p>
+                    <p class="font-normal text-text-primary">
+                        Our mission is to inspire creativity and make the world of music and technology accessible and exciting for everyone.
+                    </p>
+                </div>
+                <div class="p-1 rounded-xl shadow-2xl bg-gray-800/50 custom-card-content">
+                    <div class="w-full h-80 sm:h-96 rounded-lg placeholder-visual">
+                        [High-Quality Image/Short Video of Distanzuino Device in Use]
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="py-20 sm:py-28 bg-darker-bg fade-in-section">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="section-title-container">
+                <h2 class="section-title">Core <span class="accent">Capabilities</span></h2>
+                <p class="section-subtitle">
+                    Distanzuino is packed with features designed for intuitive play, learning, and customization.
+                </p>
+            </div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 stagger-children">
+                <div class="custom-card">
+                    <div class="custom-card-content">
+                        <div class="custom-card-icon-wrapper">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M7.864 4.243A7.5 7.5 0 0119.5 10.5c0 2.92-.556 5.709-1.568 8.268M5.742 6.364A7.465 7.465 0 004.5 10.5a7.464 7.464 0 01-1.15 3.993m1.989 3.559A11.209 11.209 0 008.25 10.5a3.75 3.75 0 117.5 0c0 .527-.021 1.049-.064 1.565M12 10.5a14.94 14.94 0 01-3.698 9.932c-.851-3.918-3.056-7.84-3.056-7.84s.213-2.022 2.269-2.022m0 0A11.25 11.25 0 0012 10.5M14.25 10.5c.178.016.356.024.534.024" /></svg>
+                        </div>
+                        <h3 class="custom-card-title">Touchless Play</h3>
+                        <p class="custom-card-text">Play music without physical contact. Move your hands over sensors to control tones intuitively and precisely.</p>
+                    </div>
+                </div>
+                <div class="custom-card">
+                    <div class="custom-card-content">
+                        <div class="custom-card-icon-wrapper">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" /></svg>
+                        </div>
+                        <h3 class="custom-card-title">Smart Web Interface</h3>
+                        <p class="custom-card-text">Customize sounds, choose instruments, adjust volume, and visualize tones in real-time via a user-friendly web app.</p>
+                    </div>
+                </div>
+                <div class="custom-card">
+                    <div class="custom-card-content">
+                        <div class="custom-card-icon-wrapper">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" /></svg>
+                        </div>
+                        <h3 class="custom-card-title">Bluetooth Audio</h3>
+                        <p class="custom-card-text">Connect wirelessly to Bluetooth speakers or headphones for rich, high-quality sound output.</p>
+                    </div>
+                </div>
+                <div class="custom-card">
+                    <div class="custom-card-content">
+                        <div class="custom-card-icon-wrapper">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
+                        </div>
+                        <h3 class="custom-card-title">Educational & Customizable</h3>
+                        <p class="custom-card-text">Designed to teach programming and music. Modify tones, code, and features with basic coding skills.</p>
+                    </div>
+                </div>
+                <div class="custom-card">
+                    <div class="custom-card-content">
+                        <div class="custom-card-icon-wrapper">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 01-.99-3.467l2.31-.66A2.25 2.25 0 009 15.553z" /></svg>
+                        </div>
+                        <h3 class="custom-card-title">Real Instrument Tones</h3>
+                        <p class="custom-card-text">Emulates instruments like flute, piano, and cello using harmonic analysis and dynamic tone shaping.</p>
+                    </div>
+                </div>
+                <div class="custom-card">
+                    <div class="custom-card-content">
+                        <div class="custom-card-icon-wrapper">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" /></svg>
+                        </div>
+                        <h3 class="custom-card-title">3D-Printed Modular Design</h3>
+                        <p class="custom-card-text">Compact, foldable, and sleek. Magnetically connected parts allow easy transport and scalability.</p>
+                    </div>
+                </div>
+                 <div class="custom-card">
+                    <div class="custom-card-content">
+                        <div class="custom-card-icon-wrapper">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l7.5-7.5 7.5 7.5m-15 6l7.5-7.5 7.5 7.5" /></svg>
+                        </div>
+                        <h3 class="custom-card-title">High-Precision Sensors</h3>
+                        <p class="custom-card-text">VL53L1X laser sensors detect hand distance with extreme accuracy, immune to environmental interferences.</p>
+                    </div>
+                </div>
+                 <div class="custom-card">
+                    <div class="custom-card-content">
+                        <div class="custom-card-icon-wrapper">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.63 2.25c-5.508 0-10.099 3.218-12.36 7.62A14.981 14.981 0 009.626 21.75v-4.8m5.964-2.58l-.016.027L15.59 14.37z" /></svg>
+                        </div>
+                        <h3 class="custom-card-title">Future-Proof Innovation</h3>
+                        <p class="custom-card-text">Constantly evolving with new versions planned: mini models, screen-based layouts, and enhanced sound realism.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="howitworks" class="py-20 sm:py-28 fade-in-section">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="section-title-container">
+                <h2 class="section-title">The Magic Behind <span class="accent">the Music</span></h2>
+                <p class="section-subtitle">
+                    Distanzuino combines cutting-edge hardware with intelligent software to create a seamless musical experience.
+                </p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-8 text-center stagger-children">
+                <div class="custom-card items-center">
+                    <div class="custom-card-content">
+                        <div class="text-5xl text-accent-red mb-4 font-bold">1</div>
+                        <h3 class="custom-card-title">Sense Motion</h3>
+                        <p class="custom-card-text">High-precision laser sensors (VL53L1X) accurately measure the distance and position of your hands in real-time.</p>
+                    </div>
+                </div>
+                <div class="custom-card items-center">
+                    <div class="custom-card-content">
+                        <div class="text-5xl text-accent-red mb-4 font-bold">2</div>
+                        <h3 class="custom-card-title">Process & Translate</h3>
+                        <p class="custom-card-text">An onboard microcontroller processes this data, translating your movements into musical notes and control signals.</p>
+                    </div>
+                </div>
+                <div class="custom-card items-center">
+                    <div class="custom-card-content">
+                        <div class="text-5xl text-accent-red mb-4 font-bold">3</div>
+                        <h3 class="custom-card-title">Create Sound</h3>
+                        <p class="custom-card-text">The generated music is outputted via Bluetooth or managed through the intuitive web interface for customization.</p>
+                    </div>
+                </div>
+            </div>
+             <div class="mt-16 w-full max-w-3xl mx-auto h-72 rounded-xl placeholder-visual shadow-xl">
+                [Interactive Animated Diagram: Hand Movement -> Sensor Array -> Microcontroller Processing -> Sound Wave Output & Web Interface Visualization]
+            </div>
+        </div>
+    </section>
+
+    <section id="gallery" class="py-20 sm:py-28 bg-darker-bg fade-in-section">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="section-title-container">
+                <h2 class="section-title">Visual <span class="accent">Showcase</span></h2>
+                <p class="section-subtitle">
+                    Explore the Distanzuino: from prototype to performance. A glimpse into its design, development, and the music it creates.
+                </p>
+            </div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 stagger-children">
+                <div class="custom-card p-0"> <div class="gallery-item-placeholder">[Image: Distanzuino Prototype]</div> </div>
+                <div class="custom-card p-0"> <div class="gallery-item-placeholder">[Video: Short Performance Clip]</div> </div>
+                <div class="custom-card p-0"> <div class="gallery-item-placeholder">[Image: Close-up of Sensors]</div> </div>
+                <div class="custom-card p-0"> <div class="gallery-item-placeholder">[Image: Team at Jugend Forscht]</div> </div>
+                <div class="custom-card p-0"> <div class="gallery-item-placeholder">[Image: 3D Printed Components]</div> </div>
+                <div class="custom-card p-0"> <div class="gallery-item-placeholder">[Video: Web Interface Demo]</div> </div>
+            </div>
+            <div class="text-center mt-12">
+                 <a href="#" class="btn btn-outline-red text-lg">View Full Gallery (Coming Soon)</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="team" class="py-20 sm:py-28 fade-in-section">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="section-title-container">
+                <h2 class="section-title">Meet the <span class="accent">Innovators</span></h2>
+                <p class="section-subtitle">
+                    Distanzuino is the creation of three passionate students from the German School of Budapest, united by their love for music and technology.
+                </p>
+            </div>
+            <div class="grid sm:grid-cols-1 md:grid-cols-3 gap-8 stagger-children">
+                <div class="team-card">
+                    <div class="team-photo-placeholder">[Photo]</div>
+                    <h3 class="team-name">Matyas Szederkenyi</h3>
+                    <p class="team-role">Co-Creator</p>
+                    <p class="team-bio">Driven by a fascination for how technology can reshape artistic expression.</p>
+                </div>
+                <div class="team-card">
+                    <div class="team-photo-placeholder">[Photo]</div>
+                    <h3 class="team-name">Dora Szederkenyi</h3>
+                    <p class="team-role">Co-Creator</p>
+                    <p class="team-bio">Passionate about merging the worlds of music performance and interactive design.</p>
+                </div>
+                <div class="team-card">
+                    <div class="team-photo-placeholder">[Photo]</div>
+                    <h3 class="team-name">Laura Kürtösi</h3>
+                    <p class="team-role">Co-Creator</p>
+                    <p class="team-bio">Inspired to create tools that make learning music and tech fun and accessible.</p>
+                </div>
+            </div>
+             <p class="mt-16 text-center text-lg text-gray-300 max-w-3xl mx-auto font-light leading-relaxed">
+                It all started in their school's physics and robotics club. What began as a project for the "Jugend forscht" competition quickly evolved into a groundbreaking musical instrument. Their collaborative spirit and shared vision continue to drive Distanzuino forward.
+            </p>
+        </div>
+    </section>
+
+    <section id="competitions" class="py-20 sm:py-28 bg-darker-bg fade-in-section">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="section-title-container">
+                <h2 class="section-title">Recognized for <span class="accent">Innovation</span></h2>
+                <p class="section-subtitle">
+                    Distanzuino has garnered acclaim in national and international competitions, showcasing its unique concept and potential.
+                </p>
+            </div>
+            <div class="space-y-8 max-w-3xl mx-auto stagger-children">
+                <div class="custom-card">
+                    <div class="custom-card-content flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-6">
+                        <div class="text-3xl text-accent-red shrink-0">🏆</div>
+                        <div>
+                            <h3 class="custom-card-title text-lg">Third Place & UNESCO Special Award</h3>
+                            <p class="custom-card-text text-sm">International STEAM Festival 2025 (April 11, 2025)</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="custom-card">
+                    <div class="custom-card-content flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-6">
+                        <div class="text-3xl text-accent-red shrink-0">🏅</div>
+                        <div>
+                            <h3 class="custom-card-title text-lg">Special Prize for Entrepreneurial Spirit</h3>
+                            <p class="custom-card-text text-sm">Jugend Forscht 2025 NRW State Finals (April 1-3, 2025)</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="custom-card">
+                    <div class="custom-card-content flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-6">
+                        <div class="text-3xl text-accent-red shrink-0">🥇</div>
+                        <div>
+                            <h3 class="custom-card-title text-lg">Regional Victory & Special Prize IHK Düsseldorf</h3>
+                            <p class="custom-card-text text-sm">Jugend Forscht 2025 Düsseldorf Regional Finals (Feb 19, 2025)</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="custom-card">
+                    <div class="custom-card-content flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-6">
+                        <div class="text-3xl text-accent-red shrink-0">🎖️</div>
+                        <div>
+                            <h3 class="custom-card-title text-lg">Special Award</h3>
+                            <p class="custom-card-text text-sm">33rd OTIO (Hungarian National Science and Innovation Olympiad) (May 31 - June 1, 2024)</p>
+                        </div>
+                    </div>
+                </div>
+                 <div class="custom-card">
+                    <div class="custom-card-content flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-6">
+                        <div class="text-3xl text-accent-red shrink-0">🥈</div>
+                        <div>
+                            <h3 class="custom-card-title text-lg">2nd Place Technology</h3>
+                            <p class="custom-card-text text-sm">Jugend Forscht - Schüler Experimentieren 2024 NRW State Finals (May 4, 2024)</p>
+                        </div>
+                    </div>
+                </div>
+                 <div class="custom-card">
+                    <div class="custom-card-content flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-6">
+                        <div class="text-3xl text-accent-red shrink-0">🥇</div>
+                        <div>
+                            <h3 class="custom-card-title text-lg">1st Place Technology & Special Prize</h3>
+                            <p class="custom-card-text text-sm">Jugend Forscht - Schüler Experimentieren 2024 Düsseldorf Regional Finals (Feb 28, 2024)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="vision" class="py-20 sm:py-28 fade-in-section">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div class="section-title-container">
+                <h2 class="section-title">The Journey <span class="accent">Ahead</span></h2>
+                <p class="section-subtitle">
+                    The Distanzuino story is just beginning. We're constantly exploring new possibilities to enhance the experience and expand its reach.
+                </p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-8 text-left stagger-children">
+                <div class="custom-card">
+                    <div class="custom-card-content">
+                        <h3 class="custom-card-title">Mini Models</h3>
+                        <p class="custom-card-text">Developing more compact and portable versions, potentially with projected interactive elements for ultimate portability.</p>
+                    </div>
+                </div>
+                <div class="custom-card">
+                    <div class="custom-card-content">
+                        <h3 class="custom-card-title">Enhanced Sound Realism</h3>
+                        <p class="custom-card-text">Further refining sound engines and sample libraries for even more authentic and diverse instrument emulation.</p>
+                    </div>
+                </div>
+                <div class="custom-card">
+                    <div class="custom-card-content">
+                        <h3 class="custom-card-title">Screen-Based Layouts</h3>
+                        <p class="custom-card-text">Exploring integrations with touch screens for richer visual feedback, expanded control interfaces, and new interactive possibilities.</p>
+                    </div>
+                </div>
+            </div>
+            <p class="mt-16 text-lg text-gray-300 font-light leading-relaxed">
+                Our goal is to make Distanzuino a versatile platform for musical expression, education, and technological exploration for years to come.
+            </p>
+        </div>
+    </section>
+
+    <footer id="contact" class="pt-20 pb-10 bg-darker-bg fade-in-section">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="footer-title">Get in <span class="accent">Touch</span></h2>
+            <p class="footer-text max-w-xl mx-auto">
+                Have questions, ideas, or want to learn more about Distanzuino? We'd love to hear from you!
+            </p>
+            <a href="mailto:hello@distanzuino.com" class="btn btn-outline-red text-lg mb-10 inline-block">
+                hello@distanzuino.com
+            </a>
+            <div class="flex justify-center space-x-6 mb-10">
+                <a href="#" class="social-icon">
+                    <svg class="h-7 w-7" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clip-rule="evenodd" /></svg>
+                    <span class="sr-only">Facebook</span>
+                </a>
+                 <a href="#" class="social-icon">
+                   <svg class="h-7 w-7" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.024.06 1.378.06 3.808s-.012 2.784-.06 3.808c-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.024.048-1.378.06-3.808.06s-2.784-.012-3.808-.06c-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.048-1.024-.06-1.378-.06-3.808s.012-2.784.06-3.808c.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 015.45 2.525c.636-.247 1.363-.416 2.427-.465C8.901 2.013 9.256 2 11.685 2h.63zm-.081 1.802h-.468c-2.456 0-2.784.011-3.807.06-1.004.046-1.634.211-2.203.423-.606.224-1.082.504-1.562.984-.48.48-.76.957-.984 1.562-.212.57-.377 1.2-.423 2.203-.049 1.023-.06 1.351-.06 3.807s.011 2.783.06 3.807c.046 1.004.211 1.634.423 2.203.224.606.504 1.082.984 1.562.48.48.957.76 1.562.984.57.212 1.2.377 2.203.423 1.023.049 1.351.06 3.807.06h.468c2.456 0 2.784-.011 3.807-.06 1.004-.046 1.634-.211 2.203-.423.606.224 1.082.504 1.562-.984.48.48.76.957-.984-1.562.212-.57.377-1.2.423-2.203.049-1.023.06-1.351.06-3.807s-.011-2.783-.06-3.807c-.046-1.004-.211-1.634-.423-2.203-.224-.606-.504-1.082-.984-1.562-.48-.48-.957-.76-1.562-.984-.57-.212-1.2-.377-2.203-.423C15.344 3.813 15.016 3.802 12.568 3.802h-.468zM12 6.838a5.162 5.162 0 100 10.324 5.162 5.162 0 000-10.324zM12 15a3 3 0 110-6 3 3 0 010 6z" clip-rule="evenodd" /></svg>
+                    <span class="sr-only">Instagram</span>
+                </a>
+                 <a href="#" class="social-icon">
+                    <svg class="h-7 w-7" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" /></svg>
+                    <span class="sr-only">Twitter</span>
+                </a>
+            </div>
+            <p class="copyright-text">
+                &copy; <span id="currentYear"></span> Distanzuino. All rights reserved.
+            </p>
+            <p class="design-credit mt-1">
+                Inspired design. Crafted with passion.
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        mobileMenuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        document.querySelectorAll('#mobile-menu a, #navbar a[href^="#"]').forEach(link => {
+            link.addEventListener('click', (e) => {
+                if (link.getAttribute('href').startsWith('#')) {
+                    e.preventDefault();
+                    if (!mobileMenu.classList.contains('hidden')) {
+                        mobileMenu.classList.add('hidden');
+                    }
+                    const targetId = link.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        const navbarHeight = document.getElementById('navbar').offsetHeight;
+                        const elementPosition = targetElement.getBoundingClientRect().top + window.pageYOffset;
+                        const offsetPosition = elementPosition - navbarHeight;
+                        
+                        window.scrollTo({
+                            top: offsetPosition,
+                            behavior: 'smooth'
+                        });
+                    }
+                }
+            });
+        });
+        
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        const sections = document.querySelectorAll('.fade-in-section');
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                }
+            });
+        }, observerOptions);
+
+        sections.forEach(section => {
+            observer.observe(section);
+        });
+        
+        const navbar = document.getElementById('navbar');
+        window.onscroll = function() {
+            if (window.pageYOffset > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        };
+
+        // Hero title character animation
+        function animateHeroTitle() {
+            const heroTitle = document.querySelector('#hero .hero-title');
+            if (heroTitle) {
+                const text = heroTitle.textContent.trim();
+                const accentText = "uino"; // Part that should be red
+                const mainText = text.substring(0, text.length - accentText.length);
+                
+                heroTitle.innerHTML = ''; // Clear existing content
+
+                mainText.split('').forEach((char, index) => {
+                    const span = document.createElement('span');
+                    span.className = 'char';
+                    span.textContent = char;
+                    span.style.animationDelay = `${0.5 + index * 0.05}s`;
+                    heroTitle.appendChild(span);
+                });
+
+                const accentSpan = document.createElement('span');
+                accentSpan.className = 'accent';
+                accentText.split('').forEach((char, index) => {
+                    const span = document.createElement('span');
+                    span.className = 'char';
+                    span.textContent = char;
+                    span.style.animationDelay = `${0.5 + (mainText.length + index) * 0.05}s`;
+                    accentSpan.appendChild(span);
+                });
+                heroTitle.appendChild(accentSpan);
+            }
+        }
+        
+        // Run animations on load
+        document.addEventListener('DOMContentLoaded', () => {
+            animateHeroTitle();
+            // Trigger initial scroll check for navbar styling if page loads scrolled
+            if (window.pageYOffset > 50) {
+                navbar.classList.add('scrolled');
+            }
+        });
+
+    </script>
+
+</body>
+</html>

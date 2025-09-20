@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Distanzuino</title>
+  <style>
+    /* Global Styles */
+    body {
+      font-family: 'Futura PT', sans-serif;
+      font-style: normal;
+      font-weight: 400;
+      text-align: center;
+      margin: 0;
+      padding: 0 15px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      background: linear-gradient(to bottom right, #000000, #333333);
+      color: #ffffff;
+      transition: background-color 0.5s ease;
+    }
+
+    #top-container {
+      display: flex;
+      align-items: center;
+      margin-top: 30px;
+      margin-bottom: 35px;
+      justify-content: center;
+      transition: margin-top 0.3s ease, margin-bottom 0.3s ease;
+    }
+
+    #logo {
+      max-width: 150px;
+      height: auto;
+      margin-right: 20px;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+
+
+    #button-container {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 150px;
+      height: 50px;
+    }
+
+    .button {
+      width: 100%;
+      height: 100%;
+      font-size: 1em;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      position: absolute;
+      transition: opacity 0.3s ease, transform 0.2s ease, background-color 0.3s ease;
+    }
+
+    #connect {
+      background-color: #ff6666;
+      color: white;
+      opacity: 1;
+      z-index: 1;
+    }
+
+    #connect:hover {
+      transform: scale(1.05);
+      background-color: #ff4d4d;
+    }
+
+    #disconnect {
+      background-color: #333333;
+      border: 2px solid #ff6666;
+      color: white;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    #disconnect:hover {
+      transform: scale(1.05);
+      background-color: #444444;
+    }
+
+    .card {
+      background-color: #444;
+      border-radius: 12px;
+      padding: 20px;
+      width: 90%;
+      max-width: 400px;
+      margin: 10px 0;
+      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.6);
+      color: #fff;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .distance-display {
+      font-size: 1.2em;
+      margin: 10px 0;
+      transition: color 0.3s ease;
+    }
+
+    .volume-slider {
+      width: 100%;
+      margin-top: 10px;
+      appearance: none;
+      height: 15px; /* Increased thickness */
+      border-radius: 5px;
+      outline: none;
+      transition: background 0.3s ease;
+    }
+
+    .volume-slider.connected {
+      background: linear-gradient(to right, #ff6666 var(--volume-level, 50%), #ffffff var(--volume-level, 50%));
+    }
+
+    .volume-slider.disconnected {
+      background: #777; /* Grey when disconnected */
+    }
+
+    .volume-slider::-webkit-slider-thumb {
+      appearance: none;
+      width: 15px;
+      height: 15px;
+      background: #ffffff;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .volume-slider::-moz-range-thumb {
+      width: 15px;
+      height: 15px;
+      background: #ffffff;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .volume-slider:disabled {
+      cursor: not-allowed;
+      background: #555;
+    }
+
+    /* Text and Card Update Animations */
+    .fade-in {
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="top-container">
+    <img id="logo" src="/bt/images/logo.jpg" alt="Distanzuino" onclick="window.location.href='https://distanzuino.com'">
+    <div id="button-container">
+      <button id="connect" class="button">Connect</button>
+      <button id="disconnect" class="button">Disconnect</button>
+    </div>
+  </div>
+
+  <div id="card1" class="card">
+    <p id="distance1" class="distance-display fade-in">Distance 1: Disconnected</p>
+    <input id="volume1" type="range" class="volume-slider disconnected" min="0" max="1" step="0.01" value="1" disabled>
+  </div>
+
+  <div id="card2" class="card">
+    <p id="distance2" class="distance-display fade-in">Distance 2: Disconnected</p>
+    <input id="volume2" type="range" class="volume-slider disconnected" min="0" max="1" step="0.01" value="1" disabled>
+  </div>
+
+  <script>
+    let bluetoothDevice;
+    let server;
+    let service;
+    let characteristic;
+
+    const HM10_SERVICE_UUID = '0000ffe0-0000-1000-8000-00805f9b34fb';
+    const HM10_CHARACTERISTIC_UUID = '0000ffe1-0000-1000-8000-00805f9b34fb';
+
+    let audioCtx;
+    let oscillator1, oscillator2;
+    let gainNode1, gainNode2;
+
+    let volume1 = 1; // Store the last volume for oscillator 1
+    let volume2 = 1; // Store the last volume for oscillator 2
+
+    document.getElementById('connect').addEventListener('click', async () => {
+      try {
+        bluetoothDevice = await navigator.bluetooth.requestDevice({
+          filters: [{ namePrefix: 'Distanzuino' }],
+          optionalServices: [HM10_SERVICE_UUID]
+        });
+
+        server = await bluetoothDevice.gatt.connect();
+        service = await server.getPrimaryService(HM10_SERVICE_UUID);
+        characteristic = await service.getCharacteristic(HM10_CHARACTERISTIC_UUID);
+
+        characteristic.startNotifications();
+        characteristic.addEventListener('characteristicvaluechanged', handleData);
+
+        document.getElementById('connect').style.opacity = '0';
+        document.getElementById('connect').style.pointerEvents = 'none';
+        document.getElementById('disconnect').style.opacity = '1';
+        document.getElementById('disconnect').style.pointerEvents = 'auto';
+
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        setupOscillators();
+        updateUIState(true);
+      } catch (error) {
+        console.error('Error connecting:', error);
+      }
+    });
+
+    function setupOscillators() {
+      oscillator1 = audioCtx.createOscillator();
+      gainNode1 = audioCtx.createGain();
+      oscillator1.connect(gainNode1).connect(audioCtx.destination);
+      oscillator1.start(audioCtx.currentTime);
+
+      oscillator2 = audioCtx.createOscillator();
+      gainNode2 = audioCtx.createGain();
+      oscillator2.connect(gainNode2).connect(audioCtx.destination);
+      oscillator2.start(audioCtx.currentTime);
+
+      document.getElementById('volume1').addEventListener('input', (e) => {
+        volume1 = parseFloat(e.target.value); // Remember volume
+        gainNode1.gain.value = volume1 === 0 ? 0 : volume1;
+        updateSliderBackground(e.target, volume1);
+      });
+
+      document.getElementById('volume2').addEventListener('input', (e) => {
+        volume2 = parseFloat(e.target.value); // Remember volume
+        gainNode2.gain.value = volume2 === 0 ? 0 : volume2;
+        updateSliderBackground(e.target, volume2);
+      });
+    }
+
+    function handleData(event) {
+      const decoder = new TextDecoder();
+      const value = decoder.decode(event.target.value).trim();
+
+      if (value.startsWith('D1:')) {
+        const distance1 = parseFloat(value.substring(3)) / 10;
+        adjustFrequency(distance1, oscillator1, document.getElementById('distance1'), "1", gainNode1);
+      } else if (value.startsWith('D2:')) {
+        const distance2 = parseFloat(value.substring(3)) / 10;
+        adjustFrequency(distance2, oscillator2, document.getElementById('distance2'), "2", gainNode2);
+      } else {
+        // If no valid data, mute oscillators
+        if (gainNode1) gainNode1.gain.value = 0;
+        if (gainNode2) gainNode2.gain.value = 0;
+      }
+    }
+
+    function adjustFrequency(distance, oscillator, distanceElement, distanceLabel, gainNode, stereoPanNode) {
+      let frequency = 0;
+    
+      // Assign frequency based on the distance and label
+      if (distanceLabel === "1") {
+        if (distance >= 3 && distance < 8.99) frequency = 250;
+        else if (distance >= 9 && distance < 14.99) frequency = 216;
+        else if (distance >= 15 && distance < 20.99) frequency = 200;
+        else if (distance >= 21 && distance < 26.99) frequency = 175;
+        else if (distance >= 27 && distance < 32.99) frequency = 166;
+        else if (distance >= 33 && distance < 38.99) frequency = 150;
+        else if (distance >= 39 && distance < 45) frequency = 133;
+      } else if (distanceLabel === "2") {
+        if (distance >= 3 && distance < 8.99) frequency = 259;
+        else if (distance >= 9 && distance < 14.99) frequency = 291;
+        else if (distance >= 15 && distance < 20.99) frequency = 325;
+        else if (distance >= 21 && distance < 26.99) frequency = 349;
+        else if (distance >= 27 && distance < 32.99) frequency = 392;
+        else if (distance >= 33 && distance < 38.99) frequency = 442;
+        else if (distance >= 39 && distance < 45) frequency = 493;
+      }
+    
+      // Update oscillator and UI
+      oscillator.frequency.value = frequency > 0 ? frequency : oscillator.frequency.value; // Keep current frequency if out of range
+      gainNode.gain.setTargetAtTime(frequency > 0 ? (distanceLabel === "1" ? volume1 : volume2) : 0, audioCtx.currentTime, 0.05); // Smooth volume adjustment
+      
+      // Panning (smooth transition between left and right stereo channels)
+      if (stereoPanNode) {
+        stereoPanNode.pan.setTargetAtTime(distanceLabel === "1" ? -1 : 1, audioCtx.currentTime, 0.05); // Left for oscillator1, right for oscillator2
+      }
+    
+      // Update UI to show distance, even if out of range
+      distanceElement.innerText = `Distance ${distanceLabel}: ${distance.toFixed(2)} cm`;
+    
+      distanceElement.classList.add('fade-in');
+    }
+    
+    // Add panning to the setupOscillators function
+    function setupOscillators() {
+      oscillator1 = audioCtx.createOscillator();
+      gainNode1 = audioCtx.createGain();
+      oscillator1.connect(gainNode1).connect(audioCtx.destination);
+      oscillator1.start(audioCtx.currentTime);
+    
+      oscillator2 = audioCtx.createOscillator();
+      gainNode2 = audioCtx.createGain();
+      oscillator2.connect(gainNode2).connect(audioCtx.destination);
+      oscillator2.start(audioCtx.currentTime);
+    
+      // Volume sliders setup
+      document.getElementById('volume1').addEventListener('input', (e) => {
+        volume1 = parseFloat(e.target.value);
+        gainNode1.gain.setTargetAtTime(volume1, audioCtx.currentTime, 0.05);
+        updateSliderBackground(e.target, volume1);
+      });
+    
+      document.getElementById('volume2').addEventListener('input', (e) => {
+        volume2 = parseFloat(e.target.value);
+        gainNode2.gain.setTargetAtTime(volume2, audioCtx.currentTime, 0.05);
+        updateSliderBackground(e.target, volume2);
+      });
+    }
+
+
+
+    function updateSliderBackground(slider, value) {
+      slider.style.setProperty('--volume-level', `${value * 100}%`);
+    }
+
+    document.getElementById('disconnect').addEventListener('click', () => {
+      if (bluetoothDevice && bluetoothDevice.gatt.connected) {
+        bluetoothDevice.gatt.disconnect();
+      }
+
+      if (audioCtx) {
+        gainNode1.gain.value = 0;
+        gainNode2.gain.value = 0;
+      }
+
+      document.getElementById('connect').style.opacity = '1';
+      document.getElementById('connect').style.pointerEvents = 'auto';
+      document.getElementById('disconnect').style.opacity = '0';
+      document.getElementById('disconnect').style.pointerEvents = 'none';
+
+      updateUIState(false);
+    });
+
+    function updateUIState(isConnected) {
+      const sliders = document.querySelectorAll('.volume-slider');
+      sliders.forEach(slider => {
+        slider.disabled = !isConnected;
+        slider.className = isConnected ? 'volume-slider connected' : 'volume-slider disconnected';
+        updateSliderBackground(slider, isConnected ? slider.value : 0);
+      });
+
+      if (isConnected) {
+        document.getElementById('distance1').innerText = 'Distance 1: Waiting...';
+        document.getElementById('distance2').innerText = 'Distance 2: Waiting...';
+
+        // Mute oscillators while in "Waiting" state
+        if (gainNode1) gainNode1.gain.value = 0;
+        if (gainNode2) gainNode2.gain.value = 0;
+      } else {
+        document.getElementById('distance1').innerText = 'Distance 1: Disconnected';
+        document.getElementById('distance2').innerText = 'Distance 2: Disconnected';
+      }
+    }
+  </script>
+</body>
+</html>

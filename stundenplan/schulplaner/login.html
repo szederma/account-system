@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Schulplaner — Login</title>
+  <link rel="stylesheet" href="./shared.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="appbar">
+      <div>
+        <div class="title">Schulplaner <span class="subtitle">— Login</span></div>
+      </div>
+    </header>
+
+    <section class="card">
+      <h2>Anmelden</h2>
+      <p class="muted">
+        Melde dich mit deinem Google-Konto an. Deine Daten werden sicher in Firebase Firestore gespeichert und nur dir angezeigt.
+      </p>
+      <button class="btn btn-accent" id="loginBtn">Mit Google anmelden</button>
+    </section>
+  </div>
+
+<script type="module">
+  import { loginWithGoogle, isAllowed } from "./auth.js";
+  import { onAuthStateChanged, getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+  document.getElementById("loginBtn").onclick = () =>
+    loginWithGoogle().then(() => (location.href = "index.html"));
+
+  onAuthStateChanged(getAuth(), (user) => {
+    if (user && isAllowed(user)) {
+      location.href = "index.html";
+    }
+  });
+</script>
+
+</body>
+</html>

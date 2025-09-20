@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Profile Settings</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body style="background-color: var(--dark-bg); color: var(--text-primary); font-family: 'Caros', sans-serif;">
+
+  <div style="max-width: 600px; margin: 80px auto; padding: 40px; background: var(--darker-bg); border-radius: 12px; box-shadow: 0 0 30px rgba(0,0,0,0.4);">
+    <h2 style="color: var(--accent-red); margin-bottom: 30px; text-align: center;">Profile Settings</h2>
+
+    <div id="profile-info" style="margin-bottom: 30px;">
+      <p><strong>Email:</strong> <span id="user-email">Loading...</span></p>
+      <p><strong>Username:</strong> <span id="user-username">Loading...</span></p>
+    </div>
+
+    <hr style="margin: 30px 0; border-color: var(--accent-red);">
+
+    <h3>Change Username</h3>
+    <input id="new-username" type="text" placeholder="New username" style="width: 100%; padding: 10px; margin-top: 10px; margin-bottom: 10px; background: rgba(255,255,255,0.05); border: none; border-radius: 6px; color: white;">
+    <button id="save-username" style="background: var(--accent-red); color: white; border: none; padding: 10px 20px; border-radius: 6px;">Save Username</button>
+
+    <hr style="margin: 30px 0; border-color: var(--accent-red);">
+
+    <h3>Reset Password</h3>
+    <p style="font-size: 0.9rem; opacity: 0.8;">We’ll send a password reset link to your registered email address.</p>
+    <button id="reset-password" style="margin-top: 10px; background: var(--accent-red); color: white; border: none; padding: 10px 20px; border-radius: 6px;">Send Reset Email</button>
+    
+    <hr style="margin: 30px 0; border-color: var(--accent-red);">
+
+    <button id="logout-btn" style="margin-top: 20px; background: gray; color: white; border: none; padding: 10px 20px; border-radius: 6px;">Logout</button>
+
+    <h3>Danger Zone</h3>
+    <button id="delete-account" style="background: darkred; color: white; border: none; padding: 10px 20px; border-radius: 6px;">Delete Account</button>
+
+    <p style="margin-top: 30px;"><a href="/chat" style="color: var(--accent-red); text-decoration: underline;">⬅ Back to Chat</a></p>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, sendPasswordResetEmail, deleteUser, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAddXTzBxZk1Su6fNnsgRuNnWqFrq_ZjCY",
+      authDomain: "distanzuino-project.firebaseapp.com",
+      projectId: "distanzuino-project"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const userEmailSpan = document.getElementById("user-email");
+    const userUsernameSpan = document.getElementById("user-username");
+
+    const newUsernameInput = document.getElementById("new-username");
+    const newPasswordInput = document.getElementById("new-password");
+
+    const saveUsernameBtn = document.getElementById("save-username");
+    const changePasswordBtn = document.getElementById("change-password");
+    const deleteAccountBtn = document.getElementById("delete-account");
+
+    let currentUser;
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        alert("You must be logged in to view this page.");
+        window.location.href = "/chat/login";
+        return;
+      }
+
+      currentUser = user;
+      userEmailSpan.textContent = user.email;
+
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      if (userDoc.exists()) {
+        userUsernameSpan.textContent = userDoc.data().username || "(unnamed)";
+      } else {
+        userUsernameSpan.textContent = "(not set)";
+      }
+    });
+
+    saveUsernameBtn.onclick = async () => {
+      const newUsername = newUsernameInput.value.trim();
+      if (!newUsername) return alert("Enter a new username.");
+
+      try {
+        await setDoc(doc(db, "users", currentUser.uid), { username: newUsername }, { merge: true });
+        userUsernameSpan.textContent = newUsername;
+        alert("Username updated!");
+      } catch (e) {
+        alert("Error updating username: " + e.message);
+      }
+    };
+
+    const resetPasswordBtn = document.getElementById("reset-password");
+
+    resetPasswordBtn.onclick = async () => {
+        try {
+            await sendPasswordResetEmail(auth, currentUser.email);
+            alert("Password reset email sent to " + currentUser.email);
+        } catch (e) {
+            alert("Failed to send reset email: " + e.message);
+        }
+    };
+
+    deleteAccountBtn.onclick = async () => {
+      if (!confirm("Are you sure you want to permanently delete your account? This cannot be undone.")) return;
+
+      try {
+        await deleteUser(currentUser);
+        alert("Account deleted.");
+        window.location.href = "index.html";
+      } catch (e) {
+        alert("Failed to delete account: " + e.message);
+      }
+    };
+
+    const logoutBtn = document.getElementById("logout-btn");
+        logoutBtn.onclick = async () => {
+        try {
+            await signOut(auth);
+            window.location.href = "index.html";
+        } catch (e) {
+            alert("Logout failed: " + e.message);
+        }
+    };
+
+  </script>
+</body>
+</html>

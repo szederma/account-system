@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Distanzuino - Your instrument. Your music. Your style.</title>
+
+  <link rel="icon" type="image/png" href="/images/icon.png" />
+  <link rel="stylesheet" href="gpt5.css" />
+
+  <!-- Consent blocker + GA (kept from your current site) -->
+  <script type="text/javascript" src="https://app.termly.io/resource-blocker/611984d8-f015-418c-b13f-dc82c88b1907?autoBlock=on"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-3HEL3CR3RW"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){ dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-3HEL3CR3RW');
+  </script>
+</head>
+<body>
+
+  <!-- Scroll progress bar -->
+  <div id="scroll-progress" aria-hidden="true"></div>
+
+  <!-- Dynamic header/footer placeholders (we keep your component fetch) -->
+  <div id="site-header"></div>
+
+  <main>
+
+    <!-- HERO -->
+    <section id="home" class="hero hero-reimagined parallax">
+      <div class="hero-content">
+        <img
+          src="/images/home.jpg"
+          alt="Distanzuino Instrument"
+          class="hero-product-image"
+          loading="eager"
+          decoding="async"
+        />
+        <div class="hero-text-overlay">
+          <h1 class="home-animate home-fadein">
+            Your instrument. Your music. Your style.
+          </h1>
+          <div class="cta-buttons">
+            <a href="#explore" class="btn btn-primary home-animate home-fadein">Explore Distanzuino</a>
+            <a href="https://distanzuino.com/bt" class="btn btn-secondary btn--icon-tight home-animate home-fadein">
+              DistanzuinoBT
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scroll cue -->
+      <button class="scroll-cue" aria-label="Scroll to explore" onclick="document.querySelector('#explore').scrollIntoView({behavior:'smooth'})">
+        <span></span>
+      </button>
+
+      <!-- Ambient cursor glow (disabled for reduced motion automatically) -->
+      <div id="cursor-glow" aria-hidden="true"></div>
+    </section>
+
+    <!-- ABOUT / EXPLORE -->
+    <section id="explore" class="about-box-section">
+      <div class="about-box reveal-on-scroll">
+        <div class="about-box-text">
+          <h2>Meet DistanzuinoBT</h2>
+          <p><strong>DistanzuinoBT</strong> is a smart, touchless musical instrument you play with gestures. Using laser sensors and Bluetooth, it turns the distance between your hands and the device into real, customizable sounds—from piano to flute. Controlled through an interactive website, it’s fun, portable, and perfect for exploring music in a whole new way.</p>
+          <p><strong>Accessible by design.</strong> No finger dexterity needed; any body movement can control sound. It’s inclusive for all abilities and a brilliant gateway for kids into music and tech.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- NEW: QUICK STATS (animated counters) -->
+    <section class="quick-stats">
+      <div class="stats-grid">
+        <div class="stat reveal-on-scroll">
+          <div class="stat-number" data-target="7">0</div>
+          <div class="stat-label">Awards & Special Prizes</div>
+        </div>
+        <div class="stat reveal-on-scroll">
+          <div class="stat-number" data-target="2">0</div>
+          <div class="stat-label">Sensor Channels</div>
+        </div>
+        <div class="stat reveal-on-scroll">
+          <div class="stat-number" data-target="12">0</div>
+          <div class="stat-label">Instrument Profiles</div>
+        </div>
+        <div class="stat reveal-on-scroll">
+          <div class="stat-number" data-target="100">0</div>
+          <div class="stat-label">ms Response</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEATURES (kept as your slider, improved keyboard A11y) -->
+    <section id="features" class="features">
+      <div class="section-title">
+        <h2>Core Features</h2>
+        <p>Discover what makes the Distanzuino a revolutionary instrument</p>
+      </div>
+
+      <div class="features-slider-container" role="region" aria-label="Distanzuino features">
+        <div class="features-slider">
+          <div class="features-track" tabindex="0" aria-live="polite">
+            <!-- same feature cards as you had; trimmed for space, add/remove freely -->
+            <div class="feature-card">
+              <div class="feature-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                  <path d="M7 11V4a1 1 0 0 1 2 0v7" />
+                  <path d="M10 10V3a1 1 0 0 1 2 0v7" />
+                  <path d="M13 11V5a1 1 0 0 1 2 0v6" />
+                  <path d="M16 12V7a1 1 0 0 1 2 0v7a5 5 0 0 1-10 0V10" />
+                </svg>
+              </div>
+              <div class="feature-content">
+                <h3>Touchless Play</h3>
+                <p>Play music without physical contact—your hands control pitch and dynamics over the sensors.</p>
+              </div>
+              <svg class="feature-outline" preserveAspectRatio="none">
+                <rect pathLength="1" class="feature-outline-rect" width="100%" height="100%" rx="20"/>
+              </svg>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+              </div>
+              <div class="feature-content">
+                <h3>Smart Web Interface</h3>
+                <p>Customize sounds, visualize notes, tweak sensitivity — all live in your browser.</p>
+              </div>
+              <svg class="feature-outline" preserveAspectRatio="none">
+                <rect pathLength="1" class="feature-outline-rect" width="100%" height="100%" rx="20"/>
+              </svg>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5"></polyline></svg>
+              </div>
+              <div class="feature-content">
+                <h3>Bluetooth Audio</h3>
+                <p>Connect wirelessly to headphones or a speaker for rich sound anywhere.</p>
+              </div>
+              <svg class="feature-outline" preserveAspectRatio="none">
+                <rect pathLength="1" class="feature-outline-rect" width="100%" height="100%" rx="20"/>
+              </svg>
+            </div>
+
+            <!-- add the rest of your cards here as needed -->
+          </div>
+        </div>
+
+        <button class="slider-arrow prev" aria-label="Previous Feature">❮</button>
+        <button class="slider-arrow next" aria-label="Next Feature">❯</button>
+      </div>
+    </section>
+
+    <!-- HOW IT WORKS (timeline kept) -->
+    <section id="how-it-works" class="how-it-works">
+      <div class="section-title">
+        <h2>How It Works</h2>
+        <p>From a simple gesture to a beautiful note: the tech under the hood.</p>
+      </div>
+      <div class="timeline-container">
+        <div class="timeline-step reveal-on-scroll">
+          <div class="step-icon">
+            <!-- icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="5 9 2 12 5 15"></polyline><polyline points="9 5 12 2 15 5"></polyline><polyline points="15 19 12 22 9 19"></polyline><polyline points="19 9 22 12 19 15"></polyline><line x1="2" y1="12" x2="22" y2="12"></line><line x1="12" y1="2" x2="12" y2="22"></line></svg>
+          </div>
+          <div class="step-content">
+            <h3>1. Gesture Detection</h3>
+            <p>VL53L1X laser sensors measure hand distance in real time.</p>
+          </div>
+        </div>
+
+        <div class="timeline-step reveal-on-scroll">
+          <div class="step-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7 7 10 10-5 5V2l5 5L7 17"></path></svg>
+          </div>
+          <div class="step-content">
+            <h3>2. Bluetooth Transmission</h3>
+            <p>Distances are sent to your device over Bluetooth instantly.</p>
+          </div>
+        </div>
+
+        <div class="timeline-step reveal-on-scroll">
+          <div class="step-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+          </div>
+          <div class="step-content">
+            <h3>3. Web App Interpretation</h3>
+            <p>The <a href="https://distanzuino.com/bt" target="_blank" rel="noopener">web app</a> maps distances to notes based on tone maps.</p>
+          </div>
+        </div>
+
+        <div class="timeline-step reveal-on-scroll">
+          <div class="step-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+          </div>
+          <div class="step-content">
+            <h3>4. Realistic Sound Generation</h3>
+            <p>Harmonics + attack shaping emulate instruments naturally.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ACHIEVEMENTS (unchanged structure) -->
+    <section id="achievements" class="achievements">
+      <div class="section-title">
+        <h2>Achievements</h2>
+        <p>Highlights from Distanzuino’s journey of innovation and recognition</p>
+      </div>
+
+      <div class="achievements-container">
+        <!-- Replace with your existing cards; keep loading="lazy" -->
+        <div class="achievement-card reveal-on-scroll">
+          <img src="/images/achievements/stemfestival25.jpg" alt="International STEAM Festival 2025" loading="lazy" decoding="async">
+          <div class="achievement-content">
+            <p>April 11, 2025</p>
+            <h3>Third Place Winner and UNESCO Special Award at International STEAM Festival 2025</h3>
+            <a href="https://stemfestival.eu/" target="_blank" rel="noopener" class="achievement-link">Visit event site
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+            </a>
+          </div>
+        </div>
+        <!-- …add the rest of your cards… -->
+      </div>
+    </section>
+
+    <!-- GALLERY LINK -->
+    <section id="gallery-link" class="gallery-link-section">
+      <div class="section-title">
+        <h2>See Distanzuino in Action</h2>
+        <p>Browse photos, videos, and behind-the-scenes moments in the gallery.</p>
+      </div>
+      <div class="gallery-button-container reveal-on-scroll">
+        <a href="/gallery" class="btn btn-secondary">Visit Gallery</a>
+      </div>
+    </section>
+
+    <!-- NEW: FAQ -->
+    <section id="faq" class="faq">
+      <div class="section-title">
+        <h2>FAQ</h2>
+        <p>Short answers to the things people ask most.</p>
+      </div>
+
+      <div class="faq-accordion">
+        <button class="faq-item" aria-expanded="false">
+          <span>Does it work without the web app?</span>
+          <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+        </button>
+        <div class="faq-panel">
+          <p>Yes, the core sensing happens on the device. The web app gives you real-time control, visual feedback, and sound engines.</p>
+        </div>
+
+        <button class="faq-item" aria-expanded="false">
+          <span>Can I load my own instrument profiles?</span>
+          <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+        </button>
+        <div class="faq-panel">
+          <p>Totally. Profiles are JSON-based; bring your own tone maps and envelopes.</p>
+        </div>
+
+        <button class="faq-item" aria-expanded="false">
+          <span>Is it suitable for kids?</span>
+          <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+        </button>
+        <div class="faq-panel">
+          <p>Yes. It’s intuitive, safe, and a great way to grasp sound, rhythm, and coding basics.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="site-footer"></div>
+
+  <!-- Back to Top -->
+  <a href="#" class="back-to-top" aria-label="Back to Top">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+  </a>
+
+  <script>
+    // ----- Load header & footer (kept) -----
+    document.addEventListener('DOMContentLoaded', () => {
+      const loadComponent = (url, elementId) => {
+        fetch(url)
+          .then(res => res.ok ? res.text() : Promise.reject('Component not found'))
+          .then(html => {
+            document.getElementById(elementId).innerHTML = html;
+            if (elementId === 'site-header') initializeHeaderListeners();
+          })
+          .catch(console.error);
+      };
+      loadComponent('/header.html', 'site-header');
+      loadComponent('/footer.html', 'site-footer');
+    });
+
+    function initializeHeaderListeners() {
+      const mobileNavToggle = document.querySelector('.mobile-nav-toggle');
+      const nav = document.getElementById('nav');
+      if (!mobileNavToggle || !nav) return;
+
+      mobileNavToggle.addEventListener('click', function() {
+        const isActive = nav.classList.toggle('active');
+        mobileNavToggle.textContent = isActive ? '✕' : '☰';
+        document.body.classList.toggle('no-scroll', isActive);
+      });
+
+      document.addEventListener('click', function(e) {
+        if (!nav.contains(e.target) && !mobileNavToggle.contains(e.target)) {
+          if (nav.classList.contains('active')) {
+            nav.classList.remove('active');
+            mobileNavToggle.textContent = '☰';
+            document.body.classList.remove('no-scroll');
+          }
+        }
+      });
+
+      nav.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', function(e) {
+          if (this.classList.contains('submenu-toggle')) {
+            e.preventDefault();
+            this.closest('.has-submenu').classList.toggle('open');
+          } else if (link.hash && document.querySelector(link.hash)) {
+            nav.classList.remove('active');
+            mobileNavToggle.textContent = '☰';
+            document.body.classList.remove('no-scroll');
+          }
+        });
+      });
+
+      // Header shrink on scroll
+      window.addEventListener('scroll', () => {
+        const header = document.getElementById('header');
+        if (header) header.classList.toggle('scrolled', window.scrollY > 50);
+      }, { passive: true });
+    }
+
+    // ----- Scroll progress -----
+    const progressEl = document.getElementById('scroll-progress');
+    const setProgress = () => {
+      const scrolled = window.scrollY;
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const ratio = Math.max(0, Math.min(1, scrolled / max));
+      progressEl.style.transform = `scaleX(${ratio})`;
+    };
+    window.addEventListener('scroll', setProgress, { passive: true });
+    window.addEventListener('load', setProgress);
+
+    // ----- Reveal on scroll (IntersectionObserver) -----
+    const io = ('IntersectionObserver' in window)
+      ? new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+              io.unobserve(entry.target);
+            }
+          });
+        }, { rootMargin: '0px 0px -10% 0px', threshold: 0.1 })
+      : null;
+
+    const revealTargets = document.querySelectorAll('.reveal-on-scroll');
+    revealTargets.forEach(el => io ? io.observe(el) : el.classList.add('visible'));
+
+    // ----- Home intro stagger -----
+    document.addEventListener('DOMContentLoaded', () => {
+      const items = document.querySelectorAll('.hero-text-overlay .home-animate');
+      items.forEach((el, i) => {
+        setTimeout(() => el.classList.add('animated'), 620 + i * 80);
+      });
+    });
+
+    // ----- Cursor glow (skips if prefers-reduced-motion) -----
+    const glow = document.getElementById('cursor-glow');
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (glow && !prefersReduced) {
+      document.addEventListener('pointermove', (e) => {
+        glow.style.setProperty('--x', e.clientX + 'px');
+        glow.style.setProperty('--y', e.clientY + 'px');
+      }, { passive: true });
+    }
+
+    // ----- Parallax hero (cheap & safe) -----
+    const hero = document.querySelector('.hero-reimagined.parallax .hero-product-image');
+    if (hero && !prefersReduced) {
+      window.addEventListener('scroll', () => {
+        const offset = window.scrollY * 0.08;
+        hero.style.transform = `translate(-50%, calc(-50% + ${offset}px))`;
+      }, { passive: true });
+    }
+
+    // ----- Back to Top -----
+    const backToTopButton = document.querySelector('.back-to-top');
+    window.addEventListener('scroll', () => {
+      backToTopButton.classList.toggle('visible', window.scrollY > 300);
+    }, { passive: true });
+
+    // ----- Features slider (with autoplay + keyboard) -----
+    document.addEventListener('DOMContentLoaded', () => {
+      const container = document.querySelector('.features-slider-container');
+      if (!container) return;
+
+      const track = container.querySelector('.features-track');
+      const prevBtn = container.querySelector('.slider-arrow.prev');
+      const nextBtn = container.querySelector('.slider-arrow.next');
+      let cards = Array.from(track.children);
+      if (!cards.length) return;
+
+      let isTransitioning = false;
+      let autoTimer;
+      const CLONE_COUNT = Math.min(cards.length, 4);
+
+      for (let i = 0; i < CLONE_COUNT; i++) {
+        const c = cards[i].cloneNode(true); c.setAttribute('aria-hidden','true'); track.appendChild(c);
+      }
+      for (let i = cards.length - 1; i >= cards.length - CLONE_COUNT; i--) {
+        const c = cards[i].cloneNode(true); c.setAttribute('aria-hidden','true'); track.insertBefore(c, track.firstChild);
+      }
+
+      let all = Array.from(track.children);
+      let index = CLONE_COUNT;
+
+      const restartOutline = (el) => {
+        el.classList.remove('animate-undraw');
+        void el.offsetWidth;
+        el.classList.add('animate-undraw');
+      };
+
+      const goTo = (i, withTransition = true) => {
+        const slide = track.parentElement;
+        const cardW = all[0].offsetWidth;
+        const gap = parseInt(getComputedStyle(track).gap, 10) || 40;
+        const center = (slide.offsetWidth / 2) - (cardW / 2);
+        const tx = -i * (cardW + gap) + center;
+
+        track.style.transition = withTransition ? 'transform 0.8s cubic-bezier(0.23,1,0.32,1)' : 'none';
+        track.style.transform = `translateX(${tx}px)`;
+
+        all.forEach((c, idx) => {
+          c.classList.toggle('active', idx === i);
+          if (idx === i) restartOutline(c);
+        });
+      };
+
+      const next = () => { if (!isTransitioning) { isTransitioning = true; index++; goTo(index); resetAutoplay(); } };
+      const prev = () => { if (!isTransitioning) { isTransitioning = true; index--; goTo(index); resetAutoplay(); } };
+
+      track.addEventListener('transitionend', () => {
+        isTransitioning = false;
+        if (index >= CLONE_COUNT + cards.length) { index -= cards.length; goTo(index, false); }
+        if (index < CLONE_COUNT) { index += cards.length; goTo(index, false); }
+      });
+
+      // autoplay
+      const resetAutoplay = () => {
+        clearTimeout(autoTimer);
+        autoTimer = setTimeout(next, 8000);
+      };
+
+      nextBtn.addEventListener('click', next);
+      prevBtn.addEventListener('click', prev);
+
+      // keyboard
+      track.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') next();
+        if (e.key === 'ArrowLeft') prev();
+      });
+
+      // click to focus slide
+      all.forEach((c, i) => c.addEventListener('click', () => { if (i !== index) { index = i; goTo(index); resetAutoplay(); } }));
+
+      // init
+      window.addEventListener('resize', () => goTo(index, false));
+      goTo(index, false);
+      resetAutoplay();
+    });
+
+    // ----- Animated counters -----
+    const easeOut = t => 1 - Math.pow(1 - t, 3);
+    const counters = document.querySelectorAll('.stat-number');
+    const startCounter = (el) => {
+      const target = +el.dataset.target;
+      const dur = 1200;
+      let start = null;
+      const tick = (ts) => {
+        if (!start) start = ts;
+        let p = Math.min(1, (ts - start) / dur);
+        p = easeOut(p);
+        el.textContent = Math.floor(target * p);
+        if (p < 1) requestAnimationFrame(tick);
+        else el.textContent = target;
+      };
+      requestAnimationFrame(tick);
+    };
+    const counterIO = ('IntersectionObserver' in window)
+      ? new IntersectionObserver((entries) => {
+          entries.forEach(e => {
+            if (e.isIntersecting) {
+              startCounter(e.target);
+              counterIO.unobserve(e.target);
+            }
+          });
+        }, { threshold: 0.5 })
+      : null;
+    counters.forEach(el => counterIO ? counterIO.observe(el) : startCounter(el));
+
+    // ----- FAQ accordion -----
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.faq-item');
+      if (!btn) return;
+      const expanded = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', String(!expanded));
+      const panel = btn.nextElementSibling;
+      panel.style.maxHeight = expanded ? '0px' : panel.scrollHeight + 'px';
+    });
+  </script>
+</body>
+</html>

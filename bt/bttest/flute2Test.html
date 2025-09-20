@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flute Sound</title>
+    <style>
+        .piano {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 20px;
+        }
+        .key {
+            width: 60px;
+            height: 200px;
+            border: 1px solid black;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .key.active {
+            background: lightgray;
+        }
+        .gap {
+            width: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="piano">
+        <div class="key" data-tone="C1">C</div>
+        <div class="key" data-tone="D1">D</div>
+        <div class="key" data-tone="E1">E</div>
+        <div class="key" data-tone="F1">F</div>
+        <div class="key" data-tone="G1">G</div>
+        <div class="key" data-tone="A1">A</div>
+        <div class="key" data-tone="H1">H</div>
+        <div class="gap"></div>
+        <div class="key" data-tone="C2">C</div>
+        <div class="key" data-tone="D2">D</div>
+        <div class="key" data-tone="E2">E</div>
+        <div class="key" data-tone="F2">F</div>
+        <div class="key" data-tone="G2">G</div>
+        <div class="key" data-tone="A2">A</div>
+        <div class="key" data-tone="H2">H</div>
+    </div>
+
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const activeOscillators = {};
+        
+        function startFluteTone(frequency, tone) {
+            if (activeOscillators[tone]) return;
+        
+            const harmonics = [1, 2, 3, 4, 5, 6];
+            const maxGains = [1.2, 0.7, 0.5, 0.175, 0.1, 0.035];
+            const oscillators = [];
+            const gainNodes = [];
+        
+            const masterGain = audioCtx.createGain();
+            masterGain.gain.setValueAtTime(0, audioCtx.currentTime); // start silent
+            masterGain.connect(audioCtx.destination);
+        
+            // Soft attack (like breath)
+            masterGain.gain.linearRampToValueAtTime(1, audioCtx.currentTime + 0.1);
+        
+            // Add slight vibrato
+            const vibrato = audioCtx.createOscillator();
+            const vibratoGain = audioCtx.createGain();
+            vibrato.frequency.setValueAtTime(5, audioCtx.currentTime); // 5 Hz vibrato
+            vibratoGain.gain.setValueAtTime(0.5, audioCtx.currentTime); // vibrato intensity
+        
+            vibrato.connect(vibratoGain);
+        
+            harmonics.forEach((harmonic, index) => {
+                const osc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+        
+                osc.type = index === 0 ? 'triangle' : 'sine'; // triangle gives a warmer tone
+                osc.frequency.setValueAtTime(frequency * harmonic, audioCtx.currentTime);
+        
+                // Slight detune on harmonics to simulate natural imperfections
+                if (index > 0) {
+                    osc.detune.setValueAtTime((Math.random() - 0.5) * 5, audioCtx.currentTime);
+                }
+        
+                gainNode.gain.setValueAtTime(maxGains[index], audioCtx.currentTime);
+        
+                osc.connect(gainNode);
+                gainNode.connect(masterGain);
+                vibratoGain.connect(osc.frequency);
+        
+                osc.start();
+        
+                oscillators.push(osc);
+                gainNodes.push(gainNode);
+            });
+        
+            // Subtle breath noise (pink noise filtered)
+            const noise = audioCtx.createBufferSource();
+            const bufferSize = audioCtx.sampleRate;
+            const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const output = noiseBuffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                output[i] = (Math.random() * 2 - 1) * 0.02; // soft white noise
+            }
+            noise.buffer = noiseBuffer;
+            noise.loop = true;
+        
+            const noiseFilter = audioCtx.createBiquadFilter();
+            noiseFilter.type = "bandpass";
+            noiseFilter.frequency.setValueAtTime(3000, audioCtx.currentTime);
+            noise.connect(noiseFilter);
+            noiseFilter.connect(masterGain);
+            noise.start();
+        
+            vibrato.start();
+        
+            activeOscillators[tone] = {
+                oscillators,
+                gainNodes,
+                masterGain,
+                vibrato,
+                vibratoGain,
+                noise
+            };
+        }
+        
+        function stopFluteTone(tone) {
+            if (activeOscillators[tone]) {
+                const { oscillators, masterGain, vibrato, noise } = activeOscillators[tone];
+        
+                // Soft release
+                masterGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
+        
+                // Stop oscillators and cleanup
+                oscillators.forEach(osc => osc.stop(audioCtx.currentTime + 0.2));
+                vibrato.stop(audioCtx.currentTime + 0.2);
+                noise.stop(audioCtx.currentTime + 0.2);
+        
+                setTimeout(() => {
+                    masterGain.disconnect();
+                }, 300);
+        
+                delete activeOscillators[tone];
+            }
+        }
+
+        document.querySelectorAll('.key').forEach(key => {
+            const tone = key.getAttribute('data-tone');
+            const frequencies = {
+                'C1': 261.63, 'D1': 293.66, 'E1': 329.63, 'F1': 349.23, 'G1': 392.00, 'A1': 440.00, 'H1': 493.88,
+                'C2': 523.25, 'D2': 587.33, 'E2': 659.25, 'F2': 698.46, 'G2': 783.99, 'A2': 880.00, 'H2': 987.77
+            };
+
+            const startTone = () => {
+                key.classList.add('active');
+                if (frequencies[tone]) {
+                    stopFluteTone(tone); // force stop in case still active
+                    startFluteTone(frequencies[tone], tone);
+                }
+            };
+
+            const stopTone = () => {
+                key.classList.remove('active');
+                stopFluteTone(tone);
+            };
+
+            key.addEventListener('mousedown', startTone);
+            key.addEventListener('mouseup', stopTone);
+            key.addEventListener('mouseleave', stopTone);
+
+            key.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                startTone();
+            }, { passive: false });
+
+            key.addEventListener('touchend', stopTone);
+            key.addEventListener('touchcancel', stopTone);
+        });
+
+        </script>
+        
+</body>
+</html>

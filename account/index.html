@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Account Settings - Distanzuino</title>
+  <style>
+    @font-face {
+        font-family: 'Caros';
+        src: url('/caros/Caros-Bold.otf') format('opentype'); /* Adjust path if necessary */
+        font-weight: bold;
+        font-style: normal;
+    }
+
+    :root {
+      --dark-bg-main: #101010;
+      --bento-container-bg: rgba(35, 35, 35, 0.95);
+      --accent-red: #ff1f1f;
+      --accent-red-hover: #d31818;
+      --text-primary: #f0f0f0;
+      --text-secondary: #b0b0b0;
+      --input-bg: #2c2c2c;
+      --border-color: rgba(255, 31, 31, 0.20);
+      --border-color-focus: rgba(255, 31, 31, 0.5);
+      --danger-red-bg: #e74c3c; 
+      --danger-red-bg-hover: #c0392b; 
+      --button-secondary-bg: #6c757d; 
+      --button-secondary-bg-hover: #5a6268;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Caros', sans-serif;
+      font-weight: 700;
+    }
+
+    body {
+      background: linear-gradient(135deg, #101010 0%, #1c1c1c 80%, #2a2a2a 100%);
+      color: var(--text-primary);
+      font-family: 'Caros', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      opacity: 0; /* Initially hidden */
+      transition: opacity 0.5s ease-in-out; /* Smooth fade-in */
+    }
+    body.loaded {
+        opacity: 1; /* Fade in when loaded */
+    }
+
+    /* Loader styles */
+    #page-loading-overlay {
+        position: fixed;
+        inset: 0;
+        background-color: #1c1c1c; /* Match body background */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 10001; /* Ensure it's on top */
+        text-align: center;
+    }
+    #page-loading-overlay img {
+        width: 80px;
+        height: auto;
+        margin-bottom: 20px;
+        border-radius: 4px; /* Consistent with logo */
+    }
+    #page-loading-overlay p {
+        color: #f0f0f0;
+        font-size: 1.5rem;
+        font-family: 'Caros', sans-serif;
+        font-weight: 700;
+    }
+
+
+    .profile-container {
+      background: var(--bento-container-bg);
+      border-radius: 16px;
+      padding: clamp(25px, 4vw, 35px) clamp(30px, 5vw, 45px);
+      width: 100%;
+      max-width: 550px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+      border: 1px solid var(--border-color);
+    }
+
+    h2, h3 {
+      color: var(--text-primary); 
+      text-align: center;
+      margin-bottom: 25px;
+      font-size: clamp(1.6rem, 5vw, 2rem);
+    }
+    h3 {
+        margin-top: 30px;
+        margin-bottom: 15px;
+        text-align: left;
+        font-size: clamp(1.1rem, 3.5vw, 1.3rem);
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 10px;
+        color: var(--text-secondary); 
+    }
+
+    #profile-info p {
+      font-size: clamp(0.9rem, 2.5vw, 1rem);
+      margin-bottom: 12px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    #profile-info strong {
+      color: var(--text-primary);
+      min-width: 100px; 
+      display: inline-block;
+      font-weight: 700;
+    }
+    #profile-info span {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    input[type="text"], input[type="email"], input[type="password"] {
+      width: 100%;
+      padding: 12px 15px;
+      margin-bottom: 15px;
+      background: var(--input-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      color: var(--text-primary);
+      box-sizing: border-box;
+      outline: none;
+      font-size: clamp(0.9rem, 2.5vw, 1rem);
+      font-weight: 500;
+      transition: border-color 0.25s ease, background-color 0.25s ease;
+    }
+    input[type="text"]:focus { /* General focus for text inputs */
+        border-color: var(--accent-red-focus);
+        background-color: #333;
+    }
+
+    button.profile-action-button {
+      padding: clamp(10px, 2.2vw, 12px) clamp(15px, 3vw, 20px);
+      font-size: clamp(0.85rem, 2.5vw, 0.95rem);
+      border-radius: 10px;
+      color: white;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.75px;
+      display: block; 
+      width: 100%; 
+      margin-top: 10px;
+      border: 1px solid transparent; 
+    }
+    
+    #save-username, #reset-password {
+      background: linear-gradient(45deg, #e61a1a, #ff3b3b);
+      border-color: var(--accent-red);
+    }
+    #save-username:hover:not(:disabled), #reset-password:hover:not(:disabled) {
+      transform: translateY(-2px);
+      background: linear-gradient(45deg, #d31818, #eb3333);
+      border-color: rgba(255, 31, 31, 0.6);
+    }
+
+    #logout-btn {
+      background: var(--button-secondary-bg);
+      border-color: #555;
+    }
+    #logout-btn:hover:not(:disabled) {
+      background: var(--button-secondary-bg-hover);
+      transform: translateY(-2px);
+    }
+    
+    #delete-account {
+      background: var(--danger-red-bg);
+      border-color: #c0392b; /* Slightly darker border for danger */
+    }
+    #delete-account:hover:not(:disabled) {
+      background: var(--danger-red-bg-hover); 
+      transform: translateY(-2px);
+    }
+    button.profile-action-button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        background: #555;
+        border-color: #444;
+    }
+
+
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 30px;
+      color: var(--accent-red);
+      text-decoration: none;
+      font-weight: bold;
+      font-size: clamp(0.9rem, 2.5vw, 1rem);
+    }
+    .back-link:hover {
+      text-decoration: underline;
+      color: var(--accent-red-hover);
+    }
+    
+    .status-message {
+        padding: 10px;
+        margin-bottom: 20px; 
+        border-radius: 8px;
+        text-align: center;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+    .status-message.success {
+        background-color: rgba(67, 181, 129, 0.1); 
+        color: #43B581;
+        border: 1px solid rgba(67, 181, 129, 0.2);
+    }
+    .status-message.error {
+        background-color: rgba(220, 53, 69, 0.1); 
+        color: #dc3545; /* Using a common Bootstrap danger color */
+        border: 1px solid rgba(220, 53, 69, 0.2);
+    }
+    p.info-text {
+        font-size: clamp(0.8rem, 2.2vw, 0.9rem);
+        opacity: 0.8;
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+        font-weight: 500;
+        text-align: left;
+    }
+
+  </style>
+</head>
+<body>
+  <div id="page-loading-overlay">
+    <img src="/images/logo.png" alt="Loading Logo">
+    <p>Loading Account...</p>
+  </div>
+
+  <div class="profile-container">
+    <h2>Account Settings</h2>
+    <div id="status-area"></div>
+
+    <div id="profile-info">
+      <p><strong>Email:</strong> <span id="user-email">Loading...</span></p>
+      <p><strong>Username:</strong> <span id="user-username">Loading...</span></p>
+    </div>
+
+    <h3>Change Username</h3>
+    <input id="new-username" type="text" placeholder="Enter new username">
+    <button id="save-username" class="profile-action-button">Save Username</button>
+
+    <h3>Password</h3>
+    <p class="info-text">We’ll send a password reset link to your registered email address.</p>
+    <button id="reset-password" class="profile-action-button">Send Password Reset Email</button>
+    
+    <h3>Account Actions</h3>
+    <button id="logout-btn" class="profile-action-button">Logout</button>
+    <button id="delete-account" class="profile-action-button">Delete My Account</button>
+
+    <a href="/bt/" class="back-link">Back to DistanzuinoBT</a>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, sendPasswordResetEmail, deleteUser, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // Firebase configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyAddXTzBxZk1Su6fNnsgRuNnWqFrq_ZjCY", // Replace with your actual API key
+        authDomain: "distanzuino-project.firebaseapp.com",
+        projectId: "distanzuino-project",
+        storageBucket: "distanzuino-project.appspot.com",
+        messagingSenderId: "584745723160",
+        appId: "1:584745723160:web:97387a22f4b4b9fb9c6a6d"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // DOM Elements
+    const userEmailSpan = document.getElementById("user-email");
+    const userUsernameSpan = document.getElementById("user-username");
+    const newUsernameInput = document.getElementById("new-username");
+    const saveUsernameBtn = document.getElementById("save-username");
+    const resetPasswordBtn = document.getElementById("reset-password");
+    const deleteAccountBtn = document.getElementById("delete-account");
+    const logoutBtn = document.getElementById("logout-btn");
+    const statusArea = document.getElementById("status-area");
+    const pageLoadingOverlay = document.getElementById("page-loading-overlay"); // Loader element
+
+    let currentUser; // To store the current user object
+
+    // Utility to show status messages
+    function showStatus(message, type = "success") { // Default to success for less verbose calls
+        statusArea.innerHTML = `<div class="status-message ${type}">${message}</div>`;
+        // Auto-clear status message after a few seconds
+        setTimeout(() => {
+            statusArea.innerHTML = "";
+        }, 4000);
+    }
+
+    // Firebase Auth state change listener
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        // User is not logged in, redirect to login page
+        showStatus("You must be logged in to view this page. Redirecting...", "error");
+        // Loader will be visible during this brief period before redirect
+        setTimeout(() => window.location.href = "/login/", 2000); 
+        return;
+      }
+
+      // User is logged in
+      currentUser = user;
+      userEmailSpan.textContent = user.email;
+
+      try {
+        const userDocRef = doc(db, "users", user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists()) {
+          const userData = userDocSnap.data();
+          userUsernameSpan.textContent = userData.username || "(No username set)";
+          newUsernameInput.value = userData.username || ""; // Pre-fill input
+        } else {
+          userUsernameSpan.textContent = "(User data not found)";
+          console.warn("User document not found in Firestore for UID:", user.uid);
+        }
+      } catch (error) {
+        console.error("Error fetching user document:", error);
+        userUsernameSpan.textContent = "(Error loading username)";
+        showStatus("Error loading profile data: " + error.message, "error");
+      } finally {
+        // Hide loader and show content after data is fetched (or error occurred)
+        if (pageLoadingOverlay) {
+            pageLoadingOverlay.style.display = "none";
+        }
+        document.body.classList.add('loaded'); // Fade in body content
+      }
+    });
+
+    // Event listener for saving new username
+    saveUsernameBtn.onclick = async () => {
+      if (!currentUser) return showStatus("Not logged in.", "error");
+      const newUsername = newUsernameInput.value.trim();
+      if (!newUsername) return showStatus("Please enter a new username.", "error");
+      if (newUsername.length < 3 || newUsername.length > 20) {
+        return showStatus("Username must be between 3 and 20 characters.", "error");
+      }
+
+      saveUsernameBtn.disabled = true; // Disable button during operation
+      try {
+        // Update username in Firestore
+        await setDoc(doc(db, "users", currentUser.uid), { username: newUsername }, { merge: true });
+        userUsernameSpan.textContent = newUsername; // Update UI
+        showStatus("Username updated successfully!", "success");
+      } catch (e) {
+        console.error("Error updating username:", e);
+        showStatus("Error updating username: " + e.message, "error");
+      } finally {
+        saveUsernameBtn.disabled = false; // Re-enable button
+      }
+    };
+
+    // Event listener for sending password reset email
+    resetPasswordBtn.onclick = async () => {
+      if (!currentUser) return showStatus("Not logged in.", "error");
+      resetPasswordBtn.disabled = true;
+      try {
+        await sendPasswordResetEmail(auth, currentUser.email);
+        showStatus("Password reset email sent to " + currentUser.email, "success");
+      } catch (e) {
+        console.error("Failed to send reset email:", e);
+        showStatus("Failed to send reset email: " + e.message, "error");
+      } finally {
+        resetPasswordBtn.disabled = false;
+      }
+    };
+
+    // Event listener for logging out
+    logoutBtn.onclick = async () => {
+      logoutBtn.disabled = true;
+      try {
+        await signOut(auth);
+        showStatus("Logged out successfully. Redirecting...", "success");
+        // Redirect to login page after logout
+        setTimeout(() => window.location.href = "/login/", 1500);
+      } catch (e) {
+        console.error("Logout failed:", e);
+        showStatus("Logout failed: " + e.message, "error");
+        logoutBtn.disabled = false;
+      }
+    };
+
+    // Event listener for deleting account
+    deleteAccountBtn.onclick = async () => {
+      if (!currentUser) return showStatus("Not logged in.", "error");
+      
+      // Confirmation dialogs (consider replacing with custom modals for better UX)
+      if (!confirm("DANGER! Are you absolutely sure you want to permanently delete your account and all associated data? This action cannot be undone.")) {
+        return;
+      }
+      if (!confirm("Second confirmation: This is permanent. Still proceed?")) {
+        return;
+      }
+
+      deleteAccountBtn.disabled = true;
+      const userId = currentUser.uid; 
+
+      try {
+        // Delete user document from Firestore
+        await deleteDoc(doc(db, "users", userId));
+        console.log("Firestore user document deleted for user:", userId);
+        
+        // Delete user from Firebase Authentication
+        await deleteUser(currentUser); 
+        
+        showStatus("Account deleted successfully. Redirecting...", "success");
+        setTimeout(() => window.location.href = "/login/", 2000); // Redirect to login
+      } catch (e) {
+        console.error("Failed to delete account:", e);
+        deleteAccountBtn.disabled = false;
+        // Handle specific error for re-authentication
+        if (e.code === 'auth/requires-recent-login') {
+          showStatus("This operation requires recent authentication. Please log out and log back in before deleting your account.", "error");
+        } else {
+          showStatus("Failed to delete account: " + e.message + ". User data may have been partially removed. Contact support.", "error");
+        }
+      }
+    };
+    // Initial check to hide loader if user is not logged in (though onAuthStateChanged should handle it)
+    // This is mostly a fallback or for very fast scenarios.
+    if (!auth.currentUser && pageLoadingOverlay) {
+        // pageLoadingOverlay.style.display = "none";
+        // document.body.classList.add('loaded');
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chat</title>
+  <style>
+    :root {
+      --dark-bg: #23272A; /* Darker Gray */
+      --darker-bg: #2C2F33; /* Slightly Lighter Gray for containers */
+      --accent-primary: #7289DA; /* Discord-like Blurple */
+      --text-primary: #FFFFFF; /* White */
+      --text-secondary: #99AAB5; /* Grayish Blue */
+      --input-bg: #40444B; /* Darker Input Background */
+      --border-color: rgba(114, 137, 218, 0.3); /* Accent-based Border */
+      --message-bg-own: #4A5A9A; /* Darker Shade of Accent */
+      --message-bg-other: #3A3F44; /* Neutral Dark Bubble */
+      --scrollbar-thumb-bg: var(--accent-primary);
+      --scrollbar-track-bg: var(--darker-bg);
+      --hover-accent: #677BC4;
+      --active-room-bg: var(--input-bg);
+      --danger-color: #F04747;
+      --hover-danger: #D84040;
+    }
+
+    @font-face {
+      font-family: 'Caros';
+      src: local('Caros'), local('Caros-Regular'); 
+    }
+
+    body {
+      background-color: var(--dark-bg);
+      color: var(--text-primary);
+      font-family: 'Caros', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      line-height: 1.6;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #loading, #initial-room-prompt {
+      position: fixed;
+      inset: 0;
+      background: var(--dark-bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      padding: 20px;
+      text-align: center;
+    }
+    #initial-room-prompt button {
+        background: var(--accent-primary);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+        margin: 10px;
+        font-size: 1rem;
+    }
+    #initial-room-prompt button:hover {
+        background: var(--hover-accent);
+    }
+    #initial-room-prompt input {
+        padding: 10px;
+        margin-top: 10px;
+        border-radius: 5px;
+        border: 1px solid var(--border-color);
+        background: var(--input-bg);
+        color: var(--text-primary);
+        width: 80%;
+        max-width: 300px;
+    }
+
+    .app-layout {
+        display: flex;
+        width: 100%;
+        height: 100%;
+    }
+
+    #rooms-sidebar {
+        width: 250px;
+        background-color: var(--darker-bg);
+        padding: 20px;
+        border-right: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+        color: var(--text-primary);
+    }
+    #rooms-sidebar h2 {
+        font-size: 1.4rem;
+        color: var(--accent-primary);
+        margin-top: 0;
+        margin-bottom: 10px;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 10px;
+    }
+    #rooms-sidebar #user-info {
+        margin-bottom: 20px;
+        font-size: 0.9rem;
+    }
+    #rooms-sidebar #user-info span#sidebar-userIdDisplay { font-weight: bold; }
+    #rooms-sidebar #user-info a {
+        color: var(--accent-primary);
+        text-decoration: none;
+    }
+    #rooms-sidebar #user-info a:hover {
+        text-decoration: underline;
+    }
+
+    #rooms-list {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 20px 0;
+        overflow-y: auto;
+        flex-grow: 1;
+    }
+    #rooms-list li {
+        padding: 10px 12px;
+        margin-bottom: 8px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        font-size: 0.95rem;
+    }
+    #rooms-list li:hover {
+        background-color: var(--input-bg);
+    }
+    #rooms-list li.active {
+        background-color: var(--active-room-bg);
+        font-weight: bold;
+        color: var(--accent-primary);
+    }
+
+    .room-actions button {
+        width: 100%;
+        padding: 10px;
+        background: var(--accent-primary);
+        border: none;
+        color: white;
+        border-radius: 6px;
+        font-weight: bold;
+        cursor: pointer;
+        margin-bottom: 10px;
+        font-size: 0.9rem;
+    }
+    .room-actions button:hover {
+        background: var(--hover-accent);
+    }
+
+
+    .chat-container {
+      flex-grow: 1;
+      background: var(--dark-bg); 
+      display: flex;
+      flex-direction: column;
+      height: 100vh; 
+    }
+
+    header.chat-header {
+      padding: 15px 20px;
+      background: var(--darker-bg);
+      border-bottom: 1px solid var(--border-color);
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+    }
+    header.chat-header h1 {
+      font-size: 1.5rem;
+      color: var(--text-primary);
+      margin: 0;
+    }
+    #room-header-actions button {
+        background: var(--accent-primary);
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        margin-left: 10px;
+    }
+    #room-header-actions button:hover {
+        background: var(--hover-accent);
+    }
+
+
+    #chat-messages {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 20px;
+      gap: 12px;
+      display: flex;
+      flex-direction: column;
+      scrollbar-width: thin;
+      scrollbar-color: var(--scrollbar-thumb-bg) var(--scrollbar-track-bg);
+    }
+    #chat-messages::-webkit-scrollbar { width: 8px; }
+    #chat-messages::-webkit-scrollbar-track { background: var(--scrollbar-track-bg); }
+    #chat-messages::-webkit-scrollbar-thumb {
+      background-color: var(--scrollbar-thumb-bg);
+      border-radius: 10px;
+      border: 2px solid var(--scrollbar-track-bg);
+    }
+
+    .message-bubble {
+      padding: 10px 15px;
+      border-radius: 18px;
+      max-width: 75%;
+      word-wrap: break-word;
+      line-height: 1.4;
+    }
+    .message-bubble.own {
+      background: var(--message-bg-own);
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+      color: var(--text-primary);
+    }
+    .message-bubble.other {
+      background: var(--message-bg-other);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+      color: var(--text-primary);
+    }
+    .message-info {
+      font-size: 0.75rem;
+      opacity: 0.7;
+      margin-top: 5px;
+      color: var(--text-secondary); 
+    }
+     .message-bubble.own .message-info { color: #c0c0e0; } 
+     .message-bubble.other .message-info { color: var(--text-secondary); }
+
+
+    #message-form {
+      display: flex;
+      padding: 15px 20px;
+      border-top: 1px solid var(--border-color);
+      gap: 10px;
+      background: var(--darker-bg);
+    }
+    #message-input {
+      flex: 1;
+      padding: 12px 15px;
+      border-radius: 20px;
+      border: 1px solid var(--border-color);
+      background: var(--input-bg);
+      color: var(--text-primary);
+      outline: none;
+      font-size: 0.95rem;
+    }
+    #message-input:focus { border-color: var(--accent-primary); }
+    #send-button {
+      padding: 10px 20px;
+      background: var(--accent-primary);
+      border: none;
+      color: white;
+      border-radius: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    #send-button:hover { background: var(--hover-accent); }
+    #send-button:disabled, #message-input:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .modal {
+        display: none; 
+        position: fixed;
+        z-index: 10000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.7);
+        align-items: center;
+        justify-content: center;
+    }
+    .modal-content {
+        background-color: var(--darker-bg);
+        margin: auto;
+        padding: 25px 30px; 
+        border-radius: 10px;
+        width: 90%;
+        max-width: 450px; 
+        text-align: left; 
+        box-shadow: 0 5px 20px rgba(0,0,0,0.4); 
+    }
+    .modal-content h3 { 
+        color: var(--accent-primary); 
+        margin-top: 0; 
+        margin-bottom: 20px; 
+        text-align: center; 
+        font-size: 1.3rem;
+    }
+    .modal-content label {
+        display: block;
+        margin-bottom: 5px;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+    }
+    .modal-content input[type="text"], .modal-content select {
+        width: calc(100% - 22px);
+        padding: 10px;
+        margin-bottom: 15px;
+        border-radius: 5px;
+        border: 1px solid var(--border-color);
+        background: var(--input-bg);
+        color: var(--text-primary);
+        font-size: 0.95rem;
+    }
+    .modal-content button {
+        background: var(--accent-primary); color: white; border: none;
+        padding: 10px 15px; border-radius: 5px; cursor: pointer; margin: 5px 2px;
+        font-weight: bold;
+    }
+    .modal-content button:hover { background: var(--hover-accent); }
+    .modal-content button.cancel { background: #6c757d; }
+    .modal-content button.cancel:hover { background: #5a6268; }
+    .modal-content button.danger { background: var(--danger-color); }
+    .modal-content button.danger:hover { background: var(--hover-danger); }
+    .modal-actions { text-align: right; margin-top: 20px; } 
+
+    #room-members-list {
+        list-style: none;
+        padding: 0;
+        max-height: 150px;
+        overflow-y: auto;
+        margin-bottom: 15px;
+        border: 1px solid var(--border-color);
+        border-radius: 5px;
+        background: var(--input-bg);
+    }
+    #room-members-list li {
+        padding: 8px 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--border-color);
+    }
+    #room-members-list li:last-child { border-bottom: none; }
+    #room-members-list .member-name { color: var(--text-primary); }
+    #room-members-list .kick-btn {
+        background: var(--danger-color);
+        color: white;
+        border: none;
+        padding: 4px 8px;
+        font-size: 0.8rem;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    #room-members-list .kick-btn:hover { background: var(--hover-danger); }
+    .room-code-display {
+        background: var(--input-bg);
+        padding: 8px;
+        border-radius: 5px;
+        margin-bottom: 15px;
+        font-family: monospace;
+        color: var(--text-secondary);
+        text-align: center;
+        border: 1px solid var(--border-color);
+    }
+
+  </style>
+</head>
+<body>
+
+    <div id="loading">
+        <p>Initializing Chat...</p>
+    </div>
+
+    <div id="initial-room-prompt" style="display: none;">
+        <h2>Welcome, <span id="prompt-userIdDisplay"></span>!</h2>
+        <p>Get started by creating a new chat room or joining an existing one.</p>
+        <div id="create-room-section">
+            <input type="text" id="new-room-name-prompt" placeholder="Enter new room name">
+            <button id="create-room-btn-prompt">Create Room</button>
+        </div>
+        <p style="margin: 20px 0;">OR</p>
+        <div id="join-room-section">
+            <input type="text" id="join-room-code-prompt" placeholder="Enter room code">
+            <button id="join-room-btn-prompt">Join Room</button>
+        </div>
+        <div id="profile-settings" style="margin-top: 40px;">
+            <a href="/chat/profile" style="color: var(--text-secondary); text-decoration: none;">Profile Settings</a>
+        </div>
+    </div>
+      
+    <div class="app-layout" id="main-app" style="display: none;">
+        <aside id="rooms-sidebar">
+            <h2>Rooms</h2>
+            <div id="user-info">
+                Welcome, <span id="sidebar-userIdDisplay"></span>! (<a href="/chat/profile">Profile Settings</a>)
+            </div>
+            <ul id="rooms-list">
+                </ul>
+            <div class="room-actions">
+                <button id="open-create-room-modal">Create New Room</button>
+                <button id="open-join-room-modal">Join Room by Code</button>
+            </div>
+        </aside>
+
+        <div class="chat-container">
+            <header class="chat-header">
+                <h1 id="current-room-name">Select a Room</h1>
+                <div id="room-header-actions" style="display:none;">
+                    <button id="room-info-btn" title="Room Details & Members">Room Info</button>
+                </div>
+            </header>
+
+            <div id="chat-messages">
+             </div>
+
+            <form id="message-form">
+                <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off" disabled />
+                <button type="submit" id="send-button" disabled>Send</button>
+            </form>
+        </div>
+    </div>
+
+
+    <div id="createRoomModal" class="modal">
+      <div class="modal-content">
+        <h3>Create New Chat Room</h3>
+        <input type="text" id="modal-new-room-name" placeholder="Enter room name (e.g., Study Group)">
+        <div class="modal-actions">
+            <button id="confirm-create-room">Create</button>
+            <button class="cancel" onclick="closeModal('createRoomModal')">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+
+    <div id="joinRoomModal" class="modal">
+      <div class="modal-content">
+        <h3>Join Chat Room</h3>
+        <input type="text" id="modal-join-room-code" placeholder="Enter room code">
+        <div class="modal-actions">
+            <button id="confirm-join-room">Join</button>
+            <button class="cancel" onclick="closeModal('joinRoomModal')">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="roomInfoModal" class="modal">
+        <div class="modal-content">
+            <h3>Room Information</h3>
+            <div>
+                <label for="modal-room-name-edit">Room Name:</label>
+                <input type="text" id="modal-room-name-edit" disabled>
+            </div>
+            <div>
+                <label>Room Code:</label>
+                <p id="modal-room-code-display" class="room-code-display">N/A</p>
+            </div>
+            <div>
+                <label>Members (<span id="modal-member-count">0</span>):</label>
+                <ul id="room-members-list">
+                    </ul>
+            </div>
+            <div class="modal-actions">
+                <button id="save-room-name-changes" style="display:none;">Save Name</button>
+                <button id="leave-room-btn" class="danger">Leave Room</button>
+                <button id="delete-room-btn" class="danger" style="display:none;">Delete Room</button>
+                <button class="cancel" onclick="closeModal('roomInfoModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="transferHostModal" class="modal">
+        <div class="modal-content">
+            <h3>Transfer Host Ownership</h3>
+            <p>You are the host. To leave this room, please select a new host:</p>
+            <select id="new-host-select">
+                </select>
+            <div class="modal-actions">
+                <button id="confirm-transfer-host-btn">Transfer & Leave</button>
+                <button class="cancel" onclick="closeModal('transferHostModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="customAlertModal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <h3 id="customAlertTitle">Alert</h3>
+            <p id="customAlertMessage" style="margin-bottom: 20px;"></p>
+            <button id="customAlertOkButton">OK</button>
+        </div>
+    </div>
+
+    <div id="customConfirmModal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <h3 id="customConfirmTitle">Confirm</h3>
+            <p id="customConfirmMessage" style="margin-bottom: 20px;"></p>
+            <div class="modal-actions" style="text-align: center;">
+                <button id="customConfirmYesButton">Yes</button>
+                <button id="customConfirmNoButton" class="cancel">No</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, serverTimestamp, query, onSnapshot, doc, getDoc, setDoc, updateDoc, where, limit, writeBatch, orderBy, getDocs, deleteDoc, runTransaction, deleteField } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"; // Added deleteField
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAddXTzBxZk1Su6fNnsgRuNnWqFrq_ZjCY", 
+            authDomain: "distanzuino-project.firebaseapp.com",
+            projectId: "distanzuino-project",
+            storageBucket: "distanzuino-project.appspot.com",
+            messagingSenderId: "584745723160",
+            appId: "1:584745723160:web:97387a22f4b4b9fb9c6a6d"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // DOM Elements
+        const messageForm = document.getElementById("message-form");
+        const messageInput = document.getElementById("message-input");
+        const sendButton = document.getElementById("send-button");
+        const chatMessages = document.getElementById("chat-messages");
+        const promptUserIdDisplay = document.getElementById("prompt-userIdDisplay");
+        const sidebarUserIdDisplay = document.getElementById("sidebar-userIdDisplay");
+        const loadingDiv = document.getElementById("loading");
+        const initialRoomPromptDiv = document.getElementById("initial-room-prompt");
+        const mainAppDiv = document.getElementById("main-app");
+        
+        const roomsList = document.getElementById("rooms-list");
+        const currentRoomNameHeader = document.getElementById("current-room-name");
+        const roomHeaderActions = document.getElementById("room-header-actions");
+
+        // Modals & Controls
+        const createRoomModal = document.getElementById("createRoomModal");
+        const joinRoomModal = document.getElementById("joinRoomModal");
+        const roomInfoModal = document.getElementById("roomInfoModal");
+        const transferHostModal = document.getElementById("transferHostModal");
+        const customAlertModal = document.getElementById("customAlertModal");
+        const customAlertTitle = document.getElementById("customAlertTitle");
+        const customAlertMessage = document.getElementById("customAlertMessage");
+        const customAlertOkButton = document.getElementById("customAlertOkButton");
+
+        const customConfirmModal = document.getElementById("customConfirmModal");
+        const customConfirmTitle = document.getElementById("customConfirmTitle");
+        const customConfirmMessage = document.getElementById("customConfirmMessage");
+        const customConfirmYesButton = document.getElementById("customConfirmYesButton");
+        const customConfirmNoButton = document.getElementById("customConfirmNoButton");
+        
+        document.getElementById("open-create-room-modal").onclick = () => openModal('createRoomModal');
+        document.getElementById("open-join-room-modal").onclick = () => openModal('joinRoomModal');
+        document.getElementById("room-info-btn").onclick = () => openRoomInfoModal();
+        
+        document.getElementById("confirm-create-room").onclick = () => handleCreateRoom(document.getElementById("modal-new-room-name").value);
+        document.getElementById("confirm-join-room").onclick = () => handleJoinRoom(document.getElementById("modal-join-room-code").value);
+        
+        document.getElementById("create-room-btn-prompt").onclick = () => handleCreateRoom(document.getElementById("new-room-name-prompt").value, true); 
+        document.getElementById("join-room-btn-prompt").onclick = () => handleJoinRoom(document.getElementById("join-room-code-prompt").value, true);
+
+        document.getElementById("save-room-name-changes").onclick = handleSaveRoomNameChanges;
+        document.getElementById("leave-room-btn").onclick = handleLeaveRoom;
+        document.getElementById("delete-room-btn").onclick = handleDeleteRoom;
+        document.getElementById("confirm-transfer-host-btn").onclick = confirmHostTransferAndLeave;
+        customAlertOkButton.onclick = () => closeModal('customAlertModal');
+
+
+        let currentUsername = "Anonymous";
+        let currentUserId = null;
+        let currentRoomId = null;
+        let currentRoomData = null; 
+        let unsubscribeMessages = null;
+        let unsubscribeUserRooms = null;
+
+        // --- Utility Functions ---
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = "flex";
+        }
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = "none";
+        }
+        function showAlert(message, title = "Alert") {
+            customAlertTitle.textContent = title;
+            customAlertMessage.textContent = message;
+            openModal('customAlertModal');
+        }
+
+        function showConfirm(message, title = "Confirm Action") {
+            return new Promise((resolve) => {
+                customConfirmTitle.textContent = title;
+                customConfirmMessage.textContent = message;
+                
+                // Ensure listeners are fresh for each confirmation
+                const newYesButton = customConfirmYesButton.cloneNode(true);
+                customConfirmYesButton.parentNode.replaceChild(newYesButton, customConfirmYesButton);
+                // @ts-ignore
+                customConfirmYesButton = newYesButton;
+
+                const newNoButton = customConfirmNoButton.cloneNode(true);
+                customConfirmNoButton.parentNode.replaceChild(newNoButton, customConfirmNoButton);
+                // @ts-ignore
+                customConfirmNoButton = newNoButton;
+                
+                openModal('customConfirmModal');
+
+                customConfirmYesButton.onclick = () => {
+                    closeModal('customConfirmModal');
+                    resolve(true);
+                };
+                customConfirmNoButton.onclick = () => {
+                    closeModal('customConfirmModal');
+                    resolve(false);
+                };
+            });
+        }
+
+
+        function generateRoomCode(length = 6) {
+            const characters = 'ABCDEFGHIJKLMNPQRSTUVWXYZ123456789';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += characters.charAt(Math.floor(Math.random() * characters.length));
+            }
+            return result;
+        }
+
+        async function checkRoomCodeExists(code) {
+            const q = query(collection(db, "rooms"), where("code", "==", code), limit(1));
+            const querySnapshot = await getDocs(q);
+            return !querySnapshot.empty;
+        }
+
+        // --- Room Management ---
+        async function handleCreateRoom(roomName, fromPrompt = false) {
+            roomName = roomName ? roomName.trim() : "";
+            if (!roomName) {
+                showAlert("Please enter a room name.");
+                return;
+            }
+            if (!currentUserId) {
+                showAlert("User not identified. Cannot create room.");
+                return;
+            }
+            console.log(`Attempting to create room: "${roomName}" by user: ${currentUserId}`);
+
+            let newRoomCode = generateRoomCode();
+            let attempts = 0;
+            try {
+                while (await checkRoomCodeExists(newRoomCode) && attempts < 10) {
+                    newRoomCode = generateRoomCode();
+                    attempts++;
+                }
+                if (attempts >= 10) {
+                    showAlert("Failed to generate a unique room code. Please try again.");
+                    return;
+                }
+
+                const roomData = {
+                    name: roomName,
+                    code: newRoomCode,
+                    createdByUid: currentUserId,
+                    createdAt: serverTimestamp(),
+                    members: { [currentUserId]: currentUsername }
+                };
+                
+                const roomRef = await addDoc(collection(db, "rooms"), roomData);
+                const userDocRef = doc(db, "users", currentUserId);
+                await setDoc(userDocRef, {
+                    joinedRooms: { [roomRef.id]: roomName }
+                }, { merge: true });
+
+                
+                showAlert(`Room "${roomName}" created! Code: ${newRoomCode}. You can share this code with others to join.`);
+                if (fromPrompt) {
+                    initialRoomPromptDiv.style.display = "none";
+                    mainAppDiv.style.display = "flex";
+                }
+                closeModal('createRoomModal');
+                document.getElementById("modal-new-room-name").value = "";
+                document.getElementById("new-room-name-prompt").value = "";
+
+                if (!currentRoomId || fromPrompt) {
+                   await selectRoom(roomRef.id); 
+                }
+            } catch (error) {
+                console.error("Error creating room:", error);
+                showAlert("Failed to create room: " + error.message);
+            }
+        }
+
+        async function handleJoinRoom(roomCode, fromPrompt = false) {
+            roomCode = roomCode ? roomCode.trim().toUpperCase() : "";
+            if (!roomCode) {
+                showAlert("Please enter a room code.");
+                return;
+            }
+            if (!currentUserId) {
+                showAlert("User not identified. Cannot join room.");
+                return;
+            }
+            console.log(`Attempting to join room with code: "${roomCode}" by user: ${currentUserId}`);
+
+            try {
+                const q = query(collection(db, "rooms"), where("code", "==", roomCode), limit(1));
+                const querySnapshot = await getDocs(q);
+
+                if (querySnapshot.empty) {
+                    showAlert("Invalid room code. Please check and try again.");
+                    console.warn("Invalid room code entered:", roomCode);
+                    return;
+                }
+
+                const roomToJoinDoc = querySnapshot.docs[0];
+                const roomToJoinId = roomToJoinDoc.id;
+                const roomToJoinData = roomToJoinDoc.data();
+                console.log("Found room to join:", roomToJoinId, roomToJoinData);
+
+                const userDocSnap = await getDoc(doc(db, "users", currentUserId));
+                if (userDocSnap.exists() && userDocSnap.data().joinedRooms && userDocSnap.data().joinedRooms[roomToJoinId]) {
+                    showAlert(`You are already in room "${roomToJoinData.name}".`);
+                     if (fromPrompt) {
+                        initialRoomPromptDiv.style.display = "none";
+                        mainAppDiv.style.display = "flex";
+                        await selectRoom(roomToJoinId);
+                    }
+                    closeModal('joinRoomModal');
+                    document.getElementById("modal-join-room-code").value = "";
+                    document.getElementById("join-room-code-prompt").value = "";
+                    return;
+                }
+
+                const batch = writeBatch(db);
+                const userDocRef = doc(db, "users", currentUserId);
+                batch.set(userDocRef, {
+                    joinedRooms: { [roomToJoinId]: roomToJoinData.name }
+                }, { merge: true });
+
+
+                const roomDocRef = doc(db, "rooms", roomToJoinId);
+                batch.update(roomDocRef, {
+                    [`members.${currentUserId}`]: currentUsername
+                });
+
+                await batch.commit();
+                // IMPORTANT: If "Failed to join: Missing or insufficient permissions" occurs here,
+                // it's almost certainly due to Firestore Security Rules.
+                // Ensure your rules for the "rooms" collection allow an authenticated user
+                // to update the "members" field of a room document.
+                // Example rule for /rooms/{roomId}:
+                // allow update: if request.auth != null && 
+                //   (request.auth.uid == resource.data.createdByUid ||  // Creator can update
+                //    request.resource.data.members.diff(resource.data.members).affectedKeys().hasOnly([request.auth.uid])); // User is adding/removing themselves from members
+                console.log("Successfully joined room and updated user/room docs.");
+                
+                showAlert(`Successfully joined room "${roomToJoinData.name}"!`);
+                 if (fromPrompt) {
+                    initialRoomPromptDiv.style.display = "none";
+                    mainAppDiv.style.display = "flex";
+                }
+                closeModal('joinRoomModal');
+                document.getElementById("modal-join-room-code").value = "";
+                document.getElementById("join-room-code-prompt").value = "";
+                
+                if (!currentRoomId || fromPrompt) {
+                   await selectRoom(roomToJoinId);
+                }
+            } catch (error) {
+                console.error("Error joining room:", error);
+                showAlert("Failed to join room: " + error.message + ". This might be due to Firestore security rules.");
+            }
+        }
+        
+        function renderRoomsList(roomsData) {
+            roomsList.innerHTML = "";
+            if (!roomsData || Object.keys(roomsData).length === 0) {
+                const li = document.createElement("li");
+                li.textContent = "No rooms. Create or join one!";
+                li.style.opacity = "0.7";
+                roomsList.appendChild(li);
+                return false; 
+            }
+
+            Object.entries(roomsData).forEach(([id, name]) => {
+                const li = document.createElement("li");
+                li.textContent = name;
+                li.dataset.roomId = id;
+                if (id === currentRoomId) {
+                    li.classList.add("active");
+                }
+                li.onclick = () => selectRoom(id);
+                roomsList.appendChild(li);
+            });
+            return true; 
+        }
+
+        async function selectRoom(roomId) {
+            if (currentRoomId === roomId && chatMessages.innerHTML !== "" && !chatMessages.innerHTML.includes("Loading messages...")) {
+                document.querySelectorAll("#rooms-list li").forEach(li => {
+                    li.classList.toggle("active", li.dataset.roomId === roomId);
+                });
+                if (currentRoomData) currentRoomNameHeader.textContent = currentRoomData.name || "Chat";
+                console.log(`Room ${roomId} already selected.`);
+                return;
+            }
+            console.log(`Selecting room: ${roomId}`);
+
+            currentRoomId = roomId;
+            messageInput.disabled = true; 
+            sendButton.disabled = true;
+            roomHeaderActions.style.display = "none";
+            chatMessages.innerHTML = '<p style="text-align:center; color: var(--text-secondary);">Loading room details...</p>';
+
+            try {
+                const roomDocSnap = await getDoc(doc(db, "rooms", roomId));
+                if (!roomDocSnap.exists()) {
+                    showAlert("Error: Selected room not found.");
+                    currentRoomId = null;
+                    chatMessages.innerHTML = '<p style="text-align:center; color: var(--text-secondary);">Could not load room.</p>';
+                    return;
+                }
+                currentRoomData = { id: roomDocSnap.id, ...roomDocSnap.data() };
+                console.log("Current room data:", currentRoomData);
+
+                currentRoomNameHeader.textContent = currentRoomData.name || "Chat";
+                messageInput.disabled = false;
+                sendButton.disabled = false;
+                roomHeaderActions.style.display = "flex"; 
+
+                document.querySelectorAll("#rooms-list li").forEach(li => {
+                    li.classList.toggle("active", li.dataset.roomId === roomId);
+                });
+
+                if (unsubscribeMessages) {
+                    unsubscribeMessages();
+                    unsubscribeMessages = null;
+                }
+
+                const messagesColRef = collection(db, "rooms", roomId, "messages");
+                const q_msg = query(messagesColRef, orderBy("timestamp", "asc"));
+                
+                unsubscribeMessages = onSnapshot(q_msg, (snapshot) => {
+                    const initialLoad = chatMessages.innerHTML.includes("Loading room details...") || chatMessages.innerHTML.includes("Loading messages...");
+                    chatMessages.innerHTML = ""; 
+                    if (snapshot.empty) {
+                        chatMessages.innerHTML = '<p style="text-align:center; color: var(--text-secondary);">No messages yet. Be the first to say something!</p>';
+                    } else {
+                        snapshot.forEach(docSnap => {
+                            const msg = docSnap.data();
+                            displayMessage(msg);
+                        });
+                    }
+                    if (initialLoad || isScrolledToBottom()) {
+                         chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }
+                }, error => {
+                    console.error(`Error fetching messages for room ${roomId}:`, error);
+                    chatMessages.innerHTML = `<p style="color:var(--accent-primary); padding: 20px; text-align: center;">Error loading messages: ${error.message}</p>`;
+                    currentRoomId = null;
+                    messageInput.disabled = true;
+                    sendButton.disabled = true;
+                });
+
+            } catch (error) {
+                console.error("Error selecting room:", error);
+                showAlert("Failed to load room details: " + error.message);
+                currentRoomId = null;
+                chatMessages.innerHTML = '<p style="text-align:center; color: var(--text-secondary);">Could not load room.</p>';
+            }
+        }
+        
+        function displayMessage(msg) {
+            const div = document.createElement("div");
+            div.classList.add("message-bubble");
+            div.classList.add(msg.userId === currentUserId ? "own" : "other");
+            
+            const textContent = msg.text ? msg.text.replace(/</g, "&lt;").replace(/>/g, "&gt;") : "";
+
+            div.innerHTML = `
+                <div>${textContent}</div>
+                <div class="message-info">
+                    ${msg.userName || `User-${msg.userId?.substring(0, 6) || "?"}`} • ${msg.timestamp?.toDate?.().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || "sending..."}
+                </div>`;
+            chatMessages.appendChild(div);
+        }
+
+        function isScrolledToBottom() {
+            if (!chatMessages.lastChild) return true;
+            return chatMessages.scrollHeight - chatMessages.clientHeight <= chatMessages.scrollTop + chatMessages.lastChild.offsetHeight + 50; 
+        }
+
+        // --- Room Info Modal Logic ---
+        function openRoomInfoModal() {
+            if (!currentRoomData || !currentUserId) {
+                showAlert("No room selected or user not identified.");
+                return;
+            }
+
+            const roomNameInput = document.getElementById("modal-room-name-edit");
+            const roomCodeDisplay = document.getElementById("modal-room-code-display");
+            const membersListUl = document.getElementById("room-members-list");
+            const memberCountSpan = document.getElementById("modal-member-count");
+            const saveNameBtn = document.getElementById("save-room-name-changes");
+            const deleteRoomBtn = document.getElementById("delete-room-btn");
+
+            roomNameInput.value = currentRoomData.name;
+            roomCodeDisplay.textContent = currentRoomData.code || "N/A";
+            
+            const isHost = currentRoomData.createdByUid === currentUserId;
+            roomNameInput.disabled = !isHost;
+            saveNameBtn.style.display = isHost ? "inline-block" : "none";
+            deleteRoomBtn.style.display = isHost ? "inline-block" : "none";
+
+            membersListUl.innerHTML = "";
+            let count = 0;
+            if (currentRoomData.members) {
+                Object.entries(currentRoomData.members).forEach(([uid, username]) => {
+                    count++;
+                    const li = document.createElement("li");
+                    const nameSpan = document.createElement("span");
+                    nameSpan.className = "member-name";
+                    nameSpan.textContent = `${username} ${uid === currentRoomData.createdByUid ? '(Host)' : ''} ${uid === currentUserId ? '(You)' : ''}`;
+                    li.appendChild(nameSpan);
+
+                    if (isHost && uid !== currentUserId) { 
+                        const kickBtn = document.createElement("button");
+                        kickBtn.className = "kick-btn";
+                        kickBtn.textContent = "Kick";
+                        kickBtn.onclick = () => handleKickUser(uid, username);
+                        li.appendChild(kickBtn);
+                    }
+                    membersListUl.appendChild(li);
+                });
+            }
+            memberCountSpan.textContent = count;
+            openModal('roomInfoModal');
+        }
+
+        async function handleSaveRoomNameChanges() {
+            if (!currentRoomData || currentRoomData.createdByUid !== currentUserId) {
+                showAlert("You are not the host or no room is selected.");
+                return;
+            }
+            const newName = document.getElementById("modal-room-name-edit").value.trim();
+            if (!newName) {
+                showAlert("Room name cannot be empty.");
+                return;
+            }
+            if (newName === currentRoomData.name) {
+                showAlert("No changes made to the room name.");
+                return;
+            }
+
+            try {
+                const roomDocRef = doc(db, "rooms", currentRoomId);
+                const batch = writeBatch(db);
+                batch.update(roomDocRef, { name: newName });
+
+                if (currentRoomData.members) {
+                    for (const memberId of Object.keys(currentRoomData.members)) {
+                        const userDocRef = doc(db, "users", memberId);
+                        batch.update(userDocRef, { [`joinedRooms.${currentRoomId}`]: newName });
+                    }
+                }
+                await batch.commit();
+                
+                currentRoomData.name = newName; 
+                currentRoomNameHeader.textContent = newName;
+                const userDocSnap = await getDoc(doc(db, "users", currentUserId));
+                if(userDocSnap.exists()) renderRoomsList(userDocSnap.data().joinedRooms);
+
+                showAlert("Room name updated successfully!");
+                closeModal('roomInfoModal');
+            } catch (error) {
+                console.error("Error updating room name:", error);
+                showAlert("Failed to update room name: " + error.message);
+            }
+        }
+
+        async function handleKickUser(userIdToKick, usernameToKick) {
+            const confirmed = await showConfirm(`Are you sure you want to kick ${usernameToKick}?`);
+            if (!confirmed) return;
+
+            if (!currentRoomData || currentRoomData.createdByUid !== currentUserId) {
+                showAlert("You are not the host or no room is selected.");
+                return;
+            }
+            if (userIdToKick === currentUserId) {
+                showAlert("You cannot kick yourself.");
+                return;
+            }
+
+            try {
+                const batch = writeBatch(db);
+                const roomDocRef = doc(db, "rooms", currentRoomId);
+                batch.update(roomDocRef, { [`members.${userIdToKick}`]: deleteField() }); 
+
+                const kickedUserDocRef = doc(db, "users", userIdToKick);
+                batch.update(kickedUserDocRef, { [`joinedRooms.${currentRoomId}`]: deleteField() });
+                
+                await batch.commit();
+
+                delete currentRoomData.members[userIdToKick];
+                openRoomInfoModal(); 
+                showAlert(`${usernameToKick} has been kicked from the room.`);
+
+            } catch (error) {
+                console.error("Error kicking user:", error);
+                showAlert("Failed to kick user: " + error.message);
+            }
+        }
+        
+        async function handleLeaveRoom() {
+            if (!currentRoomData || !currentUserId) {
+                showAlert("No room selected or user not identified.");
+                return;
+            }
+            const confirmed = await showConfirm(`Are you sure you want to leave the room "${currentRoomData.name}"?`);
+            if (!confirmed) return;
+
+            const isHost = currentRoomData.createdByUid === currentUserId;
+            const memberCount = Object.keys(currentRoomData.members).length;
+
+            try {
+                if (isHost && memberCount > 1) {
+                    const otherMembers = Object.entries(currentRoomData.members)
+                        .filter(([uid, _]) => uid !== currentUserId)
+                        .map(([uid, username]) => ({ uid, username }));
+
+                    if (otherMembers.length > 0) {
+                        const newHostSelect = document.getElementById("new-host-select");
+                        newHostSelect.innerHTML = "";
+                        otherMembers.forEach(member => {
+                            const option = document.createElement("option");
+                            option.value = member.uid;
+                            option.textContent = member.username;
+                            newHostSelect.appendChild(option);
+                        });
+                        closeModal('roomInfoModal');
+                        openModal('transferHostModal');
+                        return; 
+                    } else {
+                        await actuallyDeleteRoom();
+                    }
+                } else if (isHost && memberCount === 1) {
+                    await actuallyDeleteRoom();
+                } else {
+                    const batch = writeBatch(db);
+                    const roomDocRef = doc(db, "rooms", currentRoomId);
+                    batch.update(roomDocRef, { [`members.${currentUserId}`]: deleteField() });
+
+                    const userDocRef = doc(db, "users", currentUserId);
+                    batch.update(userDocRef, { [`joinedRooms.${currentRoomId}`]: deleteField() });
+                    
+                    await batch.commit();
+                    showAlert(`You have left the room "${currentRoomData.name}".`);
+                    
+                    currentRoomId = null;
+                    currentRoomData = null;
+                    chatMessages.innerHTML = '<p style="text-align:center; color: var(--text-secondary);">Select a room to start chatting.</p>';
+                    currentRoomNameHeader.textContent = "Select a Room";
+                    messageInput.disabled = true;
+                    sendButton.disabled = true;
+                    roomHeaderActions.style.display = "none";
+                    closeModal('roomInfoModal');
+                }
+            } catch (error) {
+                console.error("Error leaving room:", error);
+                showAlert("Failed to leave room: " + error.message);
+            }
+        }
+        
+        async function confirmHostTransferAndLeave() {
+            const newHostId = document.getElementById("new-host-select").value;
+            if (!newHostId) {
+                showAlert("Please select a new host.");
+                return;
+            }
+            if (!currentRoomData || currentRoomData.createdByUid !== currentUserId) {
+                showAlert("Error: Not authorized or no room data.");
+                return;
+            }
+            const newHostUsername = currentRoomData.members[newHostId];
+            if (!newHostUsername){
+                showAlert("Error: Selected new host not found in room members.");
+                return;
+            }
+
+
+            try {
+                const batch = writeBatch(db);
+                const roomDocRef = doc(db, "rooms", currentRoomId);
+                
+                batch.update(roomDocRef, { createdByUid: newHostId });
+                batch.update(roomDocRef, { [`members.${currentUserId}`]: deleteField() });
+
+                const userDocRef = doc(db, "users", currentUserId);
+                batch.update(userDocRef, { [`joinedRooms.${currentRoomId}`]: deleteField() });
+
+                await batch.commit();
+
+                showAlert(`Host ownership transferred to ${newHostUsername}. You have left the room.`);
+                closeModal('transferHostModal');
+                
+                currentRoomId = null;
+                currentRoomData = null;
+                chatMessages.innerHTML = '<p style="text-align:center; color: var(--text-secondary);">Select a room to start chatting.</p>';
+                currentRoomNameHeader.textContent = "Select a Room";
+                messageInput.disabled = true;
+                sendButton.disabled = true;
+                roomHeaderActions.style.display = "none";
+
+            } catch (error) {
+                console.error("Error transferring host and leaving:", error);
+                showAlert("Failed to transfer host and leave: " + error.message);
+            }
+        }
+
+        async function handleDeleteRoom() {
+            if (!currentRoomData || currentRoomData.createdByUid !== currentUserId) {
+                showAlert("You are not the host or no room is selected.");
+                return;
+            }
+            const confirmed = await showConfirm(`Are you sure you want to PERMANENTLY DELETE the room "${currentRoomData.name}"? This cannot be undone.`);
+            if (!confirmed) return;
+            
+            await actuallyDeleteRoom();
+        }
+
+        async function actuallyDeleteRoom() {
+             if (!currentRoomId || !currentRoomData) return;
+            try {
+                const batch = writeBatch(db);
+                const roomDocRef = doc(db, "rooms", currentRoomId);
+
+                if (currentRoomData.members) {
+                    for (const memberId of Object.keys(currentRoomData.members)) {
+                        const userDocRef = doc(db, "users", memberId);
+                        batch.update(userDocRef, { [`joinedRooms.${currentRoomId}`]: deleteField() });
+                    }
+                }
+                batch.delete(roomDocRef); // Delete the room document itself
+                // Note: Subcollections (like 'messages') are not automatically deleted.
+                // If messages need to be deleted, it requires a separate process (e.g., a Firebase Function).
+                await batch.commit();
+
+                showAlert(`Room "${currentRoomData.name}" has been deleted.`);
+                currentRoomId = null;
+                currentRoomData = null;
+                chatMessages.innerHTML = '<p style="text-align:center; color: var(--text-secondary);">Room deleted. Select another room or create one.</p>';
+                currentRoomNameHeader.textContent = "Select a Room";
+                messageInput.disabled = true;
+                sendButton.disabled = true;
+                roomHeaderActions.style.display = "none";
+                closeModal('roomInfoModal'); 
+            } catch (error) {
+                console.error("Error deleting room:", error);
+                showAlert("Failed to delete room: " + error.message);
+            }
+        }
+
+
+        // --- Auth & Initialization ---
+        onAuthStateChanged(auth, async (user) => {
+            console.log("Auth state changed. User:", user ? user.uid : 'No user');
+
+            if (unsubscribeMessages) { unsubscribeMessages(); unsubscribeMessages = null; }
+            if (unsubscribeUserRooms) { unsubscribeUserRooms(); unsubscribeUserRooms = null; }
+            currentRoomId = null; 
+            currentRoomData = null;
+            roomsList.innerHTML = "";
+            chatMessages.innerHTML = "";
+            currentRoomNameHeader.textContent = "Select a Room";
+            messageInput.disabled = true;
+            sendButton.disabled = true;
+            roomHeaderActions.style.display = "none";
+
+
+            if (!user) {
+                console.warn("No user logged in. Redirecting to login...");
+                loadingDiv.textContent = "Redirecting to login...";
+                initialRoomPromptDiv.style.display = "none";
+                mainAppDiv.style.display = "none";
+                window.location.replace(window.location.origin + "/chat/login"); 
+                return;
+            }
+
+            currentUserId = user.uid;
+            loadingDiv.textContent = "Fetching user data...";
+            let userDocSnapshot;
+            let userExistsInDb = false;
+            try {
+                for (let i = 0; i < 3; i++) { 
+                    userDocSnapshot = await getDoc(doc(db, "users", user.uid));
+                    if (userDocSnapshot.exists()) {
+                        userExistsInDb = true;
+                        break;
+                    }
+                    console.log(`User doc for ${user.uid} not found, attempt ${i+1}. Retrying...`);
+                    await new Promise(r => setTimeout(r, 700)); 
+                }
+
+                if (!userExistsInDb) {
+                    console.error(`User document for UID ${user.uid} not found in Firestore after retries. Chat access denied.`);
+                    loadingDiv.innerHTML = `<p style="color:var(--accent-primary); padding: 20px; text-align: center;">Your user data could not be found.<br/>This might be due to a delay after sign-up. Try refreshing in a moment.<br/>If the problem persists, please try logging out and back in, or contact support.<br/><button id="logout-on-fail" style="margin-top:10px; padding: 8px 15px; background: var(--accent-primary); color:white; border:none; border-radius:5px; cursor:pointer;">Logout</button></p>`;
+                    document.getElementById("logout-on-fail")?.addEventListener('click', () => {
+                        signOut(auth).then(() => window.location.replace(window.location.origin + "/chat/login"));
+                    });
+                    return;
+                }
+
+                const userData = userDocSnapshot.data();
+                currentUsername = (userData && userData.username && userData.username.trim()) 
+                                ? userData.username.trim() 
+                                : `User-${user.uid.slice(0, 6)}`;
+                promptUserIdDisplay.textContent = currentUsername; 
+                sidebarUserIdDisplay.textContent = currentUsername; 
+                loadingDiv.style.display = "none"; 
+
+                const userRoomsRef = doc(db, "users", user.uid);
+                unsubscribeUserRooms = onSnapshot(userRoomsRef, (docSnap) => {
+                    const userDataLive = docSnap.data();
+                    const joinedRooms = userDataLive?.joinedRooms || {};
+                    console.log("User's joined rooms updated:", joinedRooms);
+                    
+                    const haveRooms = renderRoomsList(joinedRooms);
+
+                    if (!haveRooms) {
+                        mainAppDiv.style.display = "none";
+                        initialRoomPromptDiv.style.display = "flex";
+                        currentRoomId = null; 
+                        currentRoomData = null;
+                        messageInput.disabled = true;
+                        sendButton.disabled = true;
+                        currentRoomNameHeader.textContent = "Create or Join a Room";
+                        roomHeaderActions.style.display = "none";
+                        chatMessages.innerHTML = '<p style="text-align:center; color: var(--text-secondary);">Welcome! Please create or join a room to start chatting.</p>';
+                    } else {
+                        initialRoomPromptDiv.style.display = "none";
+                        mainAppDiv.style.display = "flex";
+                        if (!currentRoomId || !joinedRooms[currentRoomId]) { 
+                            const firstRoomId = Object.keys(joinedRooms)[0];
+                            if (firstRoomId) {
+                                console.log("Auto-selecting first available room:", firstRoomId);
+                                selectRoom(firstRoomId);
+                            } else { 
+                                currentRoomNameHeader.textContent = "No Rooms Available";
+                                messageInput.disabled = true;
+                                sendButton.disabled = true;
+                                roomHeaderActions.style.display = "none";
+                                chatMessages.innerHTML = '<p style="text-align:center; color: var(--text-secondary);">You are not part of any rooms yet.</p>';
+                            }
+                        } else {
+                            if(currentRoomData && joinedRooms[currentRoomId] && currentRoomData.name !== joinedRooms[currentRoomId]) {
+                                currentRoomData.name = joinedRooms[currentRoomId];
+                                currentRoomNameHeader.textContent = currentRoomData.name;
+                            }
+                            console.log(`Current room ${currentRoomId} is still valid.`);
+                        }
+                    }
+                }, error => {
+                    console.error("Error listening to user's rooms:", error);
+                    loadingDiv.innerHTML = `<p style="color:var(--accent-primary); padding: 20px; text-align: center;">Error loading your room list: ${error.message}.</p>`;
+                });
+
+            } catch (err) {
+                console.error("Error during auth state handling or Firestore fetch:", err);
+                loadingDiv.innerHTML = `<p style="color:var(--accent-primary); padding: 20px; text-align: center;">Critical error initializing chat: ${err.message}.<br/>Try refreshing or logging out and back in.</p>`;
+            }
+        });
+
+
+    messageForm.onsubmit = async (e) => {
+        e.preventDefault();
+        if (!currentUserId || !currentRoomId) {
+            showAlert("You must be logged in and in a room to send messages.");
+            return;
+        }
+
+        const messageText = messageInput.value.trim();
+        if (!messageText) return;
+
+        const tempSendButtonText = sendButton.textContent;
+        sendButton.disabled = true;
+        sendButton.textContent = "Sending...";
+        messageInput.disabled = true;
+
+        try {
+            await addDoc(collection(db, "rooms", currentRoomId, "messages"), {
+                text: messageText,
+                userId: currentUserId,
+                userName: currentUsername,
+                timestamp: serverTimestamp()
+            });
+            messageInput.value = "";
+        } catch (err) {
+            console.error("Failed to send message:", err);
+            showAlert("Failed to send message: " + err.message);
+        } finally {
+            sendButton.disabled = false;
+            sendButton.textContent = tempSendButtonText;
+            messageInput.disabled = false; 
+            messageInput.focus();
+        }
+      };
+
+      // Close modals if clicked outside content
+        window.onclick = function(event) {
+            if (event.target == createRoomModal) closeModal('createRoomModal');
+            if (event.target == joinRoomModal) closeModal('joinRoomModal');
+            if (event.target == roomInfoModal) closeModal('roomInfoModal');
+            if (event.target == transferHostModal) closeModal('transferHostModal');
+            if (event.target == customAlertModal) closeModal('customAlertModal');
+            if (event.target == customConfirmModal) closeModal('customConfirmModal');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sudoku</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c;
+            color: #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+        }
+        .sudoku-container {
+            background-color: #2d3748;
+            padding: clamp(1rem, 3vw, 2rem);
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2), 0 4px 6px -2px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        #sudoku-grid {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            grid-template-rows: repeat(9, 1fr);
+            width: clamp(300px, 90vw, 450px); /* Responsive width */
+            height: clamp(300px, 90vw, 450px); /* Responsive height */
+            border: 3px solid #63b3ed; /* Blue border for main grid */
+            border-radius: 0.5rem;
+            margin: 1rem auto;
+            gap: 1px; /* Thin lines between cells */
+            background-color: #4a5568; /* Background for cell gaps */
+        }
+        .sudoku-cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #2d3748; /* Darker cell background */
+            font-size: clamp(1.2rem, 5vw, 1.8rem); /* Responsive font size */
+            font-weight: bold;
+            border: 1px solid #4a5568; /* Thin border for individual cells */
+            position: relative;
+        }
+        .sudoku-cell input {
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            background-color: transparent;
+            border: none;
+            color: #e2e8f0; /* Default input text color */
+            font-size: inherit;
+            font-weight: inherit;
+            outline: none;
+            padding: 0;
+        }
+        .sudoku-cell input:disabled {
+            color: #90cdf4; /* Given numbers color (light blue) */
+        }
+        .sudoku-cell.selected {
+            background-color: #4299e1; /* Blue highlight for selected cell */
+            outline: 2px solid #63b3ed;
+            z-index: 10;
+        }
+        .sudoku-cell.error input {
+            color: #f56565; /* Red for errors */
+            animation: shake 0.3s;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-3px); }
+            75% { transform: translateX(3px); }
+        }
+        /* Thick borders for 3x3 subgrids */
+        .sudoku-cell:nth-child(3n) { border-right-width: 3px; border-right-color: #63b3ed; }
+        .sudoku-cell:nth-child(9n) { border-right-width: 1px; border-right-color: #4a5568; } /* Reset last cell in row */
+        /* Select rows for thicker bottom border */
+        #sudoku-grid > div:nth-child(n+19):nth-child(-n+27), /* 3rd row */
+        #sudoku-grid > div:nth-child(n+46):nth-child(-n+54)  /* 6th row */
+        {
+            border-bottom-width: 3px;
+            border-bottom-color: #63b3ed;
+        }
+
+
+        .sudoku-controls { margin-top: 1.5rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem;}
+        .btn-sudoku {
+            background-color: #4299e1; color: white; font-weight: 600;
+            padding: 0.6rem 1.2rem; border-radius: 0.5rem; cursor: pointer;
+            transition: background-color 0.2s ease; border: none;
+        }
+        .btn-sudoku:hover { background-color: #3182ce; }
+        .btn-back-sudoku { background-color: #718096; }
+        .btn-back-sudoku:hover { background-color: #4a5568; }
+        
+        /* Number Pad */
+        #number-pad {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.5rem;
+            margin-top: 1rem;
+            max-width: 300px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        #number-pad button {
+            font-size: 1.2rem;
+            padding: 0.75rem;
+        }
+         #number-pad button.clear { grid-column: span 2; background-color: #e53e3e; }
+         #number-pad button.clear:hover { background-color: #c53030; }
+
+
+        /* Modal */
+        .modal-sudoku {
+            display: none; position: fixed; z-index: 1000;
+            left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            align-items: center; justify-content: center;
+        }
+        .modal-content-sudoku {
+            background-color: #2d3748; padding: 25px; border-radius: 0.75rem;
+            width: 90%; max-width: 380px; text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .modal-title-sudoku { font-size: 1.8rem; font-weight: bold; color: #90cdf4; margin-bottom: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="sudoku-container">
+        <h1 class="text-3xl sm:text-4xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-blue-500">Sudoku</h1>
+        <div id="sudoku-grid">
+            </div>
+        <div id="number-pad">
+            </div>
+        <div class="sudoku-controls">
+            <button id="newGameButtonSudoku" class="btn-sudoku">New Game</button>
+            <button id="validateButtonSudoku" class="btn-sudoku">Check Solution</button>
+            <button onclick="window.location.href='index.html'" class="btn-sudoku btn-back-sudoku">Back to Hub</button>
+        </div>
+    </div>
+
+    <div id="messageModalSudoku" class="modal-sudoku">
+        <div class="modal-content-sudoku">
+            <h2 id="modalTitleSudoku" class="modal-title-sudoku">Congratulations!</h2>
+            <p id="modalTextMessageSudoku" class="text-lg">You solved the puzzle!</p>
+            <button id="modalCloseButtonSudoku" class="btn-sudoku mt-4">Close</button>
+        </div>
+    </div>
+
+    <script>
+        const gridElement = document.getElementById('sudoku-grid');
+        const newGameButton = document.getElementById('newGameButtonSudoku');
+        const validateButton = document.getElementById('validateButtonSudoku');
+        // const solveButton = document.getElementById('solveButtonSudoku');
+        const numberPadElement = document.getElementById('number-pad');
+
+        const messageModal = document.getElementById('messageModalSudoku');
+        const modalTitle = document.getElementById('modalTitleSudoku');
+        const modalTextMessage = document.getElementById('modalTextMessageSudoku');
+        const modalCloseButton = document.getElementById('modalCloseButtonSudoku');
+
+        let currentBoard = []; // Stores the current state of the board (0 for empty)
+        let solutionBoard = []; // Stores the solved state of the board
+        let selectedCell = null; // {row, col, element}
+
+        // Basic Sudoku puzzles (0 means empty)
+        const puzzles = [
+            {
+                board: [
+                    [5,3,0,0,7,0,0,0,0],
+                    [6,0,0,1,9,5,0,0,0],
+                    [0,9,8,0,0,0,0,6,0],
+                    [8,0,0,0,6,0,0,0,3],
+                    [4,0,0,8,0,3,0,0,1],
+                    [7,0,0,0,2,0,0,0,6],
+                    [0,6,0,0,0,0,2,8,0],
+                    [0,0,0,4,1,9,0,0,5],
+                    [0,0,0,0,8,0,0,7,9]
+                ]
+            },
+            {
+                board: [
+                    [0,0,0,2,6,0,7,0,1],
+                    [6,8,0,0,7,0,0,9,0],
+                    [1,9,0,0,0,4,5,0,0],
+                    [8,2,0,1,0,0,0,4,0],
+                    [0,0,4,6,0,2,9,0,0],
+                    [0,5,0,0,0,3,0,2,8],
+                    [0,0,9,3,0,0,0,7,4],
+                    [0,4,0,0,5,0,0,3,6],
+                    [7,0,3,0,1,8,0,0,0]
+                ]
+            }
+            // Add more puzzles if desired
+        ];
+
+        function generateBoard() {
+            gridElement.innerHTML = '';
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('sudoku-cell');
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+
+                    const input = document.createElement('input');
+                    input.type = 'tel'; // Use tel for number pad on mobile
+                    input.maxLength = 1;
+                    
+                    if (currentBoard[r][c] !== 0) {
+                        input.value = currentBoard[r][c];
+                        input.disabled = true; // Pre-filled numbers are not editable
+                    } else {
+                        input.addEventListener('input', handleInput);
+                        input.addEventListener('focus', () => selectCell(cell, r, c));
+                        input.addEventListener('keydown', handleKeyDown);
+                    }
+                    cell.appendChild(input);
+                    gridElement.appendChild(cell);
+                }
+            }
+        }
+        
+        function generateNumberPad() {
+            numberPadElement.innerHTML = '';
+            for (let i = 1; i <= 9; i++) {
+                const btn = document.createElement('button');
+                btn.textContent = i;
+                btn.classList.add('btn-sudoku');
+                btn.addEventListener('click', () => handleNumberPadClick(i));
+                numberPadElement.appendChild(btn);
+            }
+            const clearBtn = document.createElement('button');
+            clearBtn.textContent = 'Clear';
+            clearBtn.classList.add('btn-sudoku', 'clear');
+            clearBtn.addEventListener('click', () => handleNumberPadClick(0)); // 0 for clear
+            numberPadElement.appendChild(clearBtn);
+        }
+
+        function selectCell(cellElement, r, c) {
+            if (selectedCell && selectedCell.element) {
+                selectedCell.element.classList.remove('selected');
+            }
+            if (cellElement.querySelector('input').disabled) { // Don't select disabled cells
+                selectedCell = null;
+                return;
+            }
+            selectedCell = { row: r, col: c, element: cellElement };
+            cellElement.classList.add('selected');
+            cellElement.querySelector('input').focus(); // Focus the input within the cell
+        }
+        
+        function handleNumberPadClick(num) {
+            if (selectedCell && !selectedCell.element.querySelector('input').disabled) {
+                const inputElement = selectedCell.element.querySelector('input');
+                const r = selectedCell.row;
+                const c = selectedCell.col;
+
+                if (num === 0) { // Clear
+                    inputElement.value = '';
+                    currentBoard[r][c] = 0;
+                } else {
+                    inputElement.value = num;
+                    currentBoard[r][c] = num;
+                    // Basic validation on input (not full Sudoku check yet)
+                    if (!isValidPartial(currentBoard, r, c, num)) {
+                        selectedCell.element.classList.add('error');
+                        setTimeout(() => {
+                            if(selectedCell) selectedCell.element.classList.remove('error');
+                        }, 1000);
+                    } else {
+                        selectedCell.element.classList.remove('error');
+                    }
+                }
+            }
+        }
+
+
+        function handleInput(event) {
+            const inputElement = event.target;
+            const cellElement = inputElement.parentElement;
+            const r = parseInt(cellElement.dataset.row);
+            const c = parseInt(cellElement.dataset.col);
+            let value = parseInt(inputElement.value);
+
+            if (isNaN(value) || value < 1 || value > 9) {
+                inputElement.value = ''; // Clear invalid input
+                currentBoard[r][c] = 0;
+                cellElement.classList.remove('error');
+                return;
+            }
+            
+            currentBoard[r][c] = value;
+            // Basic validation on input
+            if (!isValidPartial(currentBoard, r, c, value)) {
+                cellElement.classList.add('error');
+                 setTimeout(() => cellElement.classList.remove('error'), 1000); // Remove error highlight after a bit
+            } else {
+                cellElement.classList.remove('error');
+            }
+        }
+        
+        function handleKeyDown(event) { // Arrow key navigation
+            if (!selectedCell) return;
+            let {row, col} = selectedCell;
+            
+            switch(event.key) {
+                case "ArrowUp": row = Math.max(0, row - 1); break;
+                case "ArrowDown": row = Math.min(8, row + 1); break;
+                case "ArrowLeft": col = Math.max(0, col - 1); break;
+                case "ArrowRight": col = Math.min(8, col + 1); break;
+                case "Backspace": case "Delete":
+                    handleNumberPadClick(0); // Clear cell
+                    event.preventDefault();
+                    return;
+                default:
+                    if (event.key >= '1' && event.key <= '9') {
+                        // Allow direct number input
+                        return; 
+                    }
+                    if (!["Tab"].includes(event.key)) event.preventDefault(); // Prevent other keys if not number/tab
+                    return; 
+            }
+            
+            const newCellElement = gridElement.querySelector(`.sudoku-cell[data-row='${row}'][data-col='${col}']`);
+            if (newCellElement) {
+                selectCell(newCellElement, row, col);
+            }
+            event.preventDefault();
+        }
+
+
+        function loadNewPuzzle() {
+            const puzzleIndex = Math.floor(Math.random() * puzzles.length);
+            // Deep copy the puzzle board
+            currentBoard = puzzles[puzzleIndex].board.map(row => [...row]);
+            // For simplicity, we'll assume a solver function exists or we check against a pre-solved version
+            // Here, we'll just use the initial board for validation checks.
+            // A real Sudoku game would generate a solution or have one paired.
+            // For now, let's just ensure the board is playable.
+            solutionBoard = solveSudoku([...currentBoard]); // Get a solution for the current puzzle
+            generateBoard();
+            if (selectedCell && selectedCell.element) {
+                selectedCell.element.classList.remove('selected');
+                selectedCell = null;
+            }
+        }
+        
+        function isValidPartial(board, r, c, num) {
+            // Check row
+            for (let i = 0; i < 9; i++) {
+                if (i !== c && board[r][i] === num) return false;
+            }
+            // Check column
+            for (let i = 0; i < 9; i++) {
+                if (i !== r && board[i][c] === num) return false;
+            }
+            // Check 3x3 subgrid
+            const startRow = Math.floor(r / 3) * 3;
+            const startCol = Math.floor(c / 3) * 3;
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    if ((startRow + i !== r || startCol + j !== c) && board[startRow + i][startCol + j] === num) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+
+        function checkSolution() {
+            // Remove all previous error highlights
+            gridElement.querySelectorAll('.sudoku-cell.error').forEach(el => el.classList.remove('error'));
+
+            let isComplete = true;
+            let isCorrect = true;
+
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    const cellInput = gridElement.querySelector(`.sudoku-cell[data-row='${r}'][data-col='${c}'] input`);
+                    const val = parseInt(cellInput.value);
+
+                    if (isNaN(val) || val === 0) {
+                        isComplete = false;
+                        // Optionally highlight empty cells if you want to enforce completion first
+                        // cellInput.parentElement.classList.add('error');
+                        continue; 
+                    }
+                    
+                    // Check against Sudoku rules (ignoring pre-filled cells for error display on user input)
+                    if (!cellInput.disabled) { // Only validate user-entered numbers this way
+                        if (!isValidForFullCheck(currentBoard, r, c, val)) {
+                             isCorrect = false;
+                             cellInput.parentElement.classList.add('error');
+                        }
+                    }
+                }
+            }
+
+            if (!isComplete) {
+                showGameMessage("Incomplete", "Please fill all cells before checking.");
+                return;
+            }
+            
+            if (isCorrect) { // If all individual checks pass, it should be correct.
+                // A more robust check would compare against `solutionBoard` if available and reliable.
+                // For now, if `isValidForFullCheck` passes for all cells, we assume it's a valid Sudoku solution.
+                // The ultimate check is if it matches the `solutionBoard`.
+                let matchesSolution = true;
+                if (solutionBoard && solutionBoard.length > 0) {
+                    for(let r=0; r<9; r++) {
+                        for(let c=0; c<9; c++) {
+                            if (currentBoard[r][c] !== solutionBoard[r][c]) {
+                                matchesSolution = false; break;
+                            }
+                        }
+                        if (!matchesSolution) break;
+                    }
+                } else { // If no pre-solved board, rely on isValidForFullCheck
+                    matchesSolution = isCorrect; // isCorrect already determined this.
+                }
+
+
+                if (matchesSolution) {
+                    showGameMessage("Congratulations!", "You solved the puzzle!");
+                } else {
+                    showGameMessage("Incorrect", "There are errors in your solution. Please review highlighted cells.");
+                }
+            } else {
+                 showGameMessage("Incorrect", "There are errors in your solution. Please review highlighted cells.");
+            }
+        }
+        
+        // Used by checkSolution to validate the entire board state for a cell
+        function isValidForFullCheck(board, r, c, num) {
+            // Check row
+            for (let i = 0; i < 9; i++) {
+                if (i !== c && board[r][i] === num) return false;
+            }
+            // Check column
+            for (let i = 0; i < 9; i++) {
+                if (i !== r && board[i][c] === num) return false;
+            }
+            // Check 3x3 subgrid
+            const startRow = Math.floor(r / 3) * 3;
+            const startCol = Math.floor(c / 3) * 3;
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    if ((startRow + i !== r || startCol + j !== c) && board[startRow + i][startCol + j] === num) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+
+        function showGameMessage(title, text) {
+            modalTitle.textContent = title;
+            modalTextMessage.textContent = text;
+            messageModal.style.display = 'flex';
+        }
+        
+        // --- Sudoku Solver (Backtracking Algorithm) ---
+        // This is needed to generate a solution for validation if not pre-supplied
+        function solveSudoku(board) {
+            let solvedBoard = board.map(row => [...row]); // Work on a copy
+            solve(solvedBoard);
+            return solvedBoard;
+        }
+
+        function findEmpty(board) {
+            for (let r = 0; r < 9; r++) {
+                for (let c = 0; c < 9; c++) {
+                    if (board[r][c] === 0) return [r, c];
+                }
+            }
+            return null; // No empty cells
+        }
+
+        function isValidForSolver(board, r, c, num) {
+            // Check row
+            for (let i = 0; i < 9; i++) if (board[r][i] === num && i !== c) return false;
+            // Check col
+            for (let i = 0; i < 9; i++) if (board[i][c] === num && i !== r) return false;
+            // Check 3x3 box
+            const boxRow = Math.floor(r / 3) * 3;
+            const boxCol = Math.floor(c / 3) * 3;
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    if (board[boxRow + i][boxCol + j] === num && (boxRow + i !== r || boxCol + j !== c)) return false;
+                }
+            }
+            return true;
+        }
+        
+        function solve(board) {
+            const emptySpot = findEmpty(board);
+            if (!emptySpot) return true; // Solved
+            const [r, c] = emptySpot;
+
+            for (let num = 1; num <= 9; num++) {
+                if (isValidForSolver(board, r, c, num)) {
+                    board[r][c] = num;
+                    if (solve(board)) return true;
+                    board[r][c] = 0; // Backtrack
+                }
+            }
+            return false; // No solution found for this path
+        }
+
+
+        // Event Listeners
+        newGameButton.addEventListener('click', loadNewPuzzle);
+        validateButton.addEventListener('click', checkSolution);
+        // solveButton.addEventListener('click', () => { /* Implement solver hint or full solve */ });
+        modalCloseButton.addEventListener('click', () => messageModal.style.display = 'none');
+
+        // Initial Setup
+        loadNewPuzzle();
+        generateNumberPad();
+
+    </script>
+</body>
+</html>

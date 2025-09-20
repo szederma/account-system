@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ketchuplus+ Interaktív Szabályok</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* --- KETCHUP THEME & PROFESSIONAL DESIGN --- */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fcfcfc; /* Cleaner white background */
+            color: #333; /* Darker text for readability */
+        }
+        .ketchup-text { color: #D52B1E; }
+        .ketchup-bg { background-color: #D52B1E; }
+        .ketchup-border { border-color: #D52B1E; }
+
+        .title-text {
+            font-weight: 900;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.02);
+        }
+        .smooth-transition {
+            transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        /* --- UPGRADED VISUALS & ANIMATIONS --- */
+        .card-visual {
+            background-color: white;
+            border: 1px solid #E2E8F0;
+            border-radius: 0.75rem;
+            width: 100px;
+            height: 150px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -1px rgba(0,0,0,0.04);
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 0.5rem;
+            font-weight: 700;
+            user-select: none;
+            backface-visibility: hidden;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #card-pile .card-visual:hover {
+            transform: translateY(-10px) rotate(var(--rotation, 5deg)) scale(1.05);
+            z-index: 100 !important;
+        }
+        .professional-shadow {
+             box-shadow: 0 4px 8px rgba(0,0,0,0.02), 0 10px 20px rgba(74, 85, 104, 0.08);
+        }
+        
+        /* --- MODAL & CONTENT ANIMATIONS --- */
+        .tutorial-modal {
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.2);
+            transform: translateY(20px) scale(0.98);
+            opacity: 0;
+            animation: modal-appear 0.5s forwards cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        @keyframes modal-appear {
+            to {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+        @keyframes slideOutLeft { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(-30px); } }
+        .animate-slide-out { animation: slideOutLeft 0.3s forwards ease-in; }
+        @keyframes slideInRight { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+        .animate-slide-in { animation: slideInRight 0.3s forwards ease-out; }
+
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in-up { opacity: 0; animation: fadeInUp 0.6s forwards ease-out; }
+
+        /* --- BUTTONS & PILES --- */
+        .btn {
+            border-radius: 9999px;
+            font-weight: 700;
+            padding: 0.75rem 1.5rem;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+        }
+        .btn:active {
+            transform: translateY(0px);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);
+        }
+        .btn-ketchup { background-color: #D52B1E; color: white; }
+        .btn-gray { background-color: #E2E8F0; color: #4A5568; }
+
+        .step-content { min-height: 420px; }
+        .winnings-pile {
+            width: 100px;
+            height: 150px;
+            border: 2px dashed #CBD5E0;
+            border-radius: 0.75rem;
+            position: relative;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .winnings-pile.has-cards {
+            background-color: #EBF8FF;
+            border-color: #90CDF4;
+            border-style: solid;
+        }
+
+        /* --- NEW ANIMATIONS FOR LANDING --- */
+        @keyframes fadeInUp-slow {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .landing-element {
+            opacity: 0; /* Start hidden, animation will show it */
+            animation-duration: 0.8s;
+            animation-timing-function: ease-out;
+            animation-fill-mode: forwards;
+        }
+        .landing-title { animation-name: fadeInUp-slow; }
+        .landing-subtitle { animation-name: fadeInUp-slow; animation-delay: 0.2s; }
+        .landing-button { animation-name: fadeInUp-slow; animation-delay: 0.4s; }
+
+    </style>
+</head>
+<body class="antialiased overflow-x-hidden">
+
+    <section id="landing" class="min-h-screen flex flex-col items-center justify-center text-center p-4 md:p-8 relative smooth-transition opacity-0">
+        <div class="z-10 flex flex-col items-center">
+            <div class="landing-element landing-title">
+                <svg class="w-16 h-16 md:w-20 md:h-20 mb-4 md:mb-6 mx-auto" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16 8H8V20C8 21.1046 8.89543 22 10 22H14C15.1046 22 16 21.1046 16 20V8Z" fill="#D52B1E"/>
+                    <path d="M15 5H9C8.44772 5 8 5.44772 8 6V8H16V6C16 5.44772 15.5523 5 15 5Z" fill="#F7FAFC"/>
+                    <path d="M12.5 2H11.5C10.9477 2 10.5 2.44772 10.5 3V5H13.5V3C13.5 2.44772 13.0523 2 12.5 2Z" fill="#A0AEC0"/>
+                    <rect x="10" y="11" width="4" height="4" rx="1" fill="#FFF"/>
+                </svg>
+                <h1 class="text-5xl sm:text-6xl md:text-7xl lg:text-8xl title-text ketchup-text">Ketchuplus+</h1>
+            </div>
+            <button id="start-tutorial-btn" class="btn btn-ketchup mt-10 md:mt-12 text-lg md:text-xl transform hover:scale-105 landing-element landing-button">
+                Játékszabály
+            </button>
+        </div>
+    </section>
+
+    <section id="tutorial" class="min-h-screen flex items-center justify-center p-2 md:p-8 smooth-transition opacity-0 hidden">
+        <div class="w-full max-w-5xl rounded-2xl p-4 md:p-10 relative tutorial-modal professional-shadow">
+            <div class="w-full bg-gray-200 rounded-full h-2.5 mb-8">
+                <div id="progress-bar" class="ketchup-bg h-2.5 rounded-full smooth-transition" style="width: 0%"></div>
+            </div>
+            <div id="step-content-container" class="step-content flex flex-col items-center justify-center text-center"></div>
+            <div class="flex justify-between items-center mt-8">
+                <button id="prev-btn" class="btn btn-gray">Előző</button>
+                <span id="step-counter" class="text-sm text-gray-500 font-medium"></span>
+                <button id="next-btn" class="btn btn-ketchup">Következő</button>
+            </div>
+        </div>
+    </section>
+
+    <section id="summary" class="py-16 md:py-24 px-4 md:px-8 lg:px-16 hidden">
+        <div class="tutorial-modal max-w-6xl mx-auto p-8 md:p-12 rounded-2xl professional-shadow">
+            <h2 class="text-4xl md:text-5xl font-bold text-center mb-12 ketchup-text">Összefoglaló</h2>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="summary-card bg-white p-6 rounded-xl professional-shadow">
+                    <h3 class="text-xl font-bold mb-3 text-green-600">✅ Mikor Chupj?</h3>
+                    <ul class="list-disc list-inside space-y-2 text-left">
+                        <li>Képeslapra (Ász, Király, Dáma, Bubi)</li>
+                        <li>3-as lapra (Lopás!)</li>
+                        <li>2 egyforma szám</li>
+                        <li>3 egyforma forma (♠♠♠)</li>
+                        <li>4 egyforma szín (piros/fekete)</li>
+                    </ul>
+                </div>
+                <div class="summary-card bg-white p-6 rounded-xl professional-shadow">
+                    <h3 class="text-xl font-bold mb-3 text-red-600">❌ Mikor NE Chupj?</h3>
+                    <ul class="list-disc list-inside space-y-2 text-left">
+                        <li>Sima számozott lapra</li>
+                        <li>Hetesre (Irányváltás!)</li>
+                        <li>Jokerre (Büntetés!)</li>
+                        <li>Magyar kártyára (Gyűjtsd!)</li>
+                        <li>Büntető lapokra</li>
+                    </ul>
+                </div>
+                <div class="summary-card bg-white p-6 rounded-xl professional-shadow md:col-span-2 lg:col-span-1">
+                    <h3 class="text-xl font-bold mb-3 text-yellow-600">⭐ Különleges lapok</h3>
+                    <ul class="list-disc list-inside space-y-2 text-left">
+                        <li><strong>Hetes:</strong> Irányváltás + Láthatatlan</li>
+                        <li><strong>Joker:</strong> +5 lap büntetés, következő chupás kimarad</li>
+                        <li><strong>Hármas:</strong> Ellopod a másik 2 magyar kártyáját</li>
+                        <li><strong>Szakadt Bubi:</strong> -30 pont a végén!</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="mt-16">
+                <h2 class="text-4xl md:text-5xl font-bold text-center mb-4 ketchup-text">Gyakorló mód</h2>
+                <p class="text-lg text-gray-600 mb-8 text-center max-w-3xl mx-auto">Használd a "Lapot Húzok" gombot, és csapj le a "CHUP!" gombbal.</p>
+                <div id="training-area" class="w-full bg-red-50 rounded-lg p-4 flex flex-col md:flex-row items-center justify-around space-y-4 md:space-y-0 md:space-x-4">
+                    <div class="flex flex-col items-center text-center">
+                        <div id="winnings-pile" class="winnings-pile"></div>
+                        <p class="text-sm font-bold text-gray-600 mt-2">Te Nyereményed</p>
+                        <div id="winnings-count" class="text-xs bg-blue-100 text-blue-800 mt-1 px-2 py-0.5 rounded-full">0 lap</div>
+                    </div>
+                    <div class="w-full md:w-1/2 flex flex-col items-center">
+                        <div id="card-pile" class="relative w-32 h-48 flex items-center justify-center">
+                             <div class="card-visual bg-gray-400" style="--rotation: -5deg; transform: rotate(var(--rotation));"><div class="text-white text-center m-auto">Ketchuplus+</div></div>
+                             <div class="card-visual bg-gray-300" style="--rotation: 5deg; transform: rotate(var(--rotation));"><div class="text-white text-center m-auto">Ketchuplus+</div></div>
+                        </div>
+                        <div id="feedback-message" class="h-6 mt-4 text-lg font-bold"></div>
+                        <div class="flex space-x-4 mt-2">
+                            <button id="draw-card-btn" class="btn bg-blue-500 text-white">Lapot Húzok</button>
+                            <button id="chup-btn" class="btn btn-ketchup">CHUP!</button>
+                        </div>
+                    </div>
+                     <div class="flex flex-col items-center text-center">
+                        <div id="opponent-winnings-pile" class="winnings-pile"></div>
+                        <p class="text-sm font-bold text-gray-600 mt-2">Ellenfél Nyereményei</p>
+                        <div id="opponent-winnings-count" class="text-xs bg-gray-200 text-gray-700 mt-1 px-2 py-0.5 rounded-full">0 lap</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-12">
+                <button id="restart-btn" class="btn btn-ketchup text-lg transform hover:scale-105">
+                    Vissza a Kezdőlapra
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // --- DOM ELEMENTS ---
+        const landingSection = document.getElementById('landing');
+        const tutorialSection = document.getElementById('tutorial');
+        const summarySection = document.getElementById('summary');
+        const startTutorialBtn = document.getElementById('start-tutorial-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const progressBar = document.getElementById('progress-bar');
+        const contentContainer = document.getElementById('step-content-container');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const stepCounter = document.getElementById('step-counter');
+
+        // --- TUTORIAL DATA (Joker rule updated) ---
+        const tutorialSteps = [
+            { title: 'A Játék Célja', icon: '🎯', text: 'Gyűjtsd a legtöbb pontot a francia és magyar kártyalapokból! Legyél gyors és chupj!' },
+            { title: 'Előkészületek', icon: '🃏', text: '5 pakli francia és 1 pakli magyar kártyát összekeverünk, majd egyenlően szétosztjuk a játékosok között. Mindenki a saját pakliját lefordítva tartja maga előtt.' },
+            { title: 'A Játékmenet', icon: '🔄', text: 'A kör nyertese kezdi a következő kört. Felfordítod a paklid legfelső lapját a középső dobópaklira. Figyelj, mert lehet, hogy chupni kell!' },
+            { title: 'Mikor SZABAD Chupni?', icon: '✅', text: 'Ráchuphatsz a paklira, ha a legfelső lapok kombinációja a következő: <strong>Képeslap</strong> (Ász, Király, Dáma, Bubi), <strong>Szakadt Bubi</strong>, <strong>4 egyforma szín</strong>, <strong>3 egyforma forma</strong>, vagy ha <strong>2 egyforma szám</strong> jön. Ha egy játékos helyesen chup, akkor megnyeri a dobópaklit, a saját nyereménypaklijába teszi lefordítva őket és ő kezdi a következő kört. Ha nem chup senki, a kör megy tovább.' },
+            { title: 'Mikor TILOS Chupni?', icon: '❌', text: 'Ne csapj rá sima számozott lapokra, <strong>Hetesre</strong>, <strong>Jokerre</strong>, vagy <strong>Magyar kártyára</strong>. Ezekre külön szabályok vonatkoznak.' },
+            { title: 'Büntetés', icon: '😥', text: 'Ha rosszkor chupsz, büntetésből a saját nyereménypaklid tetejéről kell <strong>+2 lapot</strong> a dobópakli tetejére tenned. A büntető lapokra nem szabad chupni!' },
+            { title: 'Hetes szabály', icon: '7️⃣', text: 'A Hetes megfordítja a játék irányát! Emellett "láthatatlan", azaz nem számít bele semmilyen sorozatba (pl. 2 egyforma szám). Ha valaki elrontja (rosszkor chup vagy nem vált irányt) büntetést kap.' },
+            { title: 'Joker szabály', icon: '🃏', text: 'Tilos rá chupni (+5 lap büntetés)! Joker után a következő chupási lehetőséget ki kell hagyni. Fontos: ha egy nem chupható lap jön (pl. egy 7-es vagy egy magyar kártya), az nem szünteti meg a Joker effektet; az továbbra is él a következő tényleges chupás lehetőségig. Ha valaki a tiltás ellenére chup, büntetést kap. Ha 2 Joker jön egymás után chupási lehetőség nélkül, akkor a második Jokerre már szabad chupni.' },
+            { title: 'Hármas szabály', icon: '3️⃣', text: 'Ha 3-asra chupsz, nem nyered meg a paklit, hanem elveszed egy választott játékos nyereménypaklijának legfelső <strong>2 magyar kártyáját</strong>. A kör ezek után folytatódik tovább.' },
+            { title: 'A Játék Vége', icon: '🏁', text: 'Amikor minden játékos paklija elfogy, a nyereménypakli lapjainak értékét összeszámoljuk. A legtöbb pontot szerző játékos nyer.' },
+            { title: 'Pontozás', icon: '🏆', text: 'Magyar kártyák: Ász = 20 pont, Király = 15 pont, Felső / Alsó = 5 pont, Számok = értékük szerinti pont. Francia kártyák: számozott lapok: 1 pont, Bubi/Dáma/Király: 2 pont, Ász: 3 pont. A szakadt bubi <strong>-30 pontot</strong> ér!' },
+            { title: 'Kész vagy!', icon: '🎉', text: 'Végigértél a szabályokon! Most már ismered a Ketchuplus+ alapjait. A következő oldalon találsz egy összefoglalót és a gyakorló módot.' }
+        ];
+        let currentStep = 0;
+
+        // --- FUNCTIONS ---
+        function showLanding() {
+            tutorialSection.classList.add('opacity-0', 'hidden');
+            summarySection.classList.add('hidden');
+            landingSection.classList.remove('hidden', 'opacity-0');
+
+            // Re-trigger animations for landing elements
+            document.querySelectorAll('.landing-element').forEach(el => {
+                // A common trick to re-trigger CSS animations by resetting them
+                el.style.animation = 'none';
+                el.offsetHeight; /* Trigger a reflow, flushing the CSS changes */
+                el.style.animation = null; 
+            });
+
+            currentStep = 0;
+        }
+
+        function startTutorial() {
+            landingSection.classList.add('opacity-0');
+            setTimeout(() => {
+                landingSection.classList.add('hidden');
+                tutorialSection.classList.remove('hidden', 'opacity-0');
+            }, 500); // Match CSS transition duration
+            renderStep(true);
+        }
+
+        function renderStep(isInitial = false) {
+            const step = tutorialSteps[currentStep];
+            let contentHTML = `
+                <div class="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-6 ring-4 ring-red-200">
+                   <span class="text-5xl">${step.icon}</span>
+                </div>
+                <h2 class="text-4xl font-bold mb-4 ketchup-text">${step.title}</h2>
+                <p class="text-lg text-gray-600 leading-relaxed max-w-prose">${step.text}</p>
+            `;
+            
+            contentContainer.innerHTML = contentHTML;
+             if (!isInitial) {
+                contentContainer.classList.add('animate-slide-in');
+                setTimeout(() => contentContainer.classList.remove('animate-slide-in'), 300);
+            }
+            updateControls();
+        }
+        
+        function updateControls() {
+            const progress = ((currentStep + 1) / tutorialSteps.length) * 100;
+            progressBar.style.width = `${progress}%`;
+            stepCounter.textContent = `${currentStep + 1} / ${tutorialSteps.length}`;
+            prevBtn.style.visibility = currentStep === 0 ? 'hidden' : 'visible';
+            nextBtn.textContent = (currentStep === tutorialSteps.length - 1) ? 'Befejezés' : 'Következő';
+        }
+
+        function handleNavigation(direction) {
+            contentContainer.classList.add('animate-slide-out');
+            [nextBtn, prevBtn].forEach(b => b.disabled = true);
+            
+            setTimeout(() => {
+                currentStep += direction;
+                if (currentStep >= tutorialSteps.length) {
+                    finishTutorial();
+                    return;
+                }
+                renderStep();
+                contentContainer.classList.remove('animate-slide-out');
+                [nextBtn, prevBtn].forEach(b => b.disabled = false);
+            }, 300);
+        }
+
+        function finishTutorial() {
+            tutorialSection.classList.add('opacity-0');
+            setTimeout(() => {
+                tutorialSection.classList.add('hidden');
+                summarySection.classList.remove('hidden', 'opacity-0');
+                
+                const summaryCards = document.querySelectorAll('.summary-card');
+                summaryCards.forEach((card, index) => {
+                    card.style.animationDelay = `${index * 150}ms`;
+                    card.classList.add('fade-in-up');
+                });
+                
+                setupTraining();
+
+            }, 400);
+        }
+
+        // --- TRAINING LOGIC ---
+        let centerPile = [], winningsPile = [], opponentWinningsPile = [];
+        let isJokerEffectActive = false;
+        let feedbackTimeout;
+
+        function showFeedback(message, color, duration = 2500) {
+            const feedbackEl = document.getElementById('feedback-message');
+            if (!feedbackEl) return;
+            clearTimeout(feedbackTimeout);
+            feedbackEl.textContent = message;
+            feedbackEl.style.color = color;
+            feedbackEl.style.opacity = 1;
+            
+            if (duration > 0) {
+                feedbackTimeout = setTimeout(() => {
+                    feedbackEl.style.opacity = 0;
+                }, duration);
+            }
+        }
+        
+        const fSuits = { '♠': 'black', '♥': 'red', '♦': 'red', '♣': 'black' };
+        const fRanks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+        const hSuits = { 'Tök': 'green', 'Piros': 'red', 'Zöld': 'green', 'Makk': 'black' };
+        const hRanks = ['VII', 'VIII', 'IX', 'X', 'Alsó', 'Felső', 'Király', 'Ász'];
+
+        function createCard(type, rank, suit) {
+            const card = { type, rank, suit, isPenalty: false };
+            if (type === 'french') card.color = fSuits[suit];
+            else if (type === 'hungarian') card.color = hSuits[suit];
+            else if (type === 'special') card.color = '#BF2626';
+            else if (type === 'joker') card.color = '#805AD5';
+            return card;
+        }
+
+        function setupTraining() {
+            document.getElementById('draw-card-btn').addEventListener('click', drawTrainingCard);
+            document.getElementById('chup-btn').addEventListener('click', checkTrainingChup);
+            centerPile = []; winningsPile = []; opponentWinningsPile = [];
+            for(let i=0; i<5; i++) {
+                opponentWinningsPile.push(createCard('french', '5', '♠'));
+                opponentWinningsPile.push(createCard('hungarian', 'Alsó', 'Makk'));
+            }
+            isJokerEffectActive = false;
+            showFeedback('', '#4A5568', 0);
+            renderCardPile();
+            updateWinningsDisplay('winnings', winningsPile);
+            updateWinningsDisplay('opponent-winnings', opponentWinningsPile);
+        }
+
+        function isPileChuppable(pile) {
+            if (pile.length < 1) return false;
+            const topCard = pile[0];
+            if (topCard.isPenalty || topCard.rank === '7' || topCard.type === 'hungarian' || topCard.type === 'joker') return false;
+            
+            const filteredPile = pile.filter(card => card.rank !== '7' && (card.type === 'french' || card.type === 'special'));
+            if (filteredPile.length === 0) return false;
+            const topFilteredCard = filteredPile[0];
+            
+            if (topCard.type === 'special' && topCard.rank === 'J') return true;
+            if (['A', 'K', 'Q', 'J', '3'].includes(topFilteredCard.rank)) return true;
+            if (filteredPile.length >= 2 && filteredPile[0].rank === filteredPile[1].rank) return true;
+            if (filteredPile.length >= 3 && filteredPile[0].suit === filteredPile[1].suit && filteredPile[1].suit === filteredPile[2].suit) return true;
+            if (filteredPile.length >= 4 && filteredPile[0].color === filteredPile[1].color && filteredPile[1].color === filteredPile[2].color && filteredPile[2].color === filteredPile[3].color) return true;
+            return false;
+        }
+
+        function drawTrainingCard() {
+            if (isJokerEffectActive && isPileChuppable(centerPile)) {
+                isJokerEffectActive = false;
+                showFeedback('Joker effekt lejárt a kihagyással.', '#38A169');
+            }
+
+            let newCard;
+            const cardTypeChance = Math.random();
+            if (cardTypeChance < 0.02) newCard = createCard('special', 'J', 'Szakadt');
+            else if (cardTypeChance < 0.08) newCard = createCard('joker', 'Joker', '🤡');
+            else if (cardTypeChance < 0.25) newCard = createCard('hungarian', hRanks[Math.floor(Math.random() * hRanks.length)], Object.keys(hSuits)[Math.floor(Math.random() * 4)]);
+            else newCard = createCard('french', fRanks[Math.floor(Math.random() * fRanks.length)], Object.keys(fSuits)[Math.floor(Math.random() * 4)]);
+
+            centerPile.forEach(c => c.isPenalty = false);
+            centerPile.unshift(newCard);
+            if (centerPile.length > 10) centerPile.pop();
+            
+            if (newCard.type === 'joker') isJokerEffectActive = true;
+            if (isJokerEffectActive) showFeedback('Joker effekt aktív! Következő chup kimarad!', '#DD6B20', 0);
+            
+            renderCardPile();
+        }
+        
+        function renderCardPile() {
+            const pileContainer = document.getElementById('card-pile');
+            if(!pileContainer) return;
+            pileContainer.innerHTML = '';
+            if (centerPile.length === 0) {
+                 pileContainer.innerHTML = `<div class="card-visual bg-gray-400" style="--rotation: -5deg; transform: rotate(var(--rotation));"><div class="text-white text-center m-auto">Ketchuplus+</div></div>
+                                            <div class="card-visual bg-gray-300" style="--rotation: 5deg; transform: rotate(var(--rotation));"><div class="text-white text-center m-auto">Ketchuplus+</div></div>`;
+                return;
+            }
+            centerPile.slice(0, 5).reverse().forEach((card, index) => {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'card-visual';
+                cardEl.style.color = card.color;
+                const rotation = (centerPile.length - 1 - index) * 4;
+                cardEl.style.setProperty('--rotation', `${rotation}deg`);
+                cardEl.style.transform = `translateX(${(centerPile.length - 1 - index) * 5}px) translateY(${(centerPile.length - 1 - index) * -5}px) rotate(${rotation}deg)`;
+                cardEl.style.zIndex = index;
+                
+                let suitSymbol = card.suit;
+                if (card.type === 'hungarian') suitSymbol = { 'Tök': '🎃', 'Piros': '❤️', 'Zöld': '🍃', 'Makk': '🌰' }[card.suit];
+                else if (card.type === 'special') suitSymbol = '💥';
+
+                cardEl.innerHTML = `<div class="text-xl">${card.rank}</div><div class="text-3xl text-center">${suitSymbol}</div><div class="text-xl self-end transform rotate-180">${card.rank}</div>${card.isPenalty ? '<div class="absolute inset-0 bg-red-500 bg-opacity-50 flex items-center justify-center text-white font-black text-4xl rounded-lg">B</div>' : ''}`;
+                if (card.type === 'special') cardEl.classList.add('ketchup-border', 'border-2');
+                if (card.type === 'joker') cardEl.style.borderColor = '#805AD5';
+                pileContainer.appendChild(cardEl);
+            });
+        }
+
+        function updateWinningsDisplay(pileId, pileArray) {
+            const winningsEl = document.getElementById(`${pileId}-pile`);
+            const winningsCount = document.getElementById(`${pileId}-count`);
+            if(!winningsEl || !winningsCount) return;
+
+            winningsCount.textContent = `${pileArray.length} lap`;
+            winningsEl.classList.toggle('has-cards', pileArray.length > 0);
+
+            if(pileArray.length > 0) {
+                winningsEl.innerHTML = `<div class="card-visual bg-gray-200" style="position: static; transform: rotate(-3deg);"></div><div class="card-visual bg-white" style="position: absolute; transform: rotate(3deg);"></div>`;
+            } else {
+                 winningsEl.innerHTML = ``;
+            }
+        }
+        
+        function applyPenalty(count, message) {
+            showFeedback(message, '#E53E3E');
+            let penaltyCards = winningsPile.splice(0, count);
+            if(penaltyCards.length === 0) showFeedback(message + " (de nincs lapod, amit adj!)", '#E53E3E');
+            penaltyCards.forEach(c => c.isPenalty = true);
+            centerPile.unshift(...penaltyCards);
+            setTimeout(() => {
+                renderCardPile();
+                updateWinningsDisplay('winnings', winningsPile);
+            }, 1000);
+        }
+
+        function checkTrainingChup() {
+            if (centerPile.length < 1) {
+                showFeedback('Nincs lap a pakliban!', '#DD6B20');
+                return;
+            }
+            const topCard = centerPile[0];
+            const chupIsValid = isPileChuppable(centerPile);
+            
+            if (topCard.isPenalty) { applyPenalty(2, 'Helytelen! Büntető lapra nem lehet.'); return; }
+            if (isJokerEffectActive && chupIsValid) {
+                applyPenalty(2, 'Helytelen! Joker után ezt ki kellett volna hagyni.');
+                isJokerEffectActive = false;
+                return;
+            }
+            
+            if (chupIsValid) {
+                isJokerEffectActive = false;
+                if (topCard.rank === '3') { 
+                    const stolenCards = opponentWinningsPile.filter(c => c.type === 'hungarian').slice(0, 2);
+                    if (stolenCards.length > 0) {
+                        showFeedback('Helyes 3-as! Lopsz 2 magyar kártyát!', '#3182CE');
+                        opponentWinningsPile = opponentWinningsPile.filter(c => !stolenCards.includes(c));
+                        winningsPile.push(...stolenCards);
+                    } else { 
+                        showFeedback('Helyes 3-as, de az ellenfélnek nincs magyar kártyája!', '#3182CE'); 
+                    }
+                    setTimeout(() => { 
+                        updateWinningsDisplay('winnings', winningsPile); 
+                        updateWinningsDisplay('opponent-winnings', opponentWinningsPile); 
+                    }, 500);
+                } else { 
+                    showFeedback('Helyes Chup! Tiéd a pakli!', '#38A169');
+                    winningsPile.push(...centerPile);
+                    centerPile = [];
+                    setTimeout(() => { 
+                        renderCardPile(); 
+                        updateWinningsDisplay('winnings', winningsPile); 
+                    }, 500);
+                }
+            } else {
+                applyPenalty(2, 'Helytelen! Nincs érvényes kombináció.');
+            }
+        }
+        
+        // --- EVENT LISTENERS ---
+        startTutorialBtn.addEventListener('click', startTutorial);
+        restartBtn.addEventListener('click', showLanding);
+        nextBtn.addEventListener('click', () => handleNavigation(1));
+        prevBtn.addEventListener('click', () => handleNavigation(-1));
+
+        // Initial setup on load
+        document.addEventListener('DOMContentLoaded', showLanding);
+    </script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Schulplaner — Lernfenster</title>
+  <link rel="stylesheet" href="./shared.css" />
+  <script type="module">
+    import { initStore, mountCommon, DB, weekDE } from "./app.js";
+    import "./auth.js";
+
+    initStore().then(() => {
+      mountCommon("fenster.html");
+      // Init inputs from DB and render windows
+      document.querySelector('#sessionLen').value = DB.settings.sessionLen;
+      document.querySelector('#maxSessions').value = DB.settings.maxSessions;
+      renderWins();
+    });
+
+    function winRow(day, from, to, idx){
+      const d=document.createElement('div'); d.className='session';
+      d.innerHTML = `
+        <div>${day}</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input class="input" type="time" value="${from}" data-day="${day}" data-idx="${idx}" data-k="from"/>
+          <span class="muted">bis</span>
+          <input class="input" type="time" value="${to}" data-day="${day}" data-idx="${idx}" data-k="to"/>
+          <button class="btn btn-sm" data-day="${day}" data-idx="${idx}">Entfernen</button>
+        </div>`;
+      d.querySelectorAll('input[type="time"]').forEach(inp=>{
+        inp.onchange=()=>{
+          const day=inp.dataset.day, i=+inp.dataset.idx, k=inp.dataset.k;
+          if(k==='from') DB.studyWins[day][i][0]=inp.value; else DB.studyWins[day][i][1]=inp.value;
+          import('./app.js').then(m=> m.setDirty());
+        };
+      });
+      d.querySelector('button').onclick=(ev)=>{
+        const day=ev.target.dataset.day, i=+ev.target.dataset.idx;
+        DB.studyWins[day].splice(i,1);
+        import('./app.js').then(m=> m.setDirty());
+        renderWins();
+      };
+      return d;
+    }
+
+    function renderWins(){
+      const box=document.querySelector('#wins'); box.innerHTML='';
+      weekDE.forEach(day=>{
+        const group=document.createElement('div'); group.className='card';
+        group.innerHTML=`<h3 style="margin:0 0 8px;font-size:14px">${day}</h3>`;
+        const wrap=document.createElement('div'); group.appendChild(wrap);
+        (DB.studyWins[day]||[]).forEach((w,i)=> wrap.appendChild(winRow(day, w[0], w[1], i)));
+        const add=document.createElement('button'); add.className='btn btn-sm'; add.textContent='Fenster hinzufügen';
+        add.onclick=()=>{
+          (DB.studyWins[day]=DB.studyWins[day]||[]).push(["16:00","18:00"]);
+          import('./app.js').then(m=> m.setDirty());
+          renderWins();
+        };
+        group.appendChild(add);
+        box.appendChild(group);
+      });
+    }
+
+    document.addEventListener('click',(e)=>{
+      if(e.target.id==='saveWins'){
+        DB.settings.sessionLen = parseInt(document.querySelector('#sessionLen').value||'30',10);
+        DB.settings.maxSessions = parseInt(document.querySelector('#maxSessions').value||'4',10);
+        import('./app.js').then(m=> m.setDirty());
+        alert('Gespeichert');
+      }
+    });
+  </script>
+</head>
+<body>
+  <div class="app">
+    <section class="card"><h2>Lernfenster</h2></section>
+
+    <section class="card">
+      <h2>Tägliche Lernfenster</h2>
+      <div id="wins"></div>
+
+      <div class="row" style="margin-top:10px">
+        <div>
+          <label class="muted">Standard-Sitzungslänge (Minuten)</label>
+          <input class="input" id="sessionLen" type="number" min="15" step="5"/>
+        </div>
+        <div>
+          <label class="muted">Max. Sitzungen pro Tag</label>
+          <input class="input" id="maxSessions" type="number" min="1" step="1"/>
+        </div>
+      </div>
+
+      <div style="margin-top:10px">
+        <button class="btn btn-accent" id="saveWins">Speichern</button>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login to Chat</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body style="background-color: var(--dark-bg); color: var(--text-primary); font-family: 'Caros', sans-serif;">
+
+  <div style="max-width: 400px; margin: 100px auto; background: var(--darker-bg); padding: 30px; border-radius: 12px; box-shadow: 0 0 30px rgba(0,0,0,0.4);">
+    <h2 style="color: var(--accent-red); font-size: 1.8rem; text-align: center; margin-bottom: 20px;">Login to Chat</h2>
+
+    <input id="auth-email" type="email" placeholder="Email" style="margin-bottom: 10px; width: 100%; padding: 12px; border-radius: 6px; background: rgba(255,255,255,0.05); border: none; color: white;" />
+    <input id="auth-password" type="password" placeholder="Password" style="margin-bottom: 10px; width: 100%; padding: 12px; border-radius: 6px; background: rgba(255,255,255,0.05); border: none; color: white;" />
+    <input id="auth-username" type="text" placeholder="Username (for registration)" style="margin-bottom: 20px; width: 100%; padding: 12px; border-radius: 6px; background: rgba(255,255,255,0.05); border: none; color: white;" />
+
+    <div style="display: flex; gap: 10px;">
+      <button id="login-btn" style="flex: 1; background: var(--accent-red); border: none; padding: 10px; border-radius: 6px; color: white; font-weight: bold;">Login</button>
+      <button id="register-btn" style="flex: 1; background: green; border: none; padding: 10px; border-radius: 6px; color: white; font-weight: bold;">Register</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAddXTzBxZk1Su6fNnsgRuNnWqFrq_ZjCY",
+      authDomain: "distanzuino-project.firebaseapp.com",
+      projectId: "distanzuino-project"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const emailInput = document.getElementById("auth-email");
+    const passwordInput = document.getElementById("auth-password");
+    const usernameInput = document.getElementById("auth-username");
+    const loginBtn = document.getElementById("login-btn");
+    const registerBtn = document.getElementById("register-btn");
+
+    loginBtn.onclick = async () => {
+      try {
+        await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
+        window.location.href = "/chat"; // redirect to chat
+      } catch (e) {
+        alert("Login failed: " + e.message);
+      }
+    };
+
+    registerBtn.onclick = async () => {
+        const email = emailInput.value.trim();
+        const password = passwordInput.value.trim();
+        const username = usernameInput.value.trim();
+
+        if (!email || !password || !username) {
+            alert("Please fill in all fields.");
+            return;
+        }
+
+        console.log("Saving username:", username);
+
+        try {
+            const result = await createUserWithEmailAndPassword(auth, email, password);
+            const uid = result.user.uid;
+
+            await setDoc(doc(db, 'users', uid), {
+                username: username
+            });
+
+
+            // Ensure Firestore has time to write
+            await new Promise(r => setTimeout(r, 300));
+
+            window.location.href = "/chat";
+        } catch (e) {
+            alert("Registration failed: " + e.message);
+            console.error(e);
+        }
+    };
+
+
+
+
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        window.location.href = "/chat"; // skip login if already signed in
+      }
+    });
+  </script>
+</body>
+</html>

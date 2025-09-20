@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Schulplaner — Morgen</title>
+  <link rel="stylesheet" href="./shared.css" />
+  <script type="module">
+    import {
+        initStore, mountCommon,       // <-- add these
+        DB, DATA, DAYS_DE, weekdayDE,
+        renderTimetableForDay, isoDate,
+        planForDate, getPlanFor, setPlanFor,
+        ensureHomeworkFor, setDirty
+        } from "./app.js";
+    import "./auth.js";
+
+    initStore().then(() => {
+      mountCommon("morgen.html");
+      setupTomorrow();
+    });
+
+    function nextSchoolDate(base = new Date()) {
+      for (let i = 1; i <= 7; i++) {
+        const d = new Date(base);
+        d.setDate(d.getDate() + i);
+        const name = DAYS_DE[d.getDay()];
+        if ((DATA.days || []).includes(name)) return d;
+      }
+      return new Date(Date.now() + 86400000);
+    }
+
+    const d = nextSchoolDate();
+
+    function setupTomorrow() {
+      document.querySelector("#dayName").textContent = weekdayDE(d);
+      document.querySelector("#nextTitle").textContent =
+        `Morgen — ${weekdayDE(d)}, ${d.toLocaleDateString("de-DE")}`;
+
+      renderTimetableForDay("ttTomorrow", weekdayDE(d));
+      renderTomorrowPlan();
+      renderHighlights();
+      renderHomework();
+    }
+
+    function renderTomorrowPlan() {
+      const box = document.querySelector("#tomorrowPlan");
+      const items = getPlanFor(d);
+      box.innerHTML = items.length ? "" : "Noch keine Sitzungen.";
+      items.forEach((s) => {
+        const t = DB.tasks.find((x) => x.id === s.taskId);
+        const row = document.createElement("div");
+        row.className = "session";
+        row.innerHTML = `
+          <div><strong>${s.start}–${s.end}</strong> · ${s.subject}
+          <span class="muted">— ${t ? t.title : ""}</span></div>
+          <button class="btn btn-sm btn-ghost" data-id="${s.id}">Entfernen</button>`;
+        box.appendChild(row);
+      });
+      box.onclick = (e) => {
+        const b = e.target.closest("button");
+        if (!b) return;
+        const id = b.getAttribute("data-id");
+        setPlanFor(d, getPlanFor(d).filter((x) => x.id !== id));
+        renderTomorrowPlan();
+      };
+    }
+
+    function renderHighlights() {
+      const dayStr = isoDate(d);
+      const box = document.querySelector("#tomorrowHighlights");
+      box.innerHTML = "";
+      const ex = (DB.exams || []).filter((x) => isoDate(x.dateISO) === dayStr);
+      const ev = (DB.events || []).filter(
+        (e) => isoDate(e.fromISO) <= dayStr && isoDate(e.toISO || e.fromISO) >= dayStr
+      );
+      if (!ex.length && !ev.length) {
+        box.innerHTML = '<div class="muted">Keine Einträge.</div>';
+        return;
+      }
+      if (ex.length) {
+        const dv = document.createElement("div");
+        dv.className = "session";
+        dv.textContent = "Prüfungen: " + ex.map((x) => x.title).join(", ");
+        box.appendChild(dv);
+      }
+      if (ev.length) {
+        const dv = document.createElement("div");
+        dv.className = "session";
+        dv.textContent = "Ereignisse: " + ev.map((x) => x.title).join(", ");
+        box.appendChild(dv);
+      }
+    }
+
+    function renderHomework() {
+      ensureHomeworkFor(d);
+      const box = document.querySelector("#hwList");
+      box.innerHTML = "";
+      (DB.homework[isoDate(d)] || []).forEach((item) => {
+        const row = document.createElement("div");
+        row.className = "session";
+        row.innerHTML = `
+          <div class="left">
+            <input type="checkbox" ${item.done ? "checked" : ""} data-id="${item.id}" style="margin-right:8px"/>
+            <div>
+              <strong>${item.subject}</strong>
+              <div><input class="input" placeholder="Notiz (optional)" value="${item.note || ""}" data-id="${item.id}" data-note="1"></div>
+            </div>
+          </div>`;
+        box.appendChild(row);
+      });
+
+      box.onchange = (e) => {
+        const cb = e.target.closest("input[type='checkbox']");
+        if (!cb) return;
+        const id = cb.getAttribute("data-id");
+        const arr = DB.homework[isoDate(d)];
+        const it = arr.find((x) => x.id === id);
+        if (it) {
+          it.done = cb.checked;
+          setDirty();
+        }
+      };
+      box.oninput = (e) => {
+        const t = e.target.closest("input[data-note='1']");
+        if (!t) return;
+        const id = t.getAttribute("data-id");
+        const it = DB.homework[isoDate(d)].find((x) => x.id === id);
+        if (it) {
+          it.note = t.value;
+          setDirty();
+        }
+      };
+    }
+
+    document.addEventListener("click", (e) => {
+      if (e.target.id === "genTomorrow") {
+        setPlanFor(d, planForDate(d));
+        renderTomorrowPlan();
+      }
+      if (e.target.id === "clearTomorrow") {
+        setPlanFor(d, []);
+        renderTomorrowPlan();
+      }
+    });
+  </script>
+</head>
+<body>
+  <div class="app">
+    <section class="card"><h2>Morgen / Nächster Schultag</h2></section>
+    <div class="grid cols-2">
+      <section class="card">
+        <h2 id="nextTitle">Morgen</h2>
+        <div id="tomorrowHighlights" class="list"></div>
+      </section>
+      <section class="card">
+        <h2>Stundenplan — <span id="dayName"></span></h2>
+        <div class="grid-wrap">
+          <table class="timetable" id="ttTomorrow"><thead></thead><tbody></tbody></table>
+        </div>
+      </section>
+    </div>
+    <div class="grid cols-2">
+      <section class="card">
+        <h2>Lernplan für morgen</h2>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <button class="btn btn-sm btn-accent" id="genTomorrow">Plan erzeugen</button>
+          <button class="btn btn-sm btn-ghost" id="clearTomorrow">Leeren</button>
+        </div>
+        <div id="tomorrowPlan" class="list muted">Noch keine Sitzungen.</div>
+      </section>
+      <section class="card">
+        <h2>Hausaufgaben-Checkliste</h2>
+        <div id="hwList" class="list"></div>
+      </section>
+    </div>
+  </div>
+</body>
+</html>

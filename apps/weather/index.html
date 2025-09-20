@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #ffffff; /* Default text color */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+            box-sizing: border-box;
+            transition: background 0.8s ease-in-out, color 0.8s ease-in-out; /* Smooth transitions */
+            position: relative; /* For pseudo-elements */
+            overflow-x: hidden; /* Prevent horizontal scroll from pseudo-elements */
+        }
+        
+        /* Default Theme (Fallback) */
+        body {
+            background: linear-gradient(135deg, #6E8EFB, #A777E5);
+        }
+
+        /* --- Dynamic Weather Themes --- */
+        .theme-sunny {
+            background: linear-gradient(135deg, #FFDA77 0%, #FFAC57 100%);
+            color: #4A3B31; /* Darker text for sunny theme */
+        }
+        .theme-sunny::before { 
+            content: ''; position: fixed; top: -50px; right: -50px;
+            width: 200px; height: 200px;
+            background: radial-gradient(circle, rgba(255,223,186,0.5) 0%, rgba(255,223,186,0) 70%); /* Slightly softer sun center */
+            border-radius: 50%; pointer-events: none; z-index: -1; animation: pulse-sun 6s infinite ease-in-out;
+        }
+        @keyframes pulse-sun { 0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.5; } 50% { transform: scale(1.15) rotate(5deg); opacity: 0.7; } }
+
+        .theme-sunrise-sunset {
+            background: linear-gradient(to bottom, #ff7e5f 0%, #feb47b 25%, #ffca85 50%, #ff8a65 75%, #e57373 100%);
+            color: #fff5e1; /* Soft white/cream for text */
+        }
+        .theme-sunrise-sunset::before { /* Soft, large sun near horizon */
+            content: ''; position: fixed;
+            bottom: -20%; /* Positioned lower */
+            left: 50%; transform: translateX(-50%);
+            width: 80vw; height: 80vw; /* Large and responsive */
+            max-width: 600px; max-height: 600px;
+            background: radial-gradient(ellipse at center, rgba(255,223,186,0.3) 0%, rgba(255,200,150,0) 60%);
+            border-radius: 50%; pointer-events: none; z-index: -1;
+            animation: slow-glow 20s infinite alternate ease-in-out;
+        }
+        @keyframes slow-glow {
+            0% { opacity: 0.4; transform: translateX(-50%) scale(0.95); }
+            100% { opacity: 0.6; transform: translateX(-50%) scale(1.05); }
+        }
+
+
+        .theme-night-clear {
+            background: linear-gradient(135deg, #0F2027 0%, #203A43 50%, #2C5364 100%);
+            color: #E0E0E0; /* Lighter text for dark night */
+        }
+        .theme-night-clear::after { /* Stars */
+            content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                radial-gradient(circle at 15% 25%, white 0.5px, transparent 1px), radial-gradient(circle at 25% 10%, white 1px, transparent 2px),
+                radial-gradient(circle at 75% 80%, white 0.5px, transparent 1px), radial-gradient(circle at 85% 60%, white 1px, transparent 2px),
+                radial-gradient(circle at 50% 50%, white 0.7px, transparent 1.5px), radial-gradient(circle at 33% 67%, white 0.5px, transparent 1px),
+                radial-gradient(circle at 67% 33%, white 0.6px, transparent 1.2px),
+                radial-gradient(circle at 5% 85%, white 0.8px, transparent 1.8px), radial-gradient(circle at 95% 15%, white 0.7px, transparent 1.7px); /* Added more stars */
+            background-size: 50px 50px, 100px 100px, 70px 70px, 120px 120px, 90px 90px, 60px 60px, 80px 80px, 40px 40px, 110px 110px; /* Sizes for new stars */
+            animation: twinkle-stars 8s infinite linear; /* Slightly faster twinkle */
+            pointer-events: none; z-index: -1; opacity: 0.8;
+        }
+        @keyframes twinkle-stars { 0% { opacity: 0.3; } 25% { opacity: 0.8; } 50% { opacity: 0.4; } 75% {opacity: 0.9;} 100% { opacity: 0.3; } }
+
+        .theme-cloudy-day {
+            background: linear-gradient(135deg, #B0C4DE 0%, #CFD8DC 100%);
+            color: #37474F; 
+            position: relative; /* Needed for cloud stacking */
+            z-index: 0; /* Ensure body is a stacking context for pseudo elements */
+        }
+        .theme-cloudy-day::before, .theme-cloudy-day::after { /* Clouds */
+            content: ''; position: fixed;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.25); /* Soft white clouds */
+            z-index: -1; /* Behind content */
+            pointer-events: none;
+            animation: drift-clouds 120s linear infinite;
+        }
+        .theme-cloudy-day::before { /* Cloud layer 1 */
+            width: 300px; height: 150px; top: 10%; left: -150px; opacity: 0.8;
+            box-shadow: 50px 20px 0 0px rgba(255,255,255,0.2), -30px 40px 0 5px rgba(255,255,255,0.15);
+        }
+        .theme-cloudy-day::after { /* Cloud layer 2 */
+            width: 400px; height: 200px; top: 25%; right: -200px; opacity: 0.7; animation-delay: -60s; /* Offset animation */
+            box-shadow: -60px 30px 0 -10px rgba(255,255,255,0.2), 40px -30px 0 0px rgba(255,255,255,0.18);
+        }
+        
+        .theme-overcast { 
+            background: linear-gradient(135deg, #90A4AE 0%, #B0BEC5 100%);
+            color: #263238; 
+            position: relative; z-index: 0;
+        }
+        .theme-overcast::before, .theme-overcast::after { /* Denser clouds */
+            content: ''; position: fixed;
+            border-radius: 40% 60% 60% 40% / 70% 50% 50% 30%; /* More irregular cloud shapes */
+            background: rgba(190, 200, 205, 0.4); /* Darker, denser clouds */
+            z-index: -1; pointer-events: none;
+            animation: drift-clouds 150s linear infinite; /* Slower drift for overcast */
+        }
+        .theme-overcast::before {
+             width: 110vw; height: 40vh; top: 5%; left: -30vw; opacity: 0.6;
+             box-shadow: 3vw 2vh 0 0 rgba(190,200,205,0.35), -5vw 3vh 0 0.5vh rgba(190,200,205,0.3);
+        }
+        .theme-overcast::after {
+             width: 120vw; height: 50vh; top: 20%; right: -40vw; opacity: 0.5; animation-delay: -75s;
+             box-shadow: -4vw 2.5vh 0 -1vh rgba(190,200,205,0.33), 6vw -3vh 0 0 rgba(190,200,205,0.28);
+        }
+        @keyframes drift-clouds {
+            0% { transform: translateX(0px) translateY(0px) rotate(0deg); }
+            25% { transform: translateX(20px) translateY(5px) rotate(0.5deg); }
+            50% { transform: translateX(0px) translateY(10px) rotate(0deg); }
+            75% { transform: translateX(-20px) translateY(5px) rotate(-0.5deg); }
+            100% { transform: translateX(0px) translateY(0px) rotate(0deg); }
+        }
+        /* Additional subtle cloud movement if attached to body directly, else it's part of drift-clouds if fixed */
+        /* For fixed pseudo elements, the translate X to move them across the screen needs a different approach */
+        /* A simpler drift for fixed clouds: */
+        /* @keyframes drift-across {
+        /* 0% { transform: translateX(-100%) translateY(var(--initial-y, 0)); }
+        /* 100% { transform: translateX(100vw) translateY(var(--initial-y, 0)); }
+        /* }
+        /* To use drift-across, you'd apply it to pseudo-elements and reset their left/right in JS or vary animation-delay significantly */
+        /* The current drift-clouds offers a gentle bobbing. True side-to-side drift is more complex for ::before/::after on body due to fixed positioning.
+           For better visual effect, one might inject actual cloud divs if more complex movement is needed.
+           The current implementation provides a subtle atmospheric effect. */
+
+
+        .theme-cloudy-night {
+            background: linear-gradient(135deg, #414858 0%, #757F9A 100%);
+            color: #D5D8DC; 
+            position: relative; z-index: 0;
+        }
+        .theme-cloudy-night::before, .theme-cloudy-night::after { /* Darker, subtle clouds for night */
+            content: ''; position: fixed;
+            border-radius: 50%;
+            background: rgba(60, 70, 90, 0.2); /* Dark, desaturated clouds */
+            z-index: -1; pointer-events: none;
+            animation: drift-clouds 180s linear infinite; /* Slower drift */
+        }
+        .theme-cloudy-night::before {
+            width: 250px; height: 120px; top: 15%; left: -120px; opacity: 0.6;
+        }
+        .theme-cloudy-night::after {
+            width: 350px; height: 180px; top: 30%; right: -180px; opacity: 0.5; animation-delay: -90s;
+        }
+
+
+        .theme-rainy {
+            background: linear-gradient(135deg, #52596d 0%, #6f7d95 100%);
+            color: #E8EAF6; 
+        }
+        @keyframes fall { to {transform: translateY(105vh);} }
+        .theme-rainy::before { 
+            content: ""; position: fixed; left: 0; top: -5vh; width: 100%; height: 105vh;
+            background-image: linear-gradient(transparent, transparent 40%, rgba(173, 216, 230, 0.6) 60%); /* Adjusted streak */
+            background-size: 2px 25px; /* Slightly thinner, shorter streaks for a denser feel */
+            animation: fall 0.5s linear infinite; /* Slightly faster fall */
+            will-change: transform; pointer-events: none; z-index: -1; opacity: 0.5; /* Increased opacity */
+        }
+
+        .theme-snowy {
+            background: linear-gradient(135deg, #E0E0E0 0%, #F5F5F5 100%);
+            color: #424242; 
+        }
+        @keyframes snowfall { 0% {background-position: 0 0, 0 0, 0 0;} 100% {background-position: 50px 100px, 100px 200px, 150px 150px;} } /* Simpler for less distraction */
+        .theme-snowy::after {
+            content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                radial-gradient(circle, rgba(255,255,255,0.9) 1px, transparent 1.5px), /* Denser small flakes */
+                radial-gradient(circle, rgba(255,255,255,0.8) 2px, transparent 2.5px),
+                radial-gradient(circle, rgba(255,255,255,0.9) 1.5px, transparent 2px);
+            background-size: 40px 40px, 80px 80px, 60px 60px; /* Adjusted sizes for density */
+            animation: snowfall 8s linear infinite; /* Slightly faster snowfall */
+            pointer-events: none; z-index: -1;
+        }
+
+        .theme-foggy {
+            background: linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%);
+            color: #34495e; 
+        }
+        .theme-foggy::before {
+            content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(ellipse at center, rgba(220,220,220,0.3) 0%,rgba(200,200,200,0.15) 40%,rgba(180,180,180,0) 70%); /* Slightly denser fog */
+            pointer-events: none; z-index: -1;
+            animation: pulse-fog 10s infinite alternate ease-in-out;
+        }
+        @keyframes pulse-fog {
+            0% { opacity: 0.6; transform: scale(1); }
+            100% { opacity: 0.8; transform: scale(1.02); }
+        }
+
+
+        .theme-thunderstorm {
+            background: linear-gradient(135deg, #232526 0%, #414345 100%);
+            color: #CFD8DC;
+        }
+        @keyframes lightning-flash {
+            0%, 100% { opacity: 0; } 4.5% { opacity: 0; }
+            5% { opacity: 0.7; } 5.3% { opacity: 0; } /* Quicker flash */
+            5.8% { opacity: 0.4; } 6.2% { opacity: 0; }
+            20% { opacity: 0; } 20.3% { opacity: 0.8; } 20.6% { opacity: 0; } /* Quicker flash */
+        }
+        .theme-thunderstorm::after {
+            content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #FFFDE7; opacity: 0;
+            animation: lightning-flash 6s infinite ease-out 1s; /* Slightly more frequent */
+            pointer-events: none; z-index: -1;
+        }
+        
+        /* Text color overrides for specific themes if body color isn't enough */
+        .theme-sunny .weather-card, .theme-sunny .glass-button, .theme-sunny .glass-input,
+        .theme-cloudy-day .weather-card, .theme-cloudy-day .glass-button, .theme-cloudy-day .glass-input,
+        .theme-overcast .weather-card, .theme-overcast .glass-button, .theme-overcast .glass-input,
+        .theme-snowy .weather-card, .theme-snowy .glass-button, .theme-snowy .glass-input,
+        .theme-foggy .weather-card, .theme-foggy .glass-button, .theme-foggy .glass-input,
+        .theme-sunrise-sunset .weather-card, .theme-sunrise-sunset .glass-button, .theme-sunrise-sunset .glass-input { /* Added sunrise-sunset */
+            color: inherit; 
+        }
+        .theme-sunny .glass-input::placeholder,
+        .theme-cloudy-day .glass-input::placeholder,
+        .theme-overcast .glass-input::placeholder,
+        .theme-snowy .glass-input::placeholder,
+        .theme-foggy .glass-input::placeholder {
+            color: rgba(0,0,0,0.4);
+        }
+         .theme-sunrise-sunset .glass-input::placeholder { /* Placeholder for sunrise/sunset */
+            color: rgba(255,255,255,0.5);
+        }
+        .theme-sunny h1, .theme-sunny h2, .theme-sunny h3,
+        .theme-cloudy-day h1, .theme-cloudy-day h2, .theme-cloudy-day h3,
+        .theme-overcast h1, .theme-overcast h2, .theme-overcast h3,
+        .theme-snowy h1, .theme-snowy h2, .theme-snowy h3,
+        .theme-foggy h1, .theme-foggy h2, .theme-foggy h3,
+        .theme-sunrise-sunset h1, .theme-sunrise-sunset h2, .theme-sunrise-sunset h3 { /* Added sunrise-sunset */
+             color: inherit;
+        }
+        /* ------------- End Themes ------------ */
+
+        .weather-card {
+            background-color: rgba(255, 255, 255, 0.1); 
+            backdrop-filter: blur(10px);
+            border-radius: 1rem; padding: 1.5rem; margin-bottom: 1rem;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            width: 100%; max-width: 800px;
+            transition: background-color 0.5s ease, border-color 0.5s ease, color 0.5s ease; /* Added color transition */
+        }
+        .theme-sunny .weather-card, .theme-cloudy-day .weather-card, .theme-overcast .weather-card, .theme-snowy .weather-card, .theme-foggy .weather-card {
+             background-color: rgba(0, 0, 0, 0.05); 
+             border: 1px solid rgba(0,0,0,0.1);
+        }
+        .theme-sunrise-sunset .weather-card { /* Card style for sunrise/sunset */
+             background-color: rgba(255, 255, 255, 0.1);
+             border: 1px solid rgba(255,255,255,0.2);
+        }
+         .theme-night-clear .weather-card, .theme-cloudy-night .weather-card, .theme-rainy .weather-card, .theme-thunderstorm .weather-card {
+             background-color: rgba(255,255,255,0.08);
+             border: 1px solid rgba(255,255,255,0.15);
+        }
+
+
+        .glass-button {
+            background-color: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: background-color 0.3s ease, transform 0.2s ease, color 0.3s ease;
+             color: inherit; 
+        }
+        .glass-button:hover { background-color: rgba(255, 255, 255, 0.3); transform: translateY(-2px); }
+        .theme-sunny .glass-button, .theme-cloudy-day .glass-button, .theme-overcast .glass-button, .theme-snowy .glass-button, .theme-foggy .glass-button {
+            background-color: rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.2);
+        }
+        .theme-sunrise-sunset .glass-button { /* Button style for sunrise/sunset */
+             background-color: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
+        }
+        .theme-sunny .glass-button:hover, .theme-cloudy-day .glass-button:hover, .theme-overcast .glass-button:hover, .theme-snowy .glass-button:hover, .theme-foggy .glass-button:hover {
+             background-color: rgba(0,0,0,0.15);
+        }
+         .theme-sunrise-sunset .glass-button:hover {
+             background-color: rgba(255,255,255,0.25);
+        }
+
+
+        .glass-input {
+            background-color: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: inherit; 
+            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+        .glass-input::placeholder { color: rgba(255, 255, 255, 0.6); } 
+        .theme-sunny .glass-input, .theme-cloudy-day .glass-input, .theme-overcast .glass-input, .theme-snowy .glass-input, .theme-foggy .glass-input {
+            background-color: rgba(0,0,0,0.08); border: 1px solid rgba(0,0,0,0.15);
+        }
+        .theme-sunrise-sunset .glass-input { /* Input style for sunrise/sunset */
+            background-color: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+        }
+        .theme-sunny .glass-input::placeholder, .theme-cloudy-day .glass-input::placeholder, .theme-overcast .glass-input::placeholder, .theme-snowy .glass-input::placeholder, .theme-foggy .glass-input::placeholder {
+             color: rgba(0,0,0,0.5); 
+        }
+        .theme-sunrise-sunset .glass-input::placeholder {
+             color: rgba(255,255,255,0.6);
+        }
+
+
+        .hourly-forecast-container { display: flex; overflow-x: auto; padding-bottom: 1rem; gap: 0.75rem; }
+        .hourly-item {
+            min-width: 80px; text-align: center;
+            background-color: rgba(255, 255, 255, 0.08); 
+            padding: 0.75rem; border-radius: 0.75rem; 
+            transition: background-color 0.5s ease, color 0.5s ease; /* Added color transition */
+        }
+        .theme-sunny .hourly-item, .theme-cloudy-day .hourly-item, .theme-overcast .hourly-item, .theme-snowy .hourly-item, .theme-foggy .hourly-item {
+            background-color: rgba(0,0,0,0.05);
+        }
+        .theme-sunrise-sunset .hourly-item { /* Hourly item for sunrise/sunset */
+             background-color: rgba(255,255,255,0.08);
+        }
+
+
+        .modal { background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(5px); }
+        .modal-content { background: linear-gradient(145deg, #5f72bd, #7c5da0); color: white; /* Modal text always white */}
+
+        .hourly-forecast-container::-webkit-scrollbar { height: 8px; }
+        .hourly-forecast-container::-webkit-scrollbar-track { background: rgba(0,0,0, 0.1); border-radius: 10px; }
+        .hourly-forecast-container::-webkit-scrollbar-thumb { background: rgba(0,0,0, 0.3); border-radius: 10px; }
+        .hourly-forecast-container::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0, 0.5); }
+
+        .loader { border: 4px solid rgba(255,255,255,0.2); border-left-color: #ffffff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 2rem auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="w-full max-w-3xl p-4 z-10 relative"> <header class="mb-6">
+            <h1 class="text-4xl font-bold text-center mb-6 tracking-tight">Weather</h1>
+            <div class="flex flex-col sm:flex-row gap-2 mb-4">
+                <input type="text" id="citySearchInput" placeholder="Enter city name (e.g., London)" class="glass-input flex-grow p-3 rounded-lg focus:ring-2 focus:ring-purple-400 outline-none">
+                <button id="searchButton" class="glass-button font-semibold p-3 rounded-lg w-full sm:w-auto"><i class="fas fa-search mr-2"></i>Search</button>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-2">
+                <button id="currentLocationButton" class="glass-button font-semibold p-3 rounded-lg flex-grow"><i class="fas fa-map-marker-alt mr-2"></i>Use My Location</button>
+                <button id="savedLocationsButton" class="glass-button font-semibold p-3 rounded-lg flex-grow"><i class="fas fa-star mr-2"></i>Saved Places</button>
+            </div>
+        </header>
+
+        <div id="messageArea" class="mb-4 p-3 rounded-lg text-center hidden"></div>
+        <div id="loadingIndicator" class="loader hidden"></div>
+        
+        <main id="weatherContent" class="hidden">
+            <section id="currentWeather" class="weather-card mb-6">
+                <div class="flex flex-col sm:flex-row justify-between items-center mb-4">
+                    <div>
+                        <h2 id="currentCityName" class="text-3xl font-semibold">--</h2>
+                        <p id="currentDateTime" class="text-sm opacity-80">--</p>
+                    </div>
+                    <div id="currentSaveLocationButtonContainer"></div>
+                </div>
+                <div class="flex flex-col sm:flex-row items-center justify-around text-center sm:text-left">
+                    <div class="mb-4 sm:mb-0 flex flex-col items-center">
+                         <div id="currentWeatherIconContainer" class="w-24 h-24 flex items-center justify-center text-6xl mb-1">
+                            <i id="currentWeatherFAIcon" class="fas fa-question-circle"></i>
+                        </div>
+                        <p id="currentWeatherDescription" class="text-xl capitalize">--</p>
+                    </div>
+                    <div class="text-6xl font-bold mb-4 sm:mb-0">
+                        <span id="currentTemperature">--</span>°C
+                    </div>
+                    <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                        <span>Feels like: <strong id="currentFeelsLike">--°C</strong></span>
+                        <span>Humidity: <strong id="currentHumidity">--%</strong></span>
+                        <span>Wind: <strong id="currentWindSpeed">-- km/h</strong></span>
+                        <span>Pressure: <strong id="currentPressure">-- hPa</strong></span>
+                        <span>Sunrise: <strong id="currentSunrise">--:--</strong></span>
+                        <span>Sunset: <strong id="currentSunset">--:--</strong></span>
+                    </div>
+                </div>
+            </section>
+
+            <section id="hourlyForecastCard" class="weather-card mb-6">
+                <h3 class="text-2xl font-semibold mb-3">Today's Hourly Forecast</h3>
+                <div id="hourlyForecast" class="hourly-forecast-container">
+                    <p class="opacity-70">Loading hourly forecast...</p>
+                </div>
+            </section>
+
+            <section id="dailyForecastCard" class="weather-card mb-6">
+                <h3 class="text-2xl font-semibold mb-3">7-Day Forecast</h3>
+                <div id="dailyForecast" class="space-y-3">
+                    <p class="opacity-70">Loading 7-day forecast...</p>
+                </div>
+            </section>
+
+            <section id="yesterdayWeatherCard" class="weather-card">
+                <h3 class="text-2xl font-semibold mb-3">Yesterday's Weather</h3>
+                <div id="yesterdayWeather" class="flex justify-between items-center p-3 bg-white/10 rounded-lg">
+                    <p class="opacity-70">Loading yesterday's weather...</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="savedLocationsModal" class="fixed inset-0 z-50 items-center justify-center hidden p-4 modal">
+        <div class="modal-content w-full max-w-md p-6 rounded-xl shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-2xl font-semibold">Saved Locations</h3>
+                <button id="closeModalButton" class="text-2xl hover:text-gray-300">&times;</button>
+            </div>
+            <div id="savedLocationsList" class="space-y-2 max-h-60 overflow-y-auto">
+                <p class="opacity-70">No saved locations yet.</p>
+            </div>
+            <p class="text-xs opacity-60 mt-4">User ID: <span id="userIdDisplay"></span></p>
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase Imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, deleteDoc, collection, onSnapshot, serverTimestamp, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- CONFIGURATION ---
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "AIzaSyBck9R64cM8WchBFEyjUnZ8jjtmAJJhbuQ", authDomain: "weatherdistanzuino.firebaseapp.com", projectId: "weatherdistanzuino" };
+        const appId = typeof __app_id !== 'undefined' ? __app_id : '1:349412401195:web:35dd5080ec61ec48d4ca6e';
+
+        // --- FIREBASE SETUP ---
+        let app, auth, db, userId, isAuthReady = false;
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+        } catch (error) {
+            console.error("Firebase initialization error:", error);
+            showMessage("Error initializing application services. Some features might not work.", "error");
+        }
+        
+        // --- DOM ELEMENTS ---
+        const citySearchInput = document.getElementById('citySearchInput');
+        const searchButton = document.getElementById('searchButton');
+        const currentLocationButton = document.getElementById('currentLocationButton');
+        const savedLocationsButton = document.getElementById('savedLocationsButton');
+        const weatherContent = document.getElementById('weatherContent');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const messageArea = document.getElementById('messageArea');
+        const currentCityName = document.getElementById('currentCityName');
+        const currentDateTime = document.getElementById('currentDateTime');
+        const currentWeatherFAIcon = document.getElementById('currentWeatherFAIcon'); 
+        const currentWeatherDescription = document.getElementById('currentWeatherDescription');
+        const currentTemperature = document.getElementById('currentTemperature');
+        const currentFeelsLike = document.getElementById('currentFeelsLike');
+        const currentHumidity = document.getElementById('currentHumidity');
+        const currentWindSpeed = document.getElementById('currentWindSpeed');
+        const currentPressure = document.getElementById('currentPressure');
+        const currentSunrise = document.getElementById('currentSunrise');
+        const currentSunset = document.getElementById('currentSunset');
+        const currentSaveLocationButtonContainer = document.getElementById('currentSaveLocationButtonContainer');
+        const hourlyForecastContainer = document.getElementById('hourlyForecast');
+        const dailyForecastContainer = document.getElementById('dailyForecast');
+        const yesterdayWeatherContainer = document.getElementById('yesterdayWeather');
+        const savedLocationsModal = document.getElementById('savedLocationsModal');
+        const closeModalButton = document.getElementById('closeModalButton');
+        const savedLocationsList = document.getElementById('savedLocationsList');
+        const userIdDisplay = document.getElementById('userIdDisplay');
+        let currentLoadedLocation = null; 
+
+        // --- HELPER FUNCTIONS ---
+        function showLoading() {
+            loadingIndicator.classList.remove('hidden');
+            weatherContent.classList.add('hidden');
+            messageArea.classList.add('hidden');
+        }
+        function hideLoading() {
+            loadingIndicator.classList.add('hidden');
+        }
+        function showWeatherContent() {
+            weatherContent.classList.remove('hidden');
+        }
+        function showMessage(message, type = 'info') { 
+            messageArea.textContent = message;
+            messageArea.className = 'mb-4 p-3 rounded-lg text-center'; 
+            if (type === 'error') messageArea.classList.add('bg-red-500', 'text-white');
+            else if (type === 'success') messageArea.classList.add('bg-green-500', 'text-white');
+            else messageArea.classList.add('bg-blue-400', 'text-white'); 
+            messageArea.classList.remove('hidden');
+            setTimeout(() => { messageArea.classList.add('hidden'); }, 5000);
+        }
+        function formatTime(isoString, timeZone, format = 'time') {
+            try {
+                const date = new Date(isoString);
+                if (format === 'time') return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: timeZone });
+                if (format === 'datetime') return date.toLocaleString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: timeZone });
+                if (format === 'day') return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: timeZone });
+                return date.toLocaleDateString('en-US', {timeZone: timeZone});
+            } catch (e) { console.error("Error formatting date:", isoString, e); return "--"; }
+        }
+        function mapWmoCodeToWeather(wmoCode, isDay = true) {
+            const wmo = {
+                0: { description: "Clear sky", iconClass: isDay ? "fas fa-sun" : "fas fa-moon" },
+                1: { description: "Mainly clear", iconClass: isDay ? "fas fa-cloud-sun" : "fas fa-cloud-moon" },
+                2: { description: "Partly cloudy", iconClass: isDay ? "fas fa-cloud-sun" : "fas fa-cloud-moon" },
+                3: { description: "Overcast", iconClass: "fas fa-cloud" },
+                45: { description: "Fog", iconClass: "fas fa-smog" }, 48: { description: "Depositing rime fog", iconClass: "fas fa-smog" },
+                51: { description: "Light drizzle", iconClass: "fas fa-cloud-rain" }, 53: { description: "Moderate drizzle", iconClass: "fas fa-cloud-rain" }, 55: { description: "Dense drizzle", iconClass: "fas fa-cloud-showers-heavy" },
+                56: { description: "Light freezing drizzle", iconClass: "fas fa-snowflake" }, 57: { description: "Dense freezing drizzle", iconClass: "fas fa-snowflake" },
+                61: { description: "Slight rain", iconClass: "fas fa-cloud-rain" }, 63: { description: "Moderate rain", iconClass: "fas fa-cloud-rain" }, 65: { description: "Heavy rain", iconClass: "fas fa-cloud-showers-heavy" },
+                66: { description: "Light freezing rain", iconClass: "fas fa-snowflake" }, 67: { description: "Heavy freezing rain", iconClass: "fas fa-snowflake" },
+                71: { description: "Slight snow fall", iconClass: "fas fa-snowflake" }, 73: { description: "Moderate snow fall", iconClass: "fas fa-snowflake" }, 75: { description: "Heavy snow fall", iconClass: "fas fa-snowflake" },
+                77: { description: "Snow grains", iconClass: "fas fa-snowflake" },
+                80: { description: "Slight rain showers", iconClass: "fas fa-cloud-sun-rain" }, 81: { description: "Moderate rain showers", iconClass: "fas fa-cloud-sun-rain" }, 82: { description: "Violent rain showers", iconClass: "fas fa-cloud-showers-heavy" },
+                85: { description: "Slight snow showers", iconClass: "fas fa-snowflake" }, 86: { description: "Heavy snow showers", iconClass: "fas fa-snowflake" },
+                95: { description: "Thunderstorm", iconClass: "fas fa-bolt" },
+                96: { description: "Thunderstorm with slight hail", iconClass: "fas fa-cloud-bolt" }, 99: { description: "Thunderstorm with heavy hail", iconClass: "fas fa-cloud-bolt" },
+            };
+            return wmo[wmoCode] || { description: "Unknown", iconClass: "fas fa-question-circle" };
+        }
+
+        function updateAppTheme(wmoCode, isDay, currentTime, sunriseTime, sunsetTime) {
+            const body = document.body;
+            // Keep track of base classes that should always be present
+            const baseClasses = ['font-inter', 'flex', 'flex-col', 'items-center', 'min-h-screen', 'p-4', 'box-border', 'relative', 'overflow-x-hidden'];
+            
+            // Clear all classes from body except known structural/utility classes if needed, or be more specific
+            // A simple way: Store all theme classes and remove only those
+            const themeClasses = [
+                "theme-sunny", "theme-night-clear", "theme-cloudy-day", "theme-overcast",
+                "theme-cloudy-night", "theme-rainy", "theme-snowy", 
+                "theme-foggy", "theme-thunderstorm", "theme-sunrise-sunset" // Added new theme
+            ];
+            themeClasses.forEach(cls => body.classList.remove(cls));
+            
+            // Ensure base classes are present
+            baseClasses.forEach(cls => { if(!body.classList.contains(cls)) body.classList.add(cls); });
+
+
+            const transitionMinutes = 45; // 45 minutes around sunrise/sunset for the theme
+            let isSunriseSunsetPeriod = false;
+
+            if (currentTime && sunriseTime && sunsetTime) {
+                const sunriseStart = new Date(sunriseTime.getTime() - transitionMinutes * 60000);
+                const sunriseEnd = new Date(sunriseTime.getTime() + transitionMinutes * 60000);
+                const sunsetStart = new Date(sunsetTime.getTime() - transitionMinutes * 60000);
+                const sunsetEnd = new Date(sunsetTime.getTime() + transitionMinutes * 60000);
+
+                if ((currentTime >= sunriseStart && currentTime <= sunriseEnd) || (currentTime >= sunsetStart && currentTime <= sunsetEnd)) {
+                    isSunriseSunsetPeriod = true;
+                }
+            }
+
+            let appliedTheme = false;
+            if (isSunriseSunsetPeriod && (wmoCode === 0 || wmoCode === 1 || wmoCode === 2)) { // Sunrise/Sunset for clear or partly cloudy
+                body.classList.add('theme-sunrise-sunset');
+                appliedTheme = true;
+            } else if (wmoCode === 0) { body.classList.add(isDay ? 'theme-sunny' : 'theme-night-clear'); appliedTheme = true; } 
+            else if (wmoCode >= 1 && wmoCode <= 2) { body.classList.add(isDay ? 'theme-cloudy-day' : 'theme-cloudy-night'); appliedTheme = true; } 
+            else if (wmoCode === 3) { body.classList.add(isDay ? 'theme-overcast' : 'theme-cloudy-night'); appliedTheme = true; }
+            else if ((wmoCode >= 51 && wmoCode <= 67) || (wmoCode >= 80 && wmoCode <= 82)) { body.classList.add('theme-rainy'); appliedTheme = true; } 
+            else if ((wmoCode >= 71 && wmoCode <= 77) || (wmoCode >= 85 && wmoCode <= 86)) { body.classList.add('theme-snowy'); appliedTheme = true; } 
+            else if (wmoCode === 45 || wmoCode === 48) { body.classList.add('theme-foggy'); appliedTheme = true; } 
+            else if (wmoCode === 95 || wmoCode === 96 || wmoCode === 99) { body.classList.add('theme-thunderstorm'); appliedTheme = true; }
+            
+            if (!appliedTheme) { // Fallback if no specific theme matched
+                body.style.background = 'linear-gradient(135deg, #6E8EFB, #A777E5)'; 
+                body.style.color = '#ffffff';
+            } else { // Clear inline styles if a theme class was applied
+                body.style.background = '';
+                body.style.color = '';
+            }
+        }
+
+        // --- WEATHER API FUNCTIONS (OPEN-METEO) ---
+        async function getCoordinatesForCity(cityName) {
+            const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cityName)}&count=1&language=en&format=json`;
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`City geocoding error: ${response.statusText}`);
+                const data = await response.json();
+                if (data.results && data.results.length > 0) {
+                    const city = data.results[0];
+                    return { lat: city.latitude, lon: city.longitude, name: `${city.name}${city.admin1 ? ', ' + city.admin1 : ''}${city.country_code ? ', ' + city.country_code : ''}`, timezone: city.timezone };
+                } else { throw new Error("City not found."); }
+            } catch (error) { console.error("Error fetching coordinates:", error); showMessage(error.message || "Could not fetch city coordinates.", "error"); return null; }
+        }
+        async function getWeatherData(lat, lon, timezone) {
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,weather_code,wind_speed_10m,pressure_msl&hourly=temperature_2m,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset&past_days=1&forecast_days=8&timezone=${timezone || 'auto'}`;
+            try {
+                showLoading();
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`Weather data API error: ${response.statusText}`);
+                const data = await response.json();
+                hideLoading(); showWeatherContent(); return data;
+            } catch (error) { console.error("Error fetching weather data:", error); showMessage(error.message || "Could not fetch weather data.", "error"); hideLoading(); return null; }
+        }
+
+        // --- UI UPDATE FUNCTIONS ---
+        function displayCurrentWeather(data, locationName) {
+            const current = data.current;
+            const daily = data.daily; 
+            const weatherInfo = mapWmoCodeToWeather(current.weather_code, current.is_day === 1);
+            
+            const todayIndex = daily.time.findIndex(t => new Date(t).toDateString() === new Date(current.time).toDateString());
+            const sunriseTimeObj = (todayIndex !== -1 && daily.sunrise[todayIndex]) ? new Date(daily.sunrise[todayIndex]) : null;
+            const sunsetTimeObj = (todayIndex !== -1 && daily.sunset[todayIndex]) ? new Date(daily.sunset[todayIndex]) : null;
+            const currentTimeObj = new Date(current.time);
+
+            updateAppTheme(current.weather_code, current.is_day === 1, currentTimeObj, sunriseTimeObj, sunsetTimeObj);
+
+            currentCityName.textContent = locationName || data.timezone.split('/').pop().replace('_', ' ');
+            currentDateTime.textContent = formatTime(current.time, data.timezone, 'datetime');
+            currentWeatherFAIcon.className = `text-6xl ${weatherInfo.iconClass}`; 
+            currentWeatherDescription.textContent = weatherInfo.description;
+            currentTemperature.textContent = Math.round(current.temperature_2m);
+            currentFeelsLike.textContent = `${Math.round(current.apparent_temperature)}°C`;
+            currentHumidity.textContent = `${current.relative_humidity_2m}%`;
+            currentWindSpeed.textContent = `${current.wind_speed_10m.toFixed(1)} km/h`;
+            currentPressure.textContent = `${Math.round(current.pressure_msl)} hPa`;
+            
+            if (sunriseTimeObj) {
+                 currentSunrise.textContent = formatTime(daily.sunrise[todayIndex], data.timezone);
+            } else { currentSunrise.textContent = "--:--"; }
+            if (sunsetTimeObj) {
+                 currentSunset.textContent = formatTime(daily.sunset[todayIndex], data.timezone);
+            } else { currentSunset.textContent = "--:--"; }
+
+            updateSaveLocationButton(currentLoadedLocation);
+        }
+        function displayHourlyForecast(hourlyData, timezone) {
+            hourlyForecastContainer.innerHTML = ''; 
+            const now = new Date(); let count = 0;
+            for (let i = 0; i < hourlyData.time.length && count < 24; i++) {
+                const hourTime = new Date(hourlyData.time[i]);
+                if (hourTime >= now || (hourTime.getHours() === now.getHours() && hourTime.getDate() === now.getDate())) {
+                    const weatherInfo = mapWmoCodeToWeather(hourlyData.weather_code[i], hourlyData.is_day[i] === 1);
+                    const item = document.createElement('div');
+                    item.className = 'hourly-item flex flex-col items-center p-3 rounded-lg min-w-[90px]';
+                    item.innerHTML = `<p class="text-sm font-medium">${formatTime(hourlyData.time[i], timezone)}</p><i class="${weatherInfo.iconClass} text-3xl my-1"></i><p class="text-lg font-semibold">${Math.round(hourlyData.temperature_2m[i])}°C</p>`;
+                    hourlyForecastContainer.appendChild(item); count++;
+                }
+            }
+            if (count === 0) hourlyForecastContainer.innerHTML = `<p class="opacity-70">Hourly forecast not available.</p>`;
+        }
+        function displayDailyForecast(dailyData, timezone) {
+            dailyForecastContainer.innerHTML = '';
+            for (let i = 1; i < dailyData.time.length && i < 8; i++) { 
+                const weatherInfo = mapWmoCodeToWeather(dailyData.weather_code[i], true); 
+                const item = document.createElement('div');
+                item.className = 'flex justify-between items-center p-3 rounded-lg'; 
+                item.innerHTML = `<div><p class="font-semibold">${formatTime(dailyData.time[i], timezone, 'day')}</p><p class="text-sm capitalize opacity-80">${weatherInfo.description}</p></div><i class="${weatherInfo.iconClass} text-2xl"></i><p class="font-semibold">${Math.round(dailyData.temperature_2m_max[i])}° / ${Math.round(dailyData.temperature_2m_min[i])}°C</p>`;
+                dailyForecastContainer.appendChild(item);
+            }
+        }
+        function displayYesterdayWeather(dailyData, timezone) {
+            yesterdayWeatherContainer.innerHTML = '';
+            if (dailyData && dailyData.time.length > 0 && dailyData.time[0]) { 
+                const yesterday = { time: dailyData.time[0], weather_code: dailyData.weather_code[0], temp_max: dailyData.temperature_2m_max[0], temp_min: dailyData.temperature_2m_min[0], sunrise: dailyData.sunrise[0], sunset: dailyData.sunset[0] };
+                const weatherInfo = mapWmoCodeToWeather(yesterday.weather_code, true); 
+                const item = document.createElement('div');
+                item.className = 'flex flex-col sm:flex-row justify-between items-center w-full text-sm';
+                const avgTemp = (yesterday.temp_max + yesterday.temp_min) / 2;
+                item.innerHTML = `<p class="font-medium">${formatTime(yesterday.time, timezone, 'day')}</p><i class="${weatherInfo.iconClass} text-2xl mx-2"></i><p class="capitalize">${weatherInfo.description}</p><p class="font-semibold ml-2">${Math.round(avgTemp)}°C (Avg)</p><p class="ml-2">Sunrise: ${formatTime(yesterday.sunrise, timezone)}</p><p class="ml-2">Sunset: ${formatTime(yesterday.sunset, timezone)}</p>`;
+                yesterdayWeatherContainer.appendChild(item);
+            } else { yesterdayWeatherContainer.innerHTML = `<p class="opacity-70">Could not load yesterday's weather data.</p>`; }
+        }
+        async function fetchAndDisplayWeather(lat, lon, name, timezone) {
+            currentLoadedLocation = { name, lat, lon, timezone }; 
+            const weatherData = await getWeatherData(lat, lon, timezone);
+            if (weatherData) {
+                displayCurrentWeather(weatherData, name);
+                displayHourlyForecast(weatherData.hourly, weatherData.timezone);
+                displayDailyForecast(weatherData.daily, weatherData.timezone); 
+                displayYesterdayWeather(weatherData.daily, weatherData.timezone); 
+            } else { 
+                weatherContent.classList.add('hidden'); 
+                updateAppTheme(-1, true, new Date(), null, null); // Reset to default if error
+            }
+        }
+
+        // --- SAVED LOCATIONS (FIRESTORE) ---
+        let unsubscribeSavedLocations = null;
+        async function saveLocationToFirestore(location) { 
+            if (!isAuthReady || !userId || !db) { showMessage("User not authenticated. Cannot save.", "error"); return; }
+            if (!location || !location.name || typeof location.lat !== 'number' || typeof location.lon !== 'number') { showMessage("Invalid location data.", "error"); return; }
+            const locationId = location.name.replace(/[^a-zA-Z0-9]/g, '_');
+            const locationRef = doc(db, `artifacts/${appId}/users/${userId}/savedLocations`, locationId);
+            try {
+                await setDoc(locationRef, { name: location.name, lat: location.lat, lon: location.lon, timezone: location.timezone || 'auto', addedAt: serverTimestamp() });
+                showMessage(`${location.name} saved!`, "success"); updateSaveLocationButton(location, true); 
+            } catch (e) { console.error("Error saving location:", e); showMessage("Could not save location.", "error"); }
+        }
+        async function removeLocationFromFirestore(locationName) {
+            if (!isAuthReady || !userId || !db) { showMessage("User not authenticated. Cannot remove.", "error"); return; }
+            const locationId = locationName.replace(/[^a-zA-Z0-9]/g, '_');
+            const locationRef = doc(db, `artifacts/${appId}/users/${userId}/savedLocations`, locationId);
+            try {
+                await deleteDoc(locationRef); showMessage(`${locationName} removed.`, "success");
+                if (currentLoadedLocation && currentLoadedLocation.name === locationName) updateSaveLocationButton(currentLoadedLocation, false);
+            } catch (e) { console.error("Error removing location:", e); showMessage("Could not remove location.", "error"); }
+        }
+        function listenToSavedLocations() {
+            if (!isAuthReady || !userId || !db) return;
+            if (unsubscribeSavedLocations) unsubscribeSavedLocations(); 
+            const q = query(collection(db, `artifacts/${appId}/users/${userId}/savedLocations`));
+            unsubscribeSavedLocations = onSnapshot(q, (snap) => {
+                const locs = []; snap.forEach((d) => locs.push({ id: d.id, ...d.data() }));
+                displaySavedLocationsInModal(locs);
+                if (currentLoadedLocation) updateSaveLocationButton(currentLoadedLocation, locs.some(l => l.name === currentLoadedLocation.name));
+            }, (err) => { console.error("Error listening to locations:", err); showMessage("Could not load saved locations.", "error"); });
+        }
+        function updateSaveLocationButton(location, isSaved) {
+            currentSaveLocationButtonContainer.innerHTML = ''; 
+            if (!location || !location.name) return; 
+            const btn = document.createElement('button');
+            btn.className = 'glass-button font-semibold py-2 px-4 rounded-lg text-sm'; 
+            btn.innerHTML = isSaved ? `<i class="fas fa-trash-alt mr-1"></i> Remove Place` : `<i class="fas fa-save mr-1"></i> Save Place`;
+            btn.onclick = isSaved ? () => removeLocationFromFirestore(location.name) : () => saveLocationToFirestore(location);
+            currentSaveLocationButtonContainer.appendChild(btn);
+        }
+        function displaySavedLocationsInModal(locations) {
+            savedLocationsList.innerHTML = ''; 
+            if (locations.length === 0) { savedLocationsList.innerHTML = '<p class="opacity-70">No saved locations yet.</p>'; return; }
+            locations.sort((a,b) => a.name.localeCompare(b.name)); 
+            locations.forEach(loc => {
+                const item = document.createElement('div');
+                item.className = 'flex justify-between items-center p-3 bg-white/10 rounded-lg hover:bg-white/20 cursor-pointer';
+                item.innerHTML = `<span class="font-medium">${loc.name}</span><button data-name="${loc.name}" class="text-red-400 hover:text-red-300 text-sm"><i class="fas fa-trash-alt"></i></button>`;
+                item.addEventListener('click', (e) => {
+                    if (e.target.closest('button')) removeLocationFromFirestore(loc.name);
+                    else { fetchAndDisplayWeather(loc.lat, loc.lon, loc.name, loc.timezone); savedLocationsModal.classList.add('hidden'); savedLocationsModal.classList.remove('flex'); }
+                });
+                savedLocationsList.appendChild(item);
+            });
+        }
+
+        // --- EVENT LISTENERS ---
+        searchButton.addEventListener('click', async () => {
+            const cityName = citySearchInput.value.trim();
+            if (cityName) {
+                const coords = await getCoordinatesForCity(cityName);
+                if (coords) { fetchAndDisplayWeather(coords.lat, coords.lon, coords.name, coords.timezone); citySearchInput.value = '';  }
+            } else { showMessage("Please enter a city name.", "info"); }
+        });
+        citySearchInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') searchButton.click(); });
+        currentLocationButton.addEventListener('click', () => {
+            if (navigator.geolocation) {
+                showLoading();
+                navigator.geolocation.getCurrentPosition(async (position) => {
+                    const { latitude, longitude } = position.coords;
+                     try { 
+                        const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
+                        const data = await response.json();
+                        let locationName = data.city || data.locality || "Current Location";
+                        if (data.principalSubdivision && data.countryCode) locationName += `, ${data.principalSubdivision}, ${data.countryCode}`;
+                        else if (data.countryName) locationName += `, ${data.countryName}`;
+                        fetchAndDisplayWeather(latitude, longitude, locationName, 'auto'); 
+                    } catch (error) { console.error("Error reverse geocoding:", error); fetchAndDisplayWeather(latitude, longitude, "Current Location", 'auto'); }
+                }, (error) => { console.error("Error getting geolocation:", error); showMessage("Could not get current location. Enable location services and grant permission.", "error"); hideLoading(); updateAppTheme(-1, true, new Date(), null, null); });
+            } else { showMessage("Geolocation is not supported by your browser.", "error"); updateAppTheme(-1, true, new Date(), null, null); }
+        });
+        savedLocationsButton.addEventListener('click', () => {
+            if (!isAuthReady || !userId) { showMessage("Please wait, authenticating user...", "info"); return; }
+            savedLocationsModal.classList.remove('hidden'); savedLocationsModal.classList.add('flex'); listenToSavedLocations(); 
+        });
+        closeModalButton.addEventListener('click', () => { savedLocationsModal.classList.add('hidden'); savedLocationsModal.classList.remove('flex'); });
+        savedLocationsModal.addEventListener('click', (e) => { if (e.target === savedLocationsModal) { savedLocationsModal.classList.add('hidden'); savedLocationsModal.classList.remove('flex'); } });
+        
+        // --- INITIALIZATION ---
+        async function initializeAppAuth() {
+            if (!auth) { console.error("Firebase Auth not initialized."); showMessage("Authentication service failed.", "error"); return; }
+            try {
+                await setPersistence(auth, browserLocalPersistence); 
+            } catch (error) {
+                console.warn("Firebase persistence error:", error.code, error.message);
+            }
+
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    userId = user.uid; isAuthReady = true; console.log("User authenticated:", userId);
+                    userIdDisplay.textContent = userId; listenToSavedLocations(); 
+                    if (currentLoadedLocation) { 
+                         listenToSavedLocations(); 
+                    }
+                    else if (!weatherContent.classList.contains('hidden')) {
+                        // Content is visible, but no currentLoadedLocation - could refresh save button state if needed
+                    }
+                    else { 
+                        currentLocationButton.click(); 
+                    }
+                } else { 
+                    isAuthReady = false; userId = null; console.log("User not authenticated."); 
+                    savedLocationsList.innerHTML = '<p class="opacity-70">Please sign in to see saved locations.</p>';
+                    if (currentLoadedLocation) updateSaveLocationButton(currentLoadedLocation, false); 
+                }
+            });
+            try {
+                if (auth.currentUser) { 
+                     isAuthReady = true; userId = auth.currentUser.uid;
+                     console.log("User already authenticated:", userId);
+                     userIdDisplay.textContent = userId; listenToSavedLocations();
+                     currentLocationButton.click(); 
+                } else if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) { 
+                    await signInWithCustomToken(auth, __initial_auth_token); 
+                } else { 
+                    await signInAnonymously(auth); 
+                }
+            } catch (error) { console.error("Error during sign-in:", error); showMessage("Authentication failed.", "error"); updateAppTheme(-1, true, new Date(), null, null); }
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            if (auth && db) { initializeAppAuth(); } 
+            else { showMessage("Application services could not be initialized.", "error"); loadingIndicator.classList.add('hidden'); updateAppTheme(-1, true, new Date(), null, null); }
+        });
+    </script>
+</body>
+</html>

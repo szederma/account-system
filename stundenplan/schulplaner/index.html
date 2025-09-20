@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Schulplaner — Heute</title>
+  <link rel="stylesheet" href="./shared.css" />
+  <script type="module">
+    import { initStore, mountCommon, renderTimetableForDay, todayNameDE, isoDate, planForDate, getPlanFor, setPlanFor, DB } from "./app.js";
+    import "./auth.js";
+
+    initStore().then(() => {
+      mountCommon("index.html");
+      renderTimetableForDay("ttToday", todayNameDE());
+      renderPlan();
+      renderTodayHighlights();
+    });
+
+    function renderPlan() {
+      const box = document.querySelector("#todayPlan");
+      const items = getPlanFor(new Date());
+      box.innerHTML = items.length ? "" : "Noch keine Sitzungen.";
+
+      items.forEach((s) => {
+        const t = DB.tasks.find((x) => x.id === s.taskId);
+        const row = document.createElement("div");
+        row.className = "session";
+        row.innerHTML = `
+          <div><strong>${s.start}–${s.end}</strong> · ${s.subject}
+          <span class="muted">— ${t ? t.title : ""}</span></div>
+          <button class="btn btn-sm btn-ghost" data-id="${s.id}">Entfernen</button>`;
+        box.appendChild(row);
+      });
+
+      box.onclick = (e) => {
+        const b = e.target.closest("button");
+        if (!b) return;
+        const id = b.getAttribute("data-id");
+        setPlanFor(new Date(), getPlanFor(new Date()).filter((x) => x.id !== id));
+        renderPlan();
+      };
+    }
+
+    function renderTodayHighlights() {
+      const today = isoDate(new Date());
+      const box = document.querySelector("#todayHighlights");
+      box.innerHTML = "";
+
+      const ex = (DB.exams || []).filter((x) => isoDate(x.dateISO) === today);
+      const ev = (DB.events || []).filter(
+        (e) => isoDate(e.fromISO) <= today && isoDate(e.toISO || e.fromISO) >= today
+      );
+
+      if (!ex.length && !ev.length) {
+        box.innerHTML = '<div class="muted">Keine Einträge heute.</div>';
+        return;
+      }
+      if (ex.length) {
+        const d = document.createElement("div");
+        d.className = "session";
+        d.textContent = "Prüfungen: " + ex.map((x) => x.title).join(", ");
+        box.appendChild(d);
+      }
+      if (ev.length) {
+        const d = document.createElement("div");
+        d.className = "session";
+        d.textContent = "Ereignisse: " + ev.map((x) => x.title).join(", ");
+        box.appendChild(d);
+      }
+    }
+
+    document.addEventListener("click", (e) => {
+      if (e.target.id === "genToday") {
+        setPlanFor(new Date(), planForDate(new Date()));
+        renderPlan();
+      }
+      if (e.target.id === "clearToday") {
+        setPlanFor(new Date(), []);
+        renderPlan();
+      }
+    });
+  </script>
+</head>
+<body>
+  <div class="app">
+    <section class="card">
+      <h2>Heute</h2>
+    </section><section class="card">
+        <h2>Aktuelle Stunde</h2>
+        <div id="now" class="fade"><div class="muted">Wird geladen…</div></div>
+        <div id="upnext" class="fade" style="margin-top:8px"></div>
+    </section>
+    <div class="grid cols-2">
+      <section class="card">
+        <h2>Lernplan für heute</h2>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <button class="btn btn-sm btn-accent" id="genToday">Plan erzeugen</button>
+          <button class="btn btn-sm btn-ghost" id="clearToday">Leeren</button>
+        </div>
+        <div id="todayPlan" class="list muted">Noch keine Sitzungen.</div>
+      </section>
+      <section class="card">
+        <h2>Stundenplan — Heute</h2>
+        <div class="grid-wrap">
+          <table class="timetable" id="ttToday"><thead></thead><tbody></tbody></table>
+        </div>
+      </section>
+    </div>
+    <section class="card">
+      <h2>Heute — Prüfungen & Ereignisse</h2>
+      <div id="todayHighlights" class="list"></div>
+    </section>
+  </div>
+</body>
+</html>

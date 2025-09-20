@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery | Distanzuino</title>
+    <link rel="icon" type="image/jpg" href="/images/icon.png">
+
+    <link rel="stylesheet" href="/styles.css">
+
+    <script type="text/javascript" src="https://app.termly.io/resource-blocker/611984d8-f015-418c-b13f-dc82c88b1907?autoBlock=on"></script>
+
+
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3HEL3CR3RW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-3HEL3CR3RW');
+</script>
+
+<body>   
+    <div id="site-header"></div>
+
+  <main style="flex: 1;">
+    <div id="gallery-container" style="position: relative; min-height: 400px;">
+        <div id="loader" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #121212; color: white; display: flex; align-items: center; justify-content: center; z-index: 1; pointer-events: none;">
+        <div class="spinner">Loading gallery...</div>
+        </div>
+        <div id="gallery-wrapper">
+        <section class="gallery">
+            <h2>Gallery</h2>
+            <div class="media-grid" id="media-grid"></div>
+        </section>
+        </div>
+    </div>
+  </main>
+  
+  
+
+  <div id="site-footer"></div>
+
+  <div id="lightbox">
+    <span id="lightbox-left" class="lightbox-arrow">&#10094;</span>
+    <img id="lightbox-img" src="" alt="Fullscreen View">
+    <span id="lightbox-right" class="lightbox-arrow">&#10095;</span>
+  </div>
+  
+
+  <script>
+    fetch('/header.html')
+        .then(res => res.text())
+        .then(data => {
+        document.getElementById('site-header').innerHTML = data;
+
+        // Init header-related JS after insertion
+        const mobileNavToggle = document.querySelector('.mobile-nav-toggle');
+        const nav = document.getElementById('nav');
+        
+        mobileNavToggle?.addEventListener('click', function() {
+            nav.classList.toggle('active');
+            mobileNavToggle.textContent = nav.classList.contains('active') ? '✕' : '☰';
+        });
+
+        document.addEventListener('click', function(event) {
+            if (!nav.contains(event.target) && !mobileNavToggle.contains(event.target)) {
+            nav.classList.remove('active');
+            mobileNavToggle.textContent = '☰';
+            }
+        });
+
+        document.querySelectorAll('nav a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                // only close if not a submenu toggle
+                if (!this.classList.contains('submenu-toggle')) {
+                    nav.classList.remove('active');
+                    mobileNavToggle.textContent = '☰';
+                }
+            });
+        });
+
+
+        window.addEventListener('scroll', () => {
+            const header = document.getElementById('header');
+            if (window.scrollY > 50) {
+            header.classList.add('scrolled');
+            } else {
+            header.classList.remove('scrolled');
+            }
+        });
+
+        const submenuToggle = document.querySelector('.submenu-toggle');
+        const submenuParent = submenuToggle?.closest('.has-submenu');
+
+        submenuToggle?.addEventListener('click', (e) => {
+        e.preventDefault();
+        submenuParent?.classList.toggle('open');
+        });
+
+        // Close submenu if clicked outside
+        document.addEventListener('click', (e) => {
+        if (!submenuParent.contains(e.target)) {
+            submenuParent.classList.remove('open');
+        }
+        });
+
+        submenuParent?.querySelectorAll('.submenu a').forEach(link => {
+            link.addEventListener('click', () => {
+                submenuParent.classList.remove('open');
+            });
+        });
+
+        });
+
+    // Load footer
+    fetch('/footer.html')
+        .then(res => res.text())
+        .then(data => document.getElementById('site-footer').innerHTML = data);
+        
+    
+
+
+
+    const mediaGrid = document.getElementById('media-grid');
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightbox-img');
+    const leftArrow = document.getElementById('lightbox-left');
+    const rightArrow = document.getElementById('lightbox-right');
+
+    let currentImages = [];
+    let currentIndex = 0;
+
+    function openLightbox(index) {
+      currentIndex = index;
+      lightboxImg.style.display = 'none';
+      lightbox.style.display = 'flex';
+      lightboxImg.src = currentImages[currentIndex];
+
+      // Show image once it’s ready (even if cached)
+      if (lightboxImg.complete && lightboxImg.naturalHeight !== 0) {
+        lightboxImg.style.display = 'block';
+      } else {
+        lightboxImg.onload = () => {
+          lightboxImg.style.display = 'block';
+        };
+      }
+    }
+
+    function closeLightbox() {
+      lightbox.style.display = 'none';
+    }
+
+    function showPrev() {
+      if (currentImages.length === 0) return;
+      currentIndex = (currentIndex - 1 + currentImages.length) % currentImages.length;
+      animateSwipe('right');
+      lightboxImg.src = currentImages[currentIndex];
+    }
+
+    function showNext() {
+      if (currentImages.length === 0) return;
+      currentIndex = (currentIndex + 1) % currentImages.length;
+      animateSwipe('left');
+      lightboxImg.src = currentImages[currentIndex];
+    }
+
+
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    lightbox.addEventListener('touchstart', (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+    }, false);
+
+    lightbox.addEventListener('touchend', (e) => {
+      touchEndX = e.changedTouches[0].screenX;
+      handleSwipeGesture();
+    }, false);
+
+    function handleSwipeGesture() {
+      const threshold = 50; // minimum px to consider it a swipe
+      const diff = touchEndX - touchStartX;
+
+      if (Math.abs(diff) > threshold) {
+        if (diff < 0) {
+          showNext(); // Swiped left
+        } else {
+          showPrev(); // Swiped right
+        }
+      }
+    }
+
+    function animateSwipe(direction) {
+      lightboxImg.classList.remove('swipe-left', 'swipe-right');
+      void lightboxImg.offsetWidth; // Re-trigger animation
+      if (direction === 'left') {
+        lightboxImg.classList.add('swipe-left');
+      } else {
+        lightboxImg.classList.add('swipe-right');
+      }
+    }
+
+
+    // Keyboard support
+    document.addEventListener('keydown', (e) => {
+      if (lightbox.style.display === 'flex') {
+        if (e.key === 'ArrowLeft') showPrev();
+        if (e.key === 'ArrowRight') showNext();
+        if (e.key === 'Escape') closeLightbox();
+      }
+    });
+
+    // Arrow buttons
+    leftArrow.addEventListener('click', (e) => {
+      e.stopPropagation();
+      showPrev();
+    });
+    rightArrow.addEventListener('click', (e) => {
+      e.stopPropagation();
+      showNext();
+    });
+
+    // Close lightbox on background click
+    lightbox.addEventListener('click', closeLightbox);
+
+    // Load gallery content
+    fetch('gallery/')
+      .then(res => res.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const links = Array.from(doc.querySelectorAll('a'))
+          .map(a => a.getAttribute('href'))
+          .filter(file =>
+            file.match(/\.(jpe?g|png|gif|bmp)$/i) || file.match(/\.(mp4|webm)$/i)
+          );
+
+        links.sort().reverse();
+
+        let totalItems = links.length;
+        let loadedCount = 0;
+        let loadPromises = [];
+
+        function checkAllLoaded() {
+            if (loadedCount === totalItems) {
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('gallery-wrapper').classList.add('visible');
+            }
+        }
+
+
+        links.forEach((file, index) => {
+        const src = `gallery/${file}`;
+
+        if (file.match(/\.(mp4|webm)$/i)) {
+            const video = document.createElement('video');
+            video.src = src;
+            video.controls = true;
+            video.style.maxWidth = '100%';
+            mediaGrid.appendChild(video);
+
+            const promise = new Promise(resolve => {
+            video.onloadeddata = () => {
+                video.classList.add('show');
+                loadedCount++;
+                checkAllLoaded();
+                resolve();
+            };
+            });
+            loadPromises.push(promise);
+
+        } else {
+            const img = document.createElement('img');
+            img.src = src;
+            img.alt = file;
+            img.classList.add('interactive-element');
+            const imageIndex = currentImages.length;
+            img.addEventListener('click', () => openLightbox(imageIndex));
+            mediaGrid.appendChild(img);
+            currentImages.push(src);
+
+            const promise = new Promise(resolve => {
+            img.onload = () => {
+                img.classList.add('show');
+                loadedCount++;
+                checkAllLoaded();
+                resolve();
+            };
+            });
+            loadPromises.push(promise);
+        }
+        });
+
+        Promise.all(loadPromises)
+        .then(() => {
+            // Already handled inside checkAllLoaded,
+            // but keep this in case of edge cases
+            console.log("All media loaded");
+        })
+        .catch(err => {
+            mediaGrid.innerHTML = "<p style='text-align:center;'>Unable to load gallery.</p>";
+            console.error(err);
+        });
+    });
+
+
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Distanzuino</title>
+  <style>
+    /* Global Styles */
+    body {
+      font-family: 'Futura PT', sans-serif;
+      font-style: normal;
+      font-weight: 400;
+      text-align: center;
+      margin: 0;
+      padding: 0 15px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      background: linear-gradient(to bottom right, #000000, #333333);
+      color: #ffffff;
+      transition: background-color 0.5s ease;
+    }
+
+    #top-container {
+      display: flex;
+      align-items: center;
+      margin-top: 30px;
+      margin-bottom: 35px;
+      justify-content: center;
+      transition: margin-top 0.3s ease, margin-bottom 0.3s ease;
+    }
+
+    #logo {
+      max-width: 150px;
+      height: auto;
+      margin-right: 20px;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+
+    #button-container {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 150px;
+      height: 50px;
+    }
+
+    .button {
+      width: 100%;
+      height: 100%;
+      font-size: 1em;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      position: absolute;
+      transition: opacity 0.3s ease, transform 0.2s ease, background-color 0.3s ease;
+    }
+
+    #connect {
+      background-color: #ff6666;
+      color: white;
+      opacity: 1;
+      z-index: 1;
+    }
+
+    #connect:hover {
+      transform: scale(1.05);
+      background-color: #ff4d4d;
+    }
+
+    #disconnect {
+      background-color: #333333;
+      border: 2px solid #ff6666;
+      color: white;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    #disconnect:hover {
+      transform: scale(1.05);
+      background-color: #444444;
+    }
+
+    .card {
+      background-color: #444;
+      border-radius: 12px;
+      padding: 20px;
+      width: 90%;
+      max-width: 400px;
+      margin: 10px 0;
+      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.6);
+      color: #fff;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .distance-display {
+      font-size: 1.2em;
+      margin: 10px 0;
+      transition: color 0.3s ease;
+    }
+
+    .fade-in {
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="top-container">
+    <img id="logo" src="/bt/images/logo.jpg" alt="Distanzuino" onclick="window.location.href='https://distanzuino.com'">
+    <div id="button-container">
+      <button id="connect" class="button">Connect</button>
+      <button id="disconnect" class="button">Disconnect</button>
+    </div>
+  </div>
+
+  <div id="card1" class="card">
+    <p id="distance1" class="distance-display fade-in">Distance 1: Disconnected</p>
+  </div>
+
+  <div id="card2" class="card">
+    <p id="distance2" class="distance-display fade-in">Distance 2: Disconnected</p>
+  </div>
+
+  <script>
+    let bluetoothDevice;
+    let server;
+    let service;
+    let characteristic;
+
+    const HM10_SERVICE_UUID = '0000ffe0-0000-1000-8000-00805f9b34fb';
+    const HM10_CHARACTERISTIC_UUID = '0000ffe1-0000-1000-8000-00805f9b34fb';
+
+    document.getElementById('connect').addEventListener('click', async () => {
+      try {
+        bluetoothDevice = await navigator.bluetooth.requestDevice({
+          filters: [{ namePrefix: 'DistanzuinoBT' }],
+          optionalServices: [HM10_SERVICE_UUID]
+        });
+
+        server = await bluetoothDevice.gatt.connect();
+        service = await server.getPrimaryService(HM10_SERVICE_UUID);
+        characteristic = await service.getCharacteristic(HM10_CHARACTERISTIC_UUID);
+
+        characteristic.startNotifications();
+        characteristic.addEventListener('characteristicvaluechanged', handleData);
+
+        document.getElementById('connect').style.opacity = '0';
+        document.getElementById('connect').style.pointerEvents = 'none';
+        document.getElementById('disconnect').style.opacity = '1';
+        document.getElementById('disconnect').style.pointerEvents = 'auto';
+
+        updateUIState(true);
+      } catch (error) {
+        console.error('Error connecting:', error);
+      }
+    });
+
+    function handleData(event) {
+      const decoder = new TextDecoder();
+      const value = decoder.decode(event.target.value).trim();
+
+      if (value.startsWith('D1:')) {
+        const distance1 = parseFloat(value.substring(3)) / 10;
+        updateDistanceDisplay(document.getElementById('distance1'), "1", distance1);
+      } else if (value.startsWith('D2:')) {
+        const distance2 = parseFloat(value.substring(3)) / 10;
+        updateDistanceDisplay(document.getElementById('distance2'), "2", distance2);
+      }
+    }
+
+    function updateDistanceDisplay(distanceElement, distanceLabel, distance) {
+      distanceElement.innerText = `Distance ${distanceLabel}: ${distance.toFixed(2)} cm`;
+      distanceElement.classList.add('fade-in');
+    }
+
+    document.getElementById('disconnect').addEventListener('click', () => {
+      if (bluetoothDevice && bluetoothDevice.gatt.connected) {
+        bluetoothDevice.gatt.disconnect();
+      }
+
+      document.getElementById('connect').style.opacity = '1';
+      document.getElementById('connect').style.pointerEvents = 'auto';
+      document.getElementById('disconnect').style.opacity = '0';
+      document.getElementById('disconnect').style.pointerEvents = 'none';
+
+      updateUIState(false);
+    });
+
+    function updateUIState(isConnected) {
+      if (isConnected) {
+        document.getElementById('distance1').innerText = 'Distance 1: Waiting...';
+        document.getElementById('distance2').innerText = 'Distance 2: Waiting...';
+      } else {
+        document.getElementById('distance1').innerText = 'Distance 1: Disconnected';
+        document.getElementById('distance2').innerText = 'Distance 2: Disconnected';
+      }
+    }
+  </script>
+</body>
+</html>

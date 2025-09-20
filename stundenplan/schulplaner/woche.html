@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Schulplaner — Woche</title>
+  <link rel="stylesheet" href="./shared.css" />
+  <script type="module">
+    import { initStore, mountCommon, isoDate, weekdayDE, planForDate, getPlanFor, setPlanFor, DB, DATA } from "./app.js";
+    import "./auth.js";
+
+    initStore().then(() => {
+      mountCommon("woche.html");
+      buildGrid();
+      renderWeekPlan();
+    });
+
+    function buildGrid(){
+      const thead = document.querySelector('#thead');
+      const tbody = document.querySelector('#tbody');
+      thead.innerHTML=''; tbody.innerHTML='';
+
+      const trh = document.createElement('tr');
+      trh.innerHTML = '<th>Stunde</th>' + (DATA.days||[]).map(d=>`<th>${d}</th>`).join('');
+      thead.appendChild(trh);
+
+      const periods = (DATA.periods||[]);
+      for(const p of periods){
+        const tr=document.createElement('tr');
+        const left = `<strong>${p.no}.</strong> <span class="muted">${p.start}–${p.end}</span>`;
+        let cols='';
+        (DATA.days||[]).forEach(day=>{
+          const e=(DATA.entries[day]||[])[p.no-1]||{};
+          const subj=e.subject||'', room=e.room?.trim()||'', teacher=e.teacher?.trim()||'';
+          cols += `<td class="cell">${
+            subj? `<div class="subject">${subj}</div><div class="details">${room}${(room&&teacher)?' · ':''}${teacher}</div>` : '<span class="empty">– frei –</span>'
+          }</td>`;
+        });
+        tr.innerHTML = `<th class="period">${left}</th>${cols}`;
+        tbody.appendChild(tr);
+      }
+    }
+
+    function renderWeekPlan(){
+      const box=document.querySelector('#weekPlan'); box.innerHTML='';
+      for(let i=0;i<7;i++){
+        const d=new Date(); d.setDate(d.getDate()+i);
+        const key=isoDate(d); const day=weekdayDE(d);
+        const col=document.createElement('div'); col.className='card';
+        col.innerHTML=`<h3 style="margin:0 0 8px;font-size:14px">${day} <span class="muted">(${d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'})})</span></h3>`;
+        const list=document.createElement('div'); list.className='list';
+        (DB.planned?.byDate?.[key]||[]).forEach(s=>{
+          const t=DB.tasks.find(x=>x.id===s.taskId);
+          const row=document.createElement('div'); row.className='session';
+          row.innerHTML=`<div><strong>${s.start}–${s.end}</strong> · ${s.subject} <span class="muted">— ${t? t.title:''}</span></div>`;
+          list.appendChild(row);
+        });
+        if(!(DB.planned?.byDate?.[key]||[]).length) list.innerHTML='<div class="muted">Keine Sitzungen.</div>';
+        col.appendChild(list); box.appendChild(col);
+      }
+    }
+
+    document.addEventListener('click',(e)=>{
+      if(e.target.id==='genWeek'){
+        for(let i=0;i<7;i++){ const d=new Date(); d.setDate(d.getDate()+i); DB.planned.byDate[isoDate(d)] = planForDate(d); }
+        setPlanFor(new Date(), getPlanFor(new Date())); renderWeekPlan();
+      }
+      if(e.target.id==='clearWeek'){
+        DB.planned.byDate={}; setPlanFor(new Date(), getPlanFor(new Date())); renderWeekPlan();
+      }
+    });
+  </script>
+</head>
+<body>
+  <div class="app">
+    <section class="card"><h2>Woche</h2></section>
+
+    <section class="card">
+      <h2>Wochen-Stundenplan</h2>
+      <div class="grid-wrap">
+        <table class="timetable" id="grid">
+          <thead id="thead"></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <div style="display:flex;gap:8px;align-items:center;justify-content:space-between">
+        <h2>Wochen-Lernplan</h2>
+        <div>
+          <button class="btn btn-sm btn-accent" id="genWeek">Woche erzeugen</button>
+          <button class="btn btn-sm btn-ghost" id="clearWeek">Leeren</button>
+        </div>
+      </div>
+      <div id="weekPlan" class="grid cols-3"></div>
+    </section>
+  </div>
+</body>
+</html>

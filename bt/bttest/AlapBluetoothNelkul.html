@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DistanzuinoBT</title>
+  <style>
+    .slider-container {
+      display: flex;
+      justify-content: space-around;
+      margin: 20px 0;
+    }
+    .slider-wrapper {
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>DistanzuinoBT</h1>
+  
+  <div class="slider-container">
+    <!-- Distance 1 Slider -->
+    <div class="slider-wrapper">
+      <label for="distance1">Distance 1:</label>
+      <input type="range" id="distance1" min="1" max="50" step="1" value="25">
+      <span id="distance1Value">25</span>
+    </div>
+    
+    <!-- Distance 2 Slider -->
+    <div class="slider-wrapper">
+      <label for="distance2">Distance 2:</label>
+      <input type="range" id="distance2" min="1" max="50" step="1" value="25">
+      <span id="distance2Value">25</span>
+    </div>
+  </div>
+
+  <div class="slider-container">
+    <!-- Volume 1 Slider -->
+    <div class="slider-wrapper">
+      <label for="volume1">Volume for Distance 1:</label>
+      <input type="range" id="volume1" min="0" max="1" step="0.01" value="0.5">
+      <span id="volume1Value">0.5</span>
+    </div>
+    
+    <!-- Volume 2 Slider -->
+    <div class="slider-wrapper">
+      <label for="volume2">Volume for Distance 2:</label>
+      <input type="range" id="volume2" min="0" max="1" step="0.01" value="0.5">
+      <span id="volume2Value">0.5</span>
+    </div>
+  </div>
+
+  <script>
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillators = {
+      1: [],
+      2: []
+    };
+
+    const intensityMap = {
+      133: 0.0045, 258: 0.0041, 391: 0.012,
+      150: 0.04, 291: 0.06, 441: 0.045,
+      166: 0.0175, 333: 0.015, 492: 0.022,
+      175: 0.03, 350: 0.055, 525: 0.045,
+      200: 0.009, 391: 0.086, 591: 0.03,
+      216: 0.059, 441: 0.088, 657: 0.021,
+      250: 0.02, 491: 0.11, 747: 0.02,
+      258: 0.034, 524: 0.028, 782: 0.003,
+      292: 0.0275, 582: 0.009, 883: 0.0015,
+      324: 0.0095, 658: 0.0036, 987: 0.0041,
+      350: 0.038, 692: 0.028, 1040: 0.006,
+      391: 0.096, 782: 0.026, 1174: 0.014,
+      440: 0.0357, 877: 0.012, 1318: 0.007,
+      492: 0.0315, 989: 0.009, 1483: 0.005
+    };
+
+    function getFrequencies(distanceLabel, distance) {
+      if (distance < 3 || distance > 45) return [];
+      if (distanceLabel === "1") {
+        if (distance >= 3 && distance < 8.99) return [250, 491, 747];
+        if (distance >= 9 && distance < 14.99) return [216, 441, 657];
+        if (distance >= 15 && distance < 20.99) return [200, 391, 591];
+        if (distance >= 21 && distance < 26.99) return [175, 350, 525];
+        if (distance >= 27 && distance < 32.99) return [166, 333, 492];
+        if (distance >= 33 && distance < 38.99) return [150, 291, 441];
+        if (distance >= 39 && distance < 45) return [133, 258, 391];
+      } else if (distanceLabel === "2") {
+        if (distance >= 3 && distance < 8.99) return [258, 524, 782];
+        if (distance >= 9 && distance < 14.99) return [292, 582, 883];
+        if (distance >= 15 && distance < 20.99) return [324, 658, 987];
+        if (distance >= 21 && distance < 26.99) return [350, 692, 1040];
+        if (distance >= 27 && distance < 32.99) return [391, 782, 1174];
+        if (distance >= 33 && distance < 38.99) return [440, 877, 1318];
+        if (distance >= 39 && distance < 45) return [492, 989, 1483];
+      }
+      return [];
+    }
+
+    function playFrequencies(frequencies, volume, label) {
+      stopFrequencies(label); // Stop current oscillators for the label
+      frequencies.forEach(freq => {
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        oscillator.type = 'sine';
+        oscillator.frequency.value = freq;
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        const intensity = intensityMap[freq] || 0.1;
+        gainNode.gain.setValueAtTime(0, audioCtx.currentTime); // Start from 0 volume
+        gainNode.gain.linearRampToValueAtTime(volume * intensity, audioCtx.currentTime + 0.05); // Smooth fade-in
+
+        oscillator.start();
+        oscillators[label].push({ oscillator, gainNode });
+      });
+    }
+
+    function stopFrequencies(label) {
+      oscillators[label].forEach(({ oscillator, gainNode }) => {
+        gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.05); // Smooth fade-out
+        oscillator.stop(audioCtx.currentTime + 0.1); // Stop after fade-out
+      });
+      oscillators[label] = [];
+    }
+
+    function handleSliderChange() {
+      const distance1 = parseFloat(document.getElementById("distance1").value);
+      const distance2 = parseFloat(document.getElementById("distance2").value);
+      const volume1 = parseFloat(document.getElementById("volume1").value);
+      const volume2 = parseFloat(document.getElementById("volume2").value);
+
+      const frequencies1 = distance1 >= 3 && distance1 <= 45 ? getFrequencies("1", distance1) : [];
+      const frequencies2 = distance2 >= 3 && distance2 <= 45 ? getFrequencies("2", distance2) : [];
+
+      if (frequencies1.length > 0) {
+        playFrequencies(frequencies1, volume1, 1);
+      } else {
+        stopFrequencies(1);
+      }
+
+      if (frequencies2.length > 0) {
+        playFrequencies(frequencies2, volume2, 2);
+      } else {
+        stopFrequencies(2);
+      }
+
+      document.getElementById("distance1Value").textContent = distance1;
+      document.getElementById("distance2Value").textContent = distance2;
+      document.getElementById("volume1Value").textContent = volume1.toFixed(2);
+      document.getElementById("volume2Value").textContent = volume2.toFixed(2);
+    }
+
+    document.querySelectorAll('input[type="range"]').forEach(slider => {
+      slider.addEventListener("input", handleSliderChange);
+    });
+  </script>
+</body>
+</html>

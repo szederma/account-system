@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us | Distanzuino</title>
+    <link rel="icon" type="image/jpg" href="/images/icon.png">
+    <link rel="stylesheet" href="/redesign.css">
+
+    <script type="text/javascript" src="https://app.termly.io/resource-blocker/611984d8-f015-418c-b13f-dc82c88b1907?autoBlock=on"></script>
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-3HEL3CR3RW"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-3HEL3CR3RW');
+    </script>
+</head>
+<body>
+
+    <div id="site-header"></div>
+
+    <main>
+        <section class="about-page-box-section">
+            <div class="about-page-box reveal-on-scroll">
+            <div class="about-page-box-text">
+                <h2>About Us</h2>
+                <p><strong>Three 14-Year-Old Students from Hungary Invent a New Musical Instrument?</strong></p>
+                <p>We are <strong>Matyas Szederkenyi</strong>, <strong>Dora Szederkenyi</strong>, and <strong>Laura Kürtösi</strong> — three students from the German School of Budapest. We were in the eighth grade when we began working on what would later become the <strong>Distanzuino</strong> project. It all started a year earlier, in seventh grade, when we joined our school’s physics and robotics club. That’s where we first discovered the world of technology and programming — and from that moment on, we knew we wanted to create something of our own.</p>
+                <p>The idea began to take shape when we decided to enter the <strong>Jugend forscht</strong> competition. Since we’re all passionate about music, we knew we wanted to merge our two biggest interests: <strong>music and technology</strong>. Our concept evolved through countless experiments — and failures — until the <strong>Distanzuino</strong> was born: <strong>a digital musical instrument based on distance measurement</strong>.</p>
+                <p>Being long-time classmates and friends made teamwork natural and enjoyable. We quickly realized that we not only had a creative idea, but also the determination and skills to turn it into a working prototype.</p>
+                <p>Our goal wasn’t just to invent something new — we wanted to create a tool that helps young people explore music and learn the basics of technology in a <strong>fun, interactive</strong> way. We believe that these are essential skills for the future, and <strong>Distanzuino</strong> offers a playful introduction to both.</p>
+                <p>With this project, we’ve participated in several national and international competitions including <strong>Jugend Forscht</strong> and <strong>OTIO</strong> (Hungarian National Olympiad for Science and Innovation). Our mission now is to make the <strong>Distanzuino</strong> available to as many young people as possible — so they can experience the joy of making music while learning about technology, sensors, and creative thinking.</p>
+            </div>
+            </div>
+        </section>
+
+        <section class="about-page-creators-section">
+            <div class="about-page-creators-container reveal-on-scroll">
+            <h2 class="about-page-section-title">Meet the Creators</h2>
+            <div class="about-page-creator-cards">
+                <div class="about-page-creator-card">
+                <img src="/images/about/matyas_szederkenyi.jpg" alt="Mátyás Szederkényi" class="about-page-creator-photo">
+                <h3>Matyas Szederkenyi</h3>
+                <p>Co-creator</p>
+                </div>
+                <div class="about-page-creator-card">
+                <img src="/images/about/dora_szederkenyi.jpg" alt="Dóra Szederkényi" class="about-page-creator-photo">
+                <h3>Dora Szederkenyi</h3>
+                <p>Co-creator</p>
+                </div>
+            </div>
+            </div>
+        </section>
+
+        <section class="about-page-contact-section">
+            <div class="about-page-contact-box reveal-on-scroll">
+            <h2>Got any questions or ideas?</h2>
+            <p>Feel free to reach out — we’d love to hear from you.</p>
+            <form class="about-page-contact-form" action="https://formspree.io/f/xnnponbr" method="POST">
+                <input type="text" name="name" placeholder="Your Name" required>
+                <input type="email" name="_replyto" placeholder="Your Email" required>
+                <input type="text" name="subject" placeholder="Subject" required>
+                <textarea name="message" placeholder="Your Message" required></textarea>
+                <input type="hidden" name="_redirect" value="https://distanzuino.com/about?sent=true">
+                <button type="submit" class="btn btn-primary">Send Message</button>
+            </form>
+            </div>
+        </section>
+    </main>
+
+
+    <div id="site-footer"></div>
+
+    <a href="#" class="back-to-top" aria-label="Back to Top">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+    </a>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Fetch Header & Footer (header gets initialized via callback)
+            const loadComponent = (url, elementId, callback) => {
+                fetch(url)
+                    .then(res => res.ok ? res.text() : Promise.reject('Component not found'))
+                    .then(data => {
+                        const mount = document.getElementById(elementId);
+                        if (mount) {
+                            mount.innerHTML = data;
+                            if (callback) callback();
+                        }
+                    })
+                    .catch(console.error);
+            };
+
+            loadComponent('/header.html', 'site-header', initializeHeader);
+            loadComponent('/footer.html', 'site-footer');
+
+            // Back to Top Button Logic (unchanged)
+            const backToTopButton = document.querySelector('.back-to-top');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 300) {
+                    backToTopButton.classList.add('visible');
+                } else {
+                    backToTopButton.classList.remove('visible');
+                }
+            }, { passive: true });
+
+            // Contact Form Success Message (unchanged)
+            const params = new URLSearchParams(window.location.search);
+            const form = document.querySelector(".contact-form"); // intentionally unchanged
+            if (params.get("sent") === "true" && form) {
+                const successMsg = document.createElement("p");
+                successMsg.textContent = "Thank you! Your message has been sent.";
+                successMsg.style.color = "var(--accent-red)";
+                successMsg.style.marginTop = "20px";
+                successMsg.style.fontWeight = "bold";
+                form.parentNode.insertBefore(successMsg, form);
+
+                const cleanURL = window.location.origin + window.location.pathname;
+                window.history.replaceState({}, document.title, cleanURL);
+            }
+        });
+
+        // --- Header functionality (same behavior as your updated 404) ---
+        function initializeHeader() {
+            const header = document.querySelector('#header');
+            if (!header) return;
+
+            const mobileToggle = header.querySelector('.mobile-nav-toggle');
+            const submenuToggles = header.querySelectorAll('.has-submenu > .submenu-toggle');
+
+            // Mobile menu toggle
+            if (mobileToggle) {
+                mobileToggle.addEventListener('click', () => {
+                    header.classList.toggle('menu-open');
+                    document.body.classList.toggle('no-scroll', header.classList.contains('menu-open'));
+                });
+            }
+
+            // Submenu toggles
+            submenuToggles.forEach(toggle => {
+                toggle.addEventListener('click', e => {
+                    e.preventDefault();
+                    const parent = toggle.parentElement;
+
+                    // Close other submenus on desktop
+                    if (!header.classList.contains('header-mobile-layout')) {
+                        header.querySelectorAll('.has-submenu.open').forEach(item => {
+                            if (item !== parent) item.classList.remove('open');
+                        });
+                    }
+
+                    parent.classList.toggle('open');
+                });
+            });
+
+            // Close menu when any nav link (except submenu opener) is clicked
+            header.querySelectorAll('nav a').forEach(link => {
+                link.addEventListener('click', () => {
+                    const isSubmenuOpener = link.classList.contains('submenu-toggle');
+                    const parentSubmenu = link.closest('.has-submenu');
+
+                    // MOBILE MODE
+                    if (header.classList.contains('header-mobile-layout')) {
+                        if (isSubmenuOpener) return; // Don't close if just toggling submenu
+                        if (header.classList.contains('menu-open')) {
+                            header.classList.remove('menu-open');
+                            document.body.classList.remove('no-scroll');
+                            header.querySelectorAll('.has-submenu.open').forEach(item => item.classList.remove('open'));
+                        }
+                    } else {
+                        // DESKTOP: close submenu when clicking an item inside it
+                        if (parentSubmenu && !isSubmenuOpener) {
+                            parentSubmenu.classList.remove('open');
+                        }
+                    }
+                });
+            });
+
+            // Click outside to close submenus (desktop only)
+            document.addEventListener('click', e => {
+                if (!header.classList.contains('header-mobile-layout')) {
+                    const inside = e.target.closest('.has-submenu');
+                    if (!inside) {
+                        header.querySelectorAll('.has-submenu.open').forEach(item => item.classList.remove('open'));
+                    }
+                }
+            });
+
+            // Header scroll effect
+            window.addEventListener('scroll', () => {
+                header.classList.toggle('scrolled', window.scrollY > 50);
+            }, { passive: true });
+
+            // Mobile layout detection
+            const updateLayout = () => {
+                if (window.innerWidth <= 768) {
+                    header.classList.add('header-mobile-layout');
+                } else {
+                    header.classList.remove('header-mobile-layout', 'menu-open');
+                    document.body.classList.remove('no-scroll');
+                }
+            };
+            updateLayout();
+            window.addEventListener('resize', updateLayout);
+        }
+
+        // Reveal animations on scroll (unchanged)
+        const revealOnScroll = () => {
+            const elementsToReveal = document.querySelectorAll('.reveal-on-scroll');
+            const triggerBottom = window.innerHeight * 0.9;
+
+            elementsToReveal.forEach(el => {
+                const elTop = el.getBoundingClientRect().top;
+                if (elTop < triggerBottom) {
+                    el.classList.add('visible');
+                }
+            });
+        };
+
+        window.addEventListener('scroll', revealOnScroll, { passive: true });
+        window.addEventListener('load', revealOnScroll);
+    </script>
+</body>
+</html>

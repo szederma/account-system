@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Piano</title>
+    <style>
+        body { text-align: center; font-family: Arial, sans-serif; }
+        .keys { display: flex; justify-content: center; }
+        .key { width: 40px; height: 150px; margin: 2px; border: 1px solid black; background: white; }
+        .black { width: 25px; height: 100px; background: black; margin-left: -12.5px; margin-right: -12.5px; position: relative; z-index: 1; }
+        .key:active { background: lightgray; }
+        .black:active { background: darkgray; }
+    </style>
+</head>
+<body>
+    <h1>Web Piano</h1>
+    <div class="keys" id="keyboard"></div>
+
+    <script>
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
+        
+        const notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+        const keyMap = { 'a': 'C', 'w': 'C#', 's': 'D', 'e': 'D#', 'd': 'E', 'f': 'F', 't': 'F#', 'g': 'G', 'y': 'G#', 'h': 'A', 'u': 'A#', 'j': 'B', 'k': 'C2' };
+        
+        function playTone(note, duration = 0.5) {
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            const noteIndex = notes.indexOf(note.replace('2', ''));
+            if (noteIndex === -1) return;
+            
+            const frequency = 261.63 * Math.pow(2, noteIndex / 12); 
+            osc.frequency.value = frequency;
+            osc.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+        
+        function createKey(note) {
+            const key = document.createElement("div");
+            key.classList.add("key");
+            if (note.includes("#")) key.classList.add("black");
+            key.addEventListener("mousedown", () => playTone(note));
+            document.getElementById("keyboard").appendChild(key);
+        }
+        
+        notes.forEach(note => createKey(note));
+        
+        document.addEventListener("keydown", (event) => {
+            if (keyMap[event.key]) {
+                playTone(keyMap[event.key]);
+            }
+        });
+    </script>
+</body>
+</html>

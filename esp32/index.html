@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ESP32 BLE Receiver</title>
+</head>
+<body>
+  <h1>ESP32 BLE Data Receiver</h1>
+  <button onclick="connectBLE()">Connect to ESP32</button>
+  <p>Received value: <span id="data">N/A</span></p>
+
+  <script>
+    const serviceUUID = "12345678-1234-1234-1234-1234567890ab";
+    const characteristicUUID = "87654321-4321-4321-4321-abcdefabcdef";
+
+    async function connectBLE() {
+      try {
+        const device = await navigator.bluetooth.requestDevice({
+          filters: [{ name: "DistanzuinoBT" }],
+          optionalServices: [serviceUUID]
+        });
+
+        const server = await device.gatt.connect();
+        const service = await server.getPrimaryService(serviceUUID);
+        const characteristic = await service.getCharacteristic(characteristicUUID);
+
+        await characteristic.startNotifications();
+
+        characteristic.addEventListener('characteristicvaluechanged', (event) => {
+          const value = new TextDecoder().decode(event.target.value);
+          document.getElementById('data').innerText = value;
+        });
+
+        console.log("Connected and listening...");
+      } catch (error) {
+        console.error("Connection failed!", error);
+      }
+    }
+  </script>
+</body>
+</html>

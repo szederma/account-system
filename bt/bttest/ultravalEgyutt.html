@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DistanzuinoBT</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 700;
+    }
+
+    body {
+      background: linear-gradient(135deg, #000000 0%, #1a1a1a 70%, #333333 100%);
+      color: #ffffff;
+      min-height: 100vh;
+      padding: clamp(8px, 2vw, 16px);
+      width: 100%;
+      overflow-x: hidden;
+    }
+
+    .bento-grid {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      gap: clamp(6px, 1.5vw, 12px);
+      padding: clamp(6px, 1.5vw, 12px);
+      width: 100%;
+    }
+
+    .bento-container {
+      background: rgba(40, 40, 40, 0.95); /* Made more opaque */
+      border-radius: 12px;
+      padding: clamp(8px, 2vw, 16px);
+      width: 100%;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+      border: 2px solid rgba(255, 31, 31, 0.15); /* Made border thicker */
+    }
+
+    .bento-container:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(255, 31, 31, 0.1);
+    }
+
+    /* Header Styles */
+    #logo-container {
+      display: flex;
+      align-items: center;
+      gap: clamp(8px, 2vw, 15px);
+      margin-bottom: clamp(12px, 3vw, 20px);
+      padding: 0 clamp(6px, 1.5vw, 12px);
+    }
+
+    #logo {
+      width: clamp(32px, 8vw, 60px);
+      height: auto;
+      border-radius: 2px; /* Reduced from 10px for less curve */
+    }
+
+    h1 {
+      font-size: clamp(1.5rem, 4vw, 2.5rem);
+      white-space: nowrap;
+      color: #fff;
+      text-shadow: 2px 2px 4px rgba(255, 31, 31, 0.2);
+    }
+
+    /* Control Row Styles */
+    .control-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: clamp(6px, 1.5vw, 12px);
+      margin-bottom: clamp(6px, 1.5vw, 12px);
+    }
+
+    /* Connect Container */
+    #connect-container {
+      display: flex;
+      align-items: center;
+      gap: clamp(8px, 2vw, 15px);
+      min-width: 0;
+      position: relative; /* Add this */
+    }
+
+    .button {
+      padding: clamp(6px, 1.5vw, 10px) clamp(12px, 2.5vw, 20px);
+      font-size: clamp(12px, 2vw, 14px);
+      border: 2px solid rgba(255, 31, 31, 0.3);
+      border-radius: 8px;
+      background: linear-gradient(45deg, #ff1f1f, #ff4444);
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      position: absolute; /* Add this */
+      left: 0; /* Add this */
+    }
+
+    .button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(255, 31, 31, 0.3);
+    }
+
+    #connect {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #disconnect {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #connection-status {
+      font-size: clamp(12px, 2vw, 14px);
+      margin-left: clamp(100px, 25vw, 140px);
+      white-space: nowrap;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.6; }
+      50% { opacity: 1; }
+      100% { opacity: 0.6; }
+    }
+
+    /* Instrument Container */
+    #instrument-container {
+      display: flex;
+      align-items: center;
+      gap: clamp(8px, 2vw, 15px);
+      min-width: 0;
+    }
+
+    select {
+      padding: clamp(4px, 1vw, 8px) clamp(8px, 2vw, 15px);
+      font-size: clamp(12px, 2vw, 14px);
+      max-width: min(100px, 100%);
+      border-radius: 8px;
+      background: #333;
+      color: white;
+      border: 2px solid rgba(255, 31, 31, 0.3);
+      font-weight: 700;
+    }
+
+    /* Volume Controls */
+    .volume-controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: clamp(6px, 1.5vw, 12px);
+      margin-bottom: 12px; /* Reduced from 20px */
+    }
+
+    .slider-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 8px;
+      border-radius: 4px;
+      background: #333;
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #ff1f1f;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.1);
+    }
+
+    /* Tones Display */
+    .tones-wrapper {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      padding: clamp(8px, 2vw, 16px);
+      gap: clamp(8px, 2vw, 15px);
+      background: rgba(40, 40, 40, 0.95);
+      border-radius: 12px;
+      border: 2px solid rgba(255, 31, 31, 0.15);
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .tones-container {
+      display: flex;
+      gap: clamp(4px, 1vw, 8px);
+      flex-wrap: nowrap;
+    }
+
+    .tone {
+      width: clamp(28px, 7vw, 38px);
+      min-width: clamp(28px, 7vw, 38px);
+      height: clamp(42px, 10vw, 58px);
+      font-size: clamp(12px, 2vw, 14px);
+      border: 2px solid rgba(255, 31, 31, 0.3);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #333;
+      color: white;
+      transition: all 0.3s ease;
+      font-weight: 700;
+    }
+
+    .tone.active {
+      background: #ff1f1f;
+      transform: translateY(-4px);
+      box-shadow: 0 4px 12px rgba(255, 31, 31, 0.4);
+    }
+
+    .separator {
+      min-width: 2px;
+      width: 2px;
+      height: 60px;
+      background: rgba(255, 31, 31, 0.5);
+      border-radius: 1px;
+    }
+
+    .disabled-container {
+      opacity: 0.5;
+      pointer-events: none;
+      filter: grayscale(50%);
+      transition: all 0.3s ease;
+    }
+
+    /* Mute Button Styles */
+    .container {
+      --color: #ff1f1f;
+      --size: 24px;
+      display: inline-flex;
+      align-items: center;
+      position: relative;
+      cursor: pointer;
+      padding: 5px;
+    }
+
+    .container input {
+      opacity: 0;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+
+    .container svg {
+      width: var(--size);
+      height: var(--size);
+      fill: currentColor;
+      transition: all 0.3s ease;
+    }
+
+    .container .voice {
+      display: none;
+      color: #ff1f1f;
+    }
+
+    .container .mute {
+      display: block;
+      color: #666;
+    }
+
+    .container input:checked ~ .mute {
+      display: none;
+    }
+
+    .container input:checked ~ .voice {
+      display: block;
+    }
+
+    .slider-wrapper > div {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: clamp(4px, 1vw, 8px);
+      width: 100%;
+    }
+
+    input[type="range"] {
+      flex: 1;
+      min-width: 0;
+    }
+
+    #volume1Value, #volume2Value {
+      min-width: 45px;
+      text-align: right;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 12px;
+      }
+
+      .bento-grid {
+        gap: 8px;
+        padding: 8px;
+      }
+
+      .bento-container {
+        padding: 12px;
+      }
+
+      h1 {
+        font-size: 1.8rem;
+      }
+
+      #logo {
+        width: 40px;
+      }
+
+      .control-row, .volume-controls {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .button {
+        padding: 8px 16px;
+        font-size: 14px;
+      }
+
+      select {
+        padding: 6px 12px;
+        font-size: 14px;
+      }
+
+      .slider-wrapper {
+        gap: 6px;
+      }
+
+      label {
+        font-size: 14px;
+      }
+
+      .tone {
+        width: 32px;
+        height: 48px;
+        font-size: 14px;
+      }
+
+      .container svg {
+        --size: 20px;
+      }
+
+
+      .tones-wrapper {
+        flex-direction: column;
+        padding: 12px;
+      }
+
+      .separator {
+        width: 100%;
+        height: 2px;
+        margin: 8px 0;
+      }
+
+      #volume1Value, #volume2Value {
+        min-width: 40px;
+      }
+
+      .slider-wrapper label {
+        font-size: 14px;
+      }
+
+    }
+    @media (max-width: 480px) {
+      body {
+        padding: 8px;
+      }
+
+      .bento-grid {
+        gap: 6px;
+        padding: 6px;
+      }
+
+      h1 {
+        font-size: 1.25rem;
+      }
+
+      #logo {
+        width: 40px;
+      }
+
+      .volume-controls {
+        grid-template-columns: 1fr;
+      }
+
+      .bento-container {
+        padding: 12px;
+      }
+
+      .control-row {
+        grid-template-columns: 1fr;
+      }
+
+      .button {
+        padding: 6px 12px;
+        font-size: 12px;
+      }
+
+      select {
+        padding: 4px 8px;
+        font-size: 12px;
+        max-width: 100px;
+      }
+
+      .tone {
+        width: 28px;
+        min-width: 28px;
+        height: 42px;
+        font-size: 12px;
+      }
+
+      .tones-wrapper {
+        padding: 10px;
+        flex-direction: column;
+      }
+
+      .separator {
+        width: 100%;
+        height: 2px;
+        margin: clamp(4px, 1vw, 6px) 0;
+      }
+
+      .slider-wrapper label {
+        font-size: 12px;
+      }
+
+      .container svg {
+        --size: 18px;
+      }
+
+      #connection-status {
+        font-size: 14px;
+      }
+
+      #instrument-container label,
+      .slider-wrapper label {
+        font-size: clamp(12px, 2vw, 14px);
+        white-space: nowrap;
+      }
+      
+      #volume1Value, #volume2Value {
+        min-width: 35px;
+        font-size: clamp(12px, 2vw, 14px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="ios-warning" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.9); z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px;">
+    <div style="background: #282828; padding: 24px; border-radius: 12px; max-width: 400px; text-align: center; border: 2px solid rgba(255, 31, 31, 0.3);">
+      <img src="/bt/images/logo.jpg" alt="Logo" style="width: 80px; height: auto; border-radius: 2px; margin-bottom: 24px;">
+      <h2 style="margin-bottom: 16px; color: #ff1f1f;">iOS Not Supported</h2>
+      <p style="margin-bottom: 20px; line-height: 1.5;">We're sorry, but DistanzuinoBT does not support iOS devices yet. Please use a device running Android or desktop browsers like Chrome or Edge.</p>
+      <a href="https://distanzuino.com" style="margin-top: 24px; color: #ff1f1f; text-decoration: none; font-weight: bold; padding: 12px; transition: opacity 0.3s ease;">
+        Visit distanzuino.com 
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="7" y1="17" x2="17" y2="7"></line>
+          <polyline points="7 7 17 7 17 17"></polyline>
+        </svg>
+      </a>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div id="logo-container">
+    <a href="https://distanzuino.com" target="_self">
+      <img id="logo" src="/bt/images/logo.jpg" alt="Logo">
+    </a>
+    <h1>DistanzuinoBT</h1>
+  </div>
+
+  <div class="bento-grid">
+    <!-- Control Row -->
+    <div class="control-row">
+      <!-- Connect Container -->
+      <div class="bento-container" id="connect-container">
+        <div style="position: relative; width: 120px; height: 40px;"> <!-- Adjust width/height to match your button size -->
+          <button id="connect" class="button">Connect</button>
+          <button id="disconnect" class="button">Disconnect</button>
+        </div>
+        <p id="connection-status">Disconnected</p>
+      </div>
+
+      <!-- Instrument Container -->
+      <div class="bento-container" id="instrument-container">
+        <label for="instrument">Instrument:</label>
+        <select id="instrument">
+          <option value="piano">Piano</option>
+          <option value="flute">Flute</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Volume Controls -->
+    <div class="volume-controls">
+      <!-- Volume 1 Container -->
+      <div class="bento-container slider-wrapper">
+        <label for="volume1">Left Side Volume:</label>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <input type="range" id="volume1" min="0" max="1" step="0.01" value="1">
+          <span id="volume1Value">100%</span>
+          <label class="container">
+            <input id="mute1" type="checkbox">
+            <svg viewBox="0 0 576 512" height="1em" xmlns="http://www.w3.org/2000/svg" class="voice">
+              <path d="M301.1 34.8C312.6 40 320 51.4 320 64V448c0 12.6-7.4 24-18.9 29.2s-25 3.1-34.4-5.3L131.8 352H64c-35.3 0-64-28.7-64-64V224c0-35.3 28.7-64 64-64h67.8L266.7 40.1c9.4-8.4 22.9-10.4 34.4-5.3zM425 167l55 55 55-55c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-55 55 55 55c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-55-55-55 55c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l55-55-55-55c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0z"></path>
+            </svg>
+            <svg viewBox="0 0 448 512" height="1em" xmlns="http://www.w3.org/2000/svg" class="mute">
+              <path d="M301.1 34.8C312.6 40 320 51.4 320 64V448c0 12.6-7.4 24-18.9 29.2s-25 3.1-34.4-5.3L131.8 352H64c-35.3 0-64-28.7-64-64V224c0-35.3 28.7-64 64-64h67.8L266.7 40.1c9.4-8.4 22.9-10.4 34.4-5.3zM412.6 181.5C434.1 199.1 448 225.9 448 256s-13.9 56.9-35.4 74.5c-10.3 8.4-25.4 6.8-33.8-3.5s-6.8-25.4 3.5-33.8C393.1 284.4 400 271 400 256s-6.9-28.4-17.7-37.3c-10.3-8.4-11.8-23.5-3.5-33.8s23.5-11.8 33.8-3.5z"></path>
+            </svg>
+          </label>
+        </div>
+      </div>
+
+      <!-- Volume 2 Container -->
+      <div class="bento-container slider-wrapper">
+        <label for="volume2">Right Side Volume:</label>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <input type="range" id="volume2" min="0" max="1" step="0.01" value="1">
+          <span id="volume2Value">100%</span>
+          <label class="container">
+            <input id="mute2" type="checkbox">
+            <svg viewBox="0 0 576 512" height="1em" xmlns="http://www.w3.org/2000/svg" class="voice">
+              <path d="M301.1 34.8C312.6 40 320 51.4 320 64V448c0 12.6-7.4 24-18.9 29.2s-25 3.1-34.4-5.3L131.8 352H64c-35.3 0-64-28.7-64-64V224c0-35.3 28.7-64 64-64h67.8L266.7 40.1c9.4-8.4 22.9-10.4 34.4-5.3zM425 167l55 55 55-55c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-55 55 55 55c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-55-55-55 55c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l55-55-55-55c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0z"></path>
+            </svg>
+            <svg viewBox="0 0 448 512" height="1em" xmlns="http://www.w3.org/2000/svg" class="mute">
+              <path d="M301.1 34.8C312.6 40 320 51.4 320 64V448c0 12.6-7.4 24-18.9 29.2s-25 3.1-34.4-5.3L131.8 352H64c-35.3 0-64-28.7-64-64V224c0-35.3 28.7-64 64-64h67.8L266.7 40.1c9.4-8.4 22.9-10.4 34.4-5.3zM412.6 181.5C434.1 199.1 448 225.9 448 256s-13.9 56.9-35.4 74.5c-10.3 8.4-25.4 6.8-33.8-3.5s-6.8-25.4 3.5-33.8C393.1 284.4 400 271 400 256s-6.9-28.4-17.7-37.3c-10.3-8.4-11.8-23.5-3.5-33.8s23.5-11.8 33.8-3.5z"></path>
+            </svg>
+          </label>
+        </div>
+      </div>
+    </div>
+
+        <!-- Tones Display -->
+        <div class="tones-wrapper">
+          <div id="tones1" class="tones-container">
+            <div class="tone" data-tone="C1">C1</div>
+            <div class="tone" data-tone="D1">D1</div>
+            <div class="tone" data-tone="E1">E1</div>
+            <div class="tone" data-tone="F1">F1</div>
+            <div class="tone" data-tone="G1">G1</div>
+            <div class="tone" data-tone="A1">A1</div>
+            <div class="tone" data-tone="H1">H1</div>
+          </div>
+          <div class="separator"></div>
+          <div id="tones2" class="tones-container">
+            <div class="tone" data-tone="C2">C2</div>
+            <div class="tone" data-tone="D2">D2</div>
+            <div class="tone" data-tone="E2">E2</div>
+            <div class="tone" data-tone="F2">F2</div>
+            <div class="tone" data-tone="G2">G2</div>
+            <div class="tone" data-tone="A2">A2</div>
+            <div class="tone" data-tone="H2">H2</div>
+          </div>
+        </div>
+      </div>
+  
+  
+
+  <script>
+    let bluetoothDevice;
+    let server;
+    let service;
+    let characteristic;
+
+    let distance1 = 0;
+    let distance2 = 0;
+
+    let deviceType = '';
+
+
+    const HM10_SERVICE_UUID = '0000ffe0-0000-1000-8000-00805f9b34fb';
+    const HM10_CHARACTERISTIC_UUID = '0000ffe1-0000-1000-8000-00805f9b34fb';
+
+    document.getElementById('connect').addEventListener('click', async () => {
+      const statusElement = document.getElementById('connection-status');
+      statusElement.innerText = 'Connecting...';
+
+      try {
+        bluetoothDevice = await navigator.bluetooth.requestDevice({
+          filters: [
+            { namePrefix: 'DistanzuinoBT' },
+            { namePrefix: 'DistanzuinoUS' }
+          ],
+          optionalServices: [HM10_SERVICE_UUID]
+        });
+
+        deviceType = bluetoothDevice.name.includes('BT') ? 'Laser' : 'Ultrasonic';
+        console.log('Device Type:', deviceType);
+
+        // Add the disconnect event listener
+        bluetoothDevice.addEventListener('gattserverdisconnected', () => {
+          console.log('Device disconnected unexpectedly.');
+
+          // Stop all active sounds
+          stopFrequencies(1);
+          stopFrequencies(2);
+
+          // Update UI state
+          document.getElementById('connect').style.opacity = '1';
+          document.getElementById('connect').style.pointerEvents = 'auto';
+          document.getElementById('disconnect').style.opacity = '0';
+          document.getElementById('disconnect').style.pointerEvents = 'none';
+
+          updateContainerStates(false);
+          updateUIState(false);
+        });
+
+        server = await bluetoothDevice.gatt.connect();
+        service = await server.getPrimaryService(HM10_SERVICE_UUID);
+        characteristic = await service.getCharacteristic(HM10_CHARACTERISTIC_UUID);
+
+        characteristic.startNotifications();
+        characteristic.addEventListener('characteristicvaluechanged', handleData);
+
+        document.getElementById('connect').style.opacity = '0';
+        document.getElementById('connect').style.pointerEvents = 'none';
+        document.getElementById('disconnect').style.opacity = '1';
+        document.getElementById('disconnect').style.pointerEvents = 'auto';
+
+        updateContainerStates(true);
+
+        initializeOscillators(1);
+        initializeOscillators(2);
+
+        statusElement.innerText = `Connected: ${deviceType}`;
+
+        updateUIState(true);
+      } catch (error) {
+        console.error('Error connecting:', error);
+        statusElement.innerText = 'Disconnected'; // Reset to "Disconnected" on failure
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      updateContainerStates(false);
+    });
+
+    function handleData(event) {
+      const decoder = new TextDecoder();
+      const rawValue = decoder.decode(event.target.value).trim();
+
+      // Split data into multiple packets in case they're concatenated
+      const packets = rawValue.split('\n'); // Assuming newline '\n' separates packets
+      packets.forEach(packet => {
+        const value = packet.trim();
+
+        if (value.startsWith('D1:')) {
+          const parsedValue = parseFloat(value.substring(3));
+          if (!isNaN(parsedValue)) {
+            distance1 = parsedValue / 10; // Convert to cm
+            updateDistanceDisplay(document.getElementById('distance1'), "1", distance1);
+          }
+        } else if (value.startsWith('D2:')) {
+          const parsedValue = parseFloat(value.substring(3));
+          if (!isNaN(parsedValue)) {
+            distance2 = parsedValue / 10; // Convert to cm
+            updateDistanceDisplay(document.getElementById('distance2'), "2", distance2);
+          }
+        }
+      });
+
+      // Refresh audio with corrected distances
+      handleSliderChange();
+    }
+
+
+    function updateContainerStates(isConnected) {
+      const containers = document.querySelectorAll('.bento-container:not(#connect-container), .tones-wrapper');
+      containers.forEach(container => {
+        if (isConnected) {
+          container.classList.remove('disabled-container');
+        } else {
+          container.classList.add('disabled-container');
+        }
+      });
+    }
+
+
+    function updateDistanceDisplay(distanceElement, distanceLabel, distance) {
+      console.log(`Distance ${distanceLabel}: ${distance.toFixed(2)} cm`);
+    }
+
+    document.getElementById('disconnect').addEventListener('click', () => {
+      if (bluetoothDevice && bluetoothDevice.gatt.connected) {
+        bluetoothDevice.gatt.disconnect();
+      }
+
+      // Stop all active sounds
+      stopFrequencies(1);
+      stopFrequencies(2);
+
+      // Clear tone highlights
+      highlightTone('tones1', []);
+      highlightTone('tones2', []);
+
+      document.getElementById('connect').style.opacity = '1';
+      document.getElementById('connect').style.pointerEvents = 'auto';
+      document.getElementById('disconnect').style.opacity = '0';
+      document.getElementById('disconnect').style.pointerEvents = 'none';
+
+      updateContainerStates(false);
+
+      updateUIState(false);
+    });
+
+    function updateUIState(isConnected) {
+      const statusElement = document.getElementById('connection-status');
+
+      if (isConnected) {
+        statusElement.innerText = `Connected: ${deviceType}`;
+      } else {
+        statusElement.innerText = 'Disconnected';
+        deviceType = '';
+
+        // Stop all frequencies
+        stopFrequencies(1);
+        stopFrequencies(2);
+
+        // Clear tone highlights
+        highlightTone('tones1', []);
+        highlightTone('tones2', []);
+
+        distance1 = 0;
+        distance2 = 0;
+      }
+    }
+
+
+
+
+
+
+    /*+++++*/
+    
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillators = {
+      1: [],
+      2: []
+    };
+
+    const gains = {
+      1: [],
+      2: []
+    };
+
+
+
+    function initializeOscillators(label) {
+      for (let i = 0; i < 3; i++) { // Create three oscillators for each label
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        oscillator.type = 'sine';
+        oscillator.frequency.value = 0; // Start at 0 Hz (silent)
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        gainNode.gain.value = 0; // Start with no sound
+        oscillator.start();
+
+        oscillators[label].push(oscillator);
+        gains[label].push(gainNode);
+      }
+    }
+
+    const frequencyRangesLaser = {
+      1: [
+        { min: 3, max: 8.99, tone: 'H1', },
+        { min: 9, max: 14.99, tone: 'A1', },
+        { min: 15, max: 20.99, tone: 'G1' },
+        { min: 21, max: 26.99, tone: 'F1' },
+        { min: 27, max: 32.99, tone: 'E1' },
+        { min: 33, max: 38.99, tone: 'D1' },
+        { min: 39, max: 45, tone: 'C1' }
+      ],
+      2: [
+        { min: 3, max: 8.99, tone: 'C2' },
+        { min: 9, max: 14.99, tone: 'D2' },
+        { min: 15, max: 20.99, tone: 'E2' },
+        { min: 21, max: 26.99, tone: 'F2' },
+        { min: 27, max: 32.99, tone: 'G2' },
+        { min: 33, max: 38.99, tone: 'A2' },
+        { min: 39, max: 45, tone: 'H2' }
+      ]
+    };
+
+    const frequencyRangesUltrasonic = {
+      1: [
+        { min: 3, max: 8.5, tone: 'H1', },
+        { min: 9.5, max: 14.5, tone: 'A1', },
+        { min: 15.5, max: 20.5, tone: 'G1' },
+        { min: 21.5, max: 26.5, tone: 'F1' },
+        { min: 27.5, max: 32.5, tone: 'E1' },
+        { min: 33.5, max: 38.5, tone: 'D1' },
+        { min: 39.5, max: 45, tone: 'C1' }
+      ],
+      2: [
+        { min: 3, max: 8.5, tone: 'C2' },
+        { min: 9.5, max: 14.5, tone: 'D2' },
+        { min: 15.5, max: 20.5, tone: 'E2' },
+        { min: 21.5, max: 26.5, tone: 'F2' },
+        { min: 27.5, max: 32.5, tone: 'G2' },
+        { min: 33.5, max: 38.5, tone: 'A2' },
+        { min: 39.5, max: 45, tone: 'H2' }
+      ]
+    };
+
+    
+    const pianoToneMap = {
+      'C1': [[133, 0.0045], [258, 0.0041], [391, 0.012]],
+      'D1': [[150, 0.04], [291,  0.06], [441, 0.045]],
+      'E1': [[166, 0.0175], [333, 0.015], [492, 0.022]],
+      'F1': [[175, 0.03], [350, 0.055], [525, 0.045]],
+      'G1': [[200, 0.009], [391, 0.086], [591, 0.03]],
+      'A1': [[216, 0.059], [441, 0.088], [657, 0.021]],
+      'H1': [[250, 0.02], [491, 0.11], [747, 0.02]],
+      'C2': [[258, 0.034], [524, 0.028], [782, 0.003]],
+      'D2': [[292, 0.0275], [582, 0.009], [883, 0.0015]],
+      'E2': [[324, 0.0095], [658, 0.0036], [987, 0.0041]],
+      'F2': [[350, 0.038], [692, 0.028], [1040, 0.006]],
+      'G2': [[391, 0.096], [782, 0.026], [1174, 0.014]],
+      'A2': [[440, 0.0357], [877, 0.012], [1318, 0.007]],
+      'H2': [[492, 0.0315], [989, 0.009], [1483, 0.005]]
+    };
+
+
+    const fluteToneMap = {
+      'C1': [[527, 0.015], [1087, 0.053], [1649, 0.013]],
+      'D1': [[617.33, 0.011], [1208.3, 0.009], [1850.9, 0.003]],
+      'E1': [[665.81, 0.03], [1332, 0.017], [1998, 0.016]],
+      'F1': [[708.28, 0.06], [1426, 0.01], [2136, 0.01]],
+      'G1': [[773.87, 0.047], [1563, 0.005], [2337, 0.003]],
+      'A1': [[872.26, 0.08], [1749, 0.0025], [2606, 0.012]],
+      'H1': [[980.65, 0.145], [1971, 0.01], [2921, 0.003]],
+      'C2': [[1087, 0.07396], [2131, 0.03017], [3272, 0.01365]],
+      'D2': [[1152, 0.07838], [3445, 0.04875], [5221, 0.02177]],
+      'E2': [[1378, 0.09375], [4734, 0.06698], [6718, 0.02801]],
+      'F2': [[1788, 0.12165], [2929, 0.04144], [4522, 0.01885]],
+      'G2': [[1637, 0.11138], [4823, 0.06824], [8010, 0.0334]],
+      'A2': [[1001, 0.0681], [2003, 0.02834], [3058, 0.01275]],
+      'H2': [[1044, 0.07103], [1871, 0.02647], [2821, 0.01176]]
+    };
+
+
+    let currentInstrument = "piano"; // Default is Piano
+
+
+    function getFrequencies(label, distance) {
+      const toneMap = currentInstrument === "piano" ? pianoToneMap : fluteToneMap; // Choose the tone map based on the selected instrument
+      const ranges = deviceType === 'Laser' ? frequencyRangesLaser[label] : frequencyRangesUltrasonic[label];
+      
+      for (const range of ranges) {
+        if (distance >= range.min && distance <= range.max) {
+          const tone = range.tone; // E.g., 'H1', 'C1'
+          const frequenciesWithIntensity = toneMap[tone]; // Get array for this tone, now including intensities
+          return frequenciesWithIntensity ? frequenciesWithIntensity : [];
+        }
+      }
+      return [];
+    }
+
+
+    function playFrequencies(frequenciesWithIntensity, volume, label) {
+      frequenciesWithIntensity.forEach(([freq, intensity], index) => {
+        if (oscillators[label][index]) {
+          const oscillator = oscillators[label][index];
+          const gainNode = gains[label][index];
+
+          // Smoothly transition frequency and gain
+          oscillator.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.01);
+          gainNode.gain.setTargetAtTime(volume * intensity, audioCtx.currentTime, 0.01);
+        }
+      });
+
+      // Turn off unused oscillators
+      for (let i = frequenciesWithIntensity.length; i < oscillators[label].length; i++) {
+        gains[label][i].gain.setTargetAtTime(0, audioCtx.currentTime, 0.01); // Smooth fade-out
+      }
+    }
+
+
+    function stopFrequencies(label) {
+      gains[label].forEach(gainNode => {
+        gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.01); // Smooth fade-out
+      });
+    }
+
+    document.getElementById('instrument').addEventListener('change', function() {
+      currentInstrument = this.value; // Update the current instrument
+      handleSliderChange(); // Recalculate and play frequencies with the new instrument
+    });
+
+
+
+    function highlightTone(tonesContainerId, distance) {
+      const tonesContainer = document.getElementById(tonesContainerId);
+      const tones = tonesContainer.querySelectorAll('.tone');
+      tones.forEach(tone => tone.classList.remove('active'));
+
+      // Find the frequency range based on the distance
+      const label = tonesContainerId === 'tones1' ? 1 : 2;
+      const ranges = deviceType === 'Laser' ? frequencyRangesLaser[label] : frequencyRangesUltrasonic[label];
+
+      // Find the corresponding tone
+      for (const range of ranges) {
+        if (distance >= range.min && distance <= range.max) {
+          const toneName = range.tone;
+          const matchingTone = Array.from(tones).find(tone => tone.textContent === toneName);
+          if (matchingTone) {
+            matchingTone.classList.add('active');
+          }
+          break; // Stop searching once the correct tone is found
+        }
+      }
+    }
+
+
+    let isMuted1 = false;
+    let isMuted2 = false;
+
+    document.getElementById('mute1').addEventListener('change', function () {
+      const isMuted1 = this.checked;
+      handleSliderChange(); // Recalculate volume based on mute state
+    });
+
+    document.getElementById('mute2').addEventListener('change', function () {
+      const isMuted2 = this.checked;
+      handleSliderChange(); // Recalculate volume based on mute state
+    });
+
+
+    function handleSliderChange() {
+
+      const isMuted1 = document.getElementById('mute1').checked;
+      const isMuted2 = document.getElementById('mute2').checked;
+
+      const volume1 = isMuted1 ? 0 : parseFloat(document.getElementById("volume1").value);
+      const volume2 = isMuted2 ? 0 : parseFloat(document.getElementById("volume2").value);
+
+      const frequencies1 = distance1 >= 3 && distance1 <= 45 ? getFrequencies("1", distance1) : [];
+      const frequencies2 = distance2 >= 3 && distance2 <= 45 ? getFrequencies("2", distance2) : [];
+
+      const percentage1 = Math.round(volume1 * 100);
+      const percentage2 = Math.round(volume2 * 100);
+
+      if (frequencies1.length > 0) {
+        playFrequencies(frequencies1, volume1, 1);
+        highlightTone('tones1', distance1);
+      } else {
+        stopFrequencies(1);
+        highlightTone('tones1', []);
+      }
+
+      if (frequencies2.length > 0) {
+        playFrequencies(frequencies2, volume2, 2);
+        highlightTone('tones2', distance2);
+      } else {
+        stopFrequencies(2);
+        highlightTone('tones2', []);
+      }
+
+
+      document.getElementById("volume1Value").textContent = `${percentage1}%`;
+      document.getElementById("volume2Value").textContent = `${percentage2}%`;
+    }
+
+    document.querySelectorAll('input[type="range"]').forEach(slider => {
+      slider.addEventListener("input", handleSliderChange);
+    });
+
+    window.onload = () => {
+      const disconnectButton = document.getElementById('disconnect');
+      disconnectButton.style.opacity = '0';
+      disconnectButton.style.pointerEvents = 'none';
+    };
+
+
+    function isIOS() {
+      return [
+        'iPad Simulator',
+        'iPhone Simulator',
+        'iPod Simulator',
+        'iPad',
+        'iPhone',
+        'iPod'
+      ].includes(navigator.platform)
+      || (navigator.userAgent.includes("Mac") && "ontouchend" in document);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      if (isIOS()) {
+        document.getElementById('ios-warning').style.display = 'flex';
+        
+        // Completely hide the main content on iOS
+        document.querySelector('.bento-grid').style.display = 'none';
+        document.getElementById('logo-container').style.display = 'none';
+      } else {
+        document.getElementById('ios-warning').remove(); // Remove warning element on non-iOS devices
+      }
+    });
+  </script>
+</body>
+</html>

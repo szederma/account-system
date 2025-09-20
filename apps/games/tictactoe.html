@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Dark blue-gray background */
+            color: #e2e8f0; /* Light gray text */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+        }
+        .game-container {
+            background-color: #2d3748; /* Slightly lighter card background */
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px; /* Increased gap for better visual separation */
+            width: 300px; /* Fixed width for the board */
+            height: 300px; /* Fixed height for the board */
+            margin: 20px auto;
+        }
+        .cell {
+            background-color: #4a5568; /* Cell background */
+            border: 2px solid #718096; /* Cell border */
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem; /* Larger font for X and O */
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            color: #e2e8f0; /* Default text color for X/O */
+        }
+        .cell:hover {
+            background-color: #718096; /* Darker on hover */
+        }
+        .cell.X {
+            color: #63b3ed; /* Blue for X */
+        }
+        .cell.O {
+            color: #f6ad55; /* Orange for O */
+        }
+        .status {
+            margin-bottom: 1.5rem; /* Increased margin */
+            font-size: 1.5rem; /* Larger status text */
+            font-weight: 600;
+            color: #90cdf4; /* Light blue status text */
+            min-height: 2.25rem; /* Ensure space for status message */
+        }
+        .btn {
+            background-color: #4299e1; /* Blue button */
+            color: white;
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            border: none;
+            margin-top: 1rem;
+        }
+        .btn:hover {
+            background-color: #3182ce; /* Darker blue on hover */
+        }
+        .btn-back {
+            background-color: #718096; /* Gray button */
+        }
+        .btn-back:hover {
+            background-color: #4a5568;
+        }
+        .winning-cell {
+            animation: pulse 0.7s infinite alternate;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+            100% { transform: scale(1.05); box-shadow: 0 0 10px 5px rgba(59, 130, 246, 0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="text-4xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">Tic Tac Toe</h1>
+        <div id="status" class="status">Player X's turn</div>
+        <div id="board" class="board">
+            </div>
+        <button id="restartButton" class="btn">Restart Game</button>
+        <button onclick="window.location.href='index.html'" class="btn btn-back ml-2">Back to Hub</button>
+    </div>
+
+    <script>
+        const boardElement = document.getElementById('board');
+        const statusElement = document.getElementById('status');
+        const restartButton = document.getElementById('restartButton');
+
+        let board = ['', '', '', '', '', '', '', '', ''];
+        let currentPlayer = 'X';
+        let gameActive = true;
+        const winningConditions = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
+            [0, 4, 8], [2, 4, 6]  // Diagonals
+        ];
+
+        // Function to create the board cells
+        function createBoard() {
+            boardElement.innerHTML = ''; // Clear previous board
+            board.forEach((_, index) => {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.dataset.index = index;
+                cell.addEventListener('click', handleCellClick);
+                boardElement.appendChild(cell);
+            });
+        }
+
+        // Handle cell click
+        function handleCellClick(event) {
+            const clickedCell = event.target;
+            const clickedCellIndex = parseInt(clickedCell.dataset.index);
+
+            if (board[clickedCellIndex] !== '' || !gameActive) {
+                return;
+            }
+
+            board[clickedCellIndex] = currentPlayer;
+            clickedCell.textContent = currentPlayer;
+            clickedCell.classList.add(currentPlayer); // Add X or O class for styling
+
+            checkResult();
+        }
+
+        // Check for win or draw
+        function checkResult() {
+            let roundWon = false;
+            let winningLine = null;
+
+            for (let i = 0; i < winningConditions.length; i++) {
+                const winCondition = winningConditions[i];
+                const a = board[winCondition[0]];
+                const b = board[winCondition[1]];
+                const c = board[winCondition[2]];
+
+                if (a === '' || b === '' || c === '') {
+                    continue;
+                }
+                if (a === b && b === c) {
+                    roundWon = true;
+                    winningLine = winCondition;
+                    break;
+                }
+            }
+
+            if (roundWon) {
+                statusElement.textContent = `Player ${currentPlayer} has won! 🎉`;
+                gameActive = false;
+                highlightWinningCells(winningLine);
+                return;
+            }
+
+            if (!board.includes('')) {
+                statusElement.textContent = 'Game ended in a draw! 🤝';
+                gameActive = false;
+                return;
+            }
+
+            // Switch player
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            statusElement.textContent = `Player ${currentPlayer}'s turn`;
+        }
+
+        // Highlight winning cells
+        function highlightWinningCells(line) {
+            if (!line) return;
+            line.forEach(index => {
+                const cell = boardElement.querySelector(`.cell[data-index='${index}']`);
+                if (cell) {
+                    cell.classList.add('winning-cell');
+                    // Ensure X/O color is prioritized over winning-cell background if needed
+                    cell.style.backgroundColor = currentPlayer === 'X' ? '#3182ce' : '#dd6b20'; // Darker shades for winning cells
+                    cell.style.color = '#ffffff'; // White text on winning cells
+                }
+            });
+        }
+
+        // Restart game
+        function restartGame() {
+            board = ['', '', '', '', '', '', '', '', ''];
+            currentPlayer = 'X';
+            gameActive = true;
+            statusElement.textContent = `Player ${currentPlayer}'s turn`;
+            createBoard(); // Recreate the board to clear styles and text
+        }
+
+        // Event Listeners
+        restartButton.addEventListener('click', restartGame);
+
+        // Initial game setup
+        createBoard();
+    </script>
+</body>
+</html>

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DistanzuinoBT</title>
+  <style>
+    .slider-container {
+      display: flex;
+      justify-content: space-around;
+      margin: 20px 0;
+    }
+    .slider-wrapper {
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>DistanzuinoBT</h1>
+
+  <div id="top-container">
+    <div id="button-container">
+      <button id="connect" class="button">Connect</button>
+      <button id="disconnect" class="button">Disconnect</button>
+    </div>
+  </div>
+
+  <div id="card1" class="card">
+    <p id="distance1" class="distance-display fade-in">Distance 1: Disconnected</p>
+  </div>
+
+  <div id="card2" class="card">
+    <p id="distance2" class="distance-display fade-in">Distance 2: Disconnected</p>
+  </div>
+  
+
+  <div class="slider-container">
+    <!-- Volume 1 Slider -->
+    <div class="slider-wrapper">
+      <label for="volume1">Volume for Distance 1:</label>
+      <input type="range" id="volume1" min="0" max="1" step="0.01" value="1">
+      <span id="volume1Value">1</span>
+    </div>
+    
+    <!-- Volume 2 Slider -->
+    <div class="slider-wrapper">
+      <label for="volume2">Volume for Distance 2:</label>
+      <input type="range" id="volume2" min="0" max="1" step="0.01" value="1">
+      <span id="volume2Value">1</span>
+    </div>
+  </div>
+
+  <script>
+    let bluetoothDevice;
+    let server;
+    let service;
+    let characteristic;
+
+    let distance1 = 0;
+    let distance2 = 0;
+
+    const HM10_SERVICE_UUID = '0000ffe0-0000-1000-8000-00805f9b34fb';
+    const HM10_CHARACTERISTIC_UUID = '0000ffe1-0000-1000-8000-00805f9b34fb';
+
+    document.getElementById('connect').addEventListener('click', async () => {
+      try {
+        bluetoothDevice = await navigator.bluetooth.requestDevice({
+          filters: [{ namePrefix: 'DistanzuinoBT' }],
+          optionalServices: [HM10_SERVICE_UUID]
+        });
+
+        // Add the disconnect event listener
+        bluetoothDevice.addEventListener('gattserverdisconnected', () => {
+          console.log('Device disconnected unexpectedly.');
+
+          // Stop all active sounds
+          stopFrequencies(1);
+          stopFrequencies(2);
+
+          // Update UI state
+          document.getElementById('connect').style.opacity = '1';
+          document.getElementById('connect').style.pointerEvents = 'auto';
+          document.getElementById('disconnect').style.opacity = '0';
+          document.getElementById('disconnect').style.pointerEvents = 'none';
+
+          updateUIState(false);
+        });
+
+        server = await bluetoothDevice.gatt.connect();
+        service = await server.getPrimaryService(HM10_SERVICE_UUID);
+        characteristic = await service.getCharacteristic(HM10_CHARACTERISTIC_UUID);
+
+        characteristic.startNotifications();
+        characteristic.addEventListener('characteristicvaluechanged', handleData);
+
+        document.getElementById('connect').style.opacity = '0';
+        document.getElementById('connect').style.pointerEvents = 'none';
+        document.getElementById('disconnect').style.opacity = '1';
+        document.getElementById('disconnect').style.pointerEvents = 'auto';
+
+
+        initializeOscillators(1);
+        initializeOscillators(2);
+
+        updateUIState(true);
+      } catch (error) {
+        console.error('Error connecting:', error);
+      }
+    });
+
+
+    function handleData(event) {
+      const decoder = new TextDecoder();
+      const rawValue = decoder.decode(event.target.value).trim();
+
+      // Split data into multiple packets in case they're concatenated
+      const packets = rawValue.split('\n'); // Assuming newline '\n' separates packets
+      packets.forEach(packet => {
+        const value = packet.trim();
+
+        if (value.startsWith('D1:')) {
+          const parsedValue = parseFloat(value.substring(3));
+          if (!isNaN(parsedValue)) {
+            distance1 = parsedValue / 10; // Convert to cm
+            updateDistanceDisplay(document.getElementById('distance1'), "1", distance1);
+          }
+        } else if (value.startsWith('D2:')) {
+          const parsedValue = parseFloat(value.substring(3));
+          if (!isNaN(parsedValue)) {
+            distance2 = parsedValue / 10; // Convert to cm
+            updateDistanceDisplay(document.getElementById('distance2'), "2", distance2);
+          }
+        }
+      });
+
+      // Refresh audio with corrected distances
+      handleSliderChange();
+    }
+
+
+
+
+    function updateDistanceDisplay(distanceElement, distanceLabel, distance) {
+      distanceElement.innerText = `Distance ${distanceLabel}: ${distance.toFixed(2)} cm`;
+      distanceElement.classList.add('fade-in');
+    }
+
+    document.getElementById('disconnect').addEventListener('click', () => {
+      if (bluetoothDevice && bluetoothDevice.gatt.connected) {
+        bluetoothDevice.gatt.disconnect();
+      }
+
+      // Stop all active sounds
+      stopFrequencies(1);
+      stopFrequencies(2);
+
+      document.getElementById('connect').style.opacity = '1';
+      document.getElementById('connect').style.pointerEvents = 'auto';
+      document.getElementById('disconnect').style.opacity = '0';
+      document.getElementById('disconnect').style.pointerEvents = 'none';
+
+      updateUIState(false);
+    });
+
+    function updateUIState(isConnected) {
+      if (isConnected) {
+        document.getElementById('distance1').innerText = 'Distance 1: Waiting...';
+        document.getElementById('distance2').innerText = 'Distance 2: Waiting...';
+      } else {
+        document.getElementById('distance1').innerText = 'Distance 1: Disconnected';
+        document.getElementById('distance2').innerText = 'Distance 2: Disconnected';
+      }
+    }
+
+
+
+
+
+
+
+    //*****
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillators = {
+      1: [],
+      2: []
+    };
+
+    const gains = {
+      1: [],
+      2: []
+    };
+
+    const intensityMap = {
+      133: 0.0045, 258: 0.0041, 391: 0.012,
+      150: 0.04, 291: 0.06, 441: 0.045,
+      166: 0.0175, 333: 0.015, 492: 0.022,
+      175: 0.03, 350: 0.055, 525: 0.045,
+      200: 0.009, 391: 0.086, 591: 0.03,
+      216: 0.059, 441: 0.088, 657: 0.021,
+      250: 0.02, 491: 0.11, 747: 0.02,
+      258: 0.034, 524: 0.028, 782: 0.003,
+      292: 0.0275, 582: 0.009, 883: 0.0015,
+      324: 0.0095, 658: 0.0036, 987: 0.0041,
+      350: 0.038, 692: 0.028, 1040: 0.006,
+      391: 0.096, 782: 0.026, 1174: 0.014,
+      440: 0.0357, 877: 0.012, 1318: 0.007,
+      492: 0.0315, 989: 0.009, 1483: 0.005
+    };
+
+
+
+    function initializeOscillators(label) {
+      for (let i = 0; i < 3; i++) { // Create three oscillators for each label
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        oscillator.type = 'sine';
+        oscillator.frequency.value = 0; // Start at 0 Hz (silent)
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        gainNode.gain.value = 0; // Start with no sound
+        oscillator.start();
+
+        oscillators[label].push(oscillator);
+        gains[label].push(gainNode);
+      }
+    }
+
+
+
+    const frequencyRanges = {
+      1: [
+        { min: 3, max: 8.99, freqs: [250, 491, 747] },
+        { min: 9, max: 14.99, freqs: [216, 441, 657] },
+        { min: 15, max: 20.99, freqs: [200, 391, 591] },
+        { min: 21, max: 26.99, freqs: [175, 350, 525] },
+        { min: 27, max: 32.99, freqs: [166, 333, 492] },
+        { min: 33, max: 38.99, freqs: [150, 291, 441] },
+        { min: 39, max: 45, freqs: [133, 258, 391] }
+      ],
+      2: [
+        { min: 3, max: 8.99, freqs: [258, 524, 782] },
+        { min: 9, max: 14.99, freqs: [292, 582, 883] },
+        { min: 15, max: 20.99, freqs: [324, 658, 987] },
+        { min: 21, max: 26.99, freqs: [350, 692, 1040] },
+        { min: 27, max: 32.99, freqs: [391, 782, 1174] },
+        { min: 33, max: 38.99, freqs: [440, 877, 1318] },
+        { min: 39, max: 45, freqs: [492, 989, 1483] }
+      ]
+    };
+
+    function getFrequencies(label, distance) {
+      const ranges = frequencyRanges[label];
+      for (const range of ranges) {
+        if (distance >= range.min && distance <= range.max) {
+          return range.freqs;
+        }
+      }
+      return [];
+    }
+
+    /*
+    function getFrequencies(distanceLabel, distance) {
+      if (distance < 3 || distance > 45) return [];
+      if (distanceLabel === "1") {
+        if (distance >= 3 && distance < 8.99) return [250, 491, 747];
+        if (distance >= 9 && distance < 14.99) return [216, 441, 657];
+        if (distance >= 15 && distance < 20.99) return [200, 391, 591];
+        if (distance >= 21 && distance < 26.99) return [175, 350, 525];
+        if (distance >= 27 && distance < 32.99) return [166, 333, 492];
+        if (distance >= 33 && distance < 38.99) return [150, 291, 441];
+        if (distance >= 39 && distance < 45) return [133, 258, 391];
+      } else if (distanceLabel === "2") {
+        if (distance >= 3 && distance < 8.99) return [258, 524, 782];
+        if (distance >= 9 && distance < 14.99) return [292, 582, 883];
+        if (distance >= 15 && distance < 20.99) return [324, 658, 987];
+        if (distance >= 21 && distance < 26.99) return [350, 692, 1040];
+        if (distance >= 27 && distance < 32.99) return [391, 782, 1174];
+        if (distance >= 33 && distance < 38.99) return [440, 877, 1318];
+        if (distance >= 39 && distance < 45) return [492, 989, 1483];
+      }
+      return [];
+    }
+    */
+
+    function playFrequencies(frequencies, volume, label) {
+      frequencies.forEach((freq, index) => {
+        if (oscillators[label][index]) {
+          const oscillator = oscillators[label][index];
+          const gainNode = gains[label][index];
+
+          // Smoothly transition frequency and gain
+          oscillator.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.01);
+          const intensity = intensityMap[freq] || 0.1;
+          gainNode.gain.setTargetAtTime(volume * intensity, audioCtx.currentTime, 0.01);
+        }
+      });
+
+      // Turn off unused oscillators
+      for (let i = frequencies.length; i < oscillators[label].length; i++) {
+        const gainNode = gains[label][i];
+        gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.01); // Smooth fade-out
+      }
+    }
+
+
+    function stopFrequencies(label) {
+      gains[label].forEach(gainNode => {
+        gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.01); // Smooth fade-out
+      });
+    }
+
+
+    function handleSliderChange() {
+
+      const volume1 = parseFloat(document.getElementById("volume1").value);
+      const volume2 = parseFloat(document.getElementById("volume2").value);
+
+      const frequencies1 = distance1 >= 3 && distance1 <= 45 ? getFrequencies("1", distance1) : [];
+      const frequencies2 = distance2 >= 3 && distance2 <= 45 ? getFrequencies("2", distance2) : [];
+
+      if (frequencies1.length > 0) {
+        playFrequencies(frequencies1, volume1, 1);
+      } else {
+        stopFrequencies(1);
+      }
+
+      if (frequencies2.length > 0) {
+        playFrequencies(frequencies2, volume2, 2);
+      } else {
+        stopFrequencies(2);
+      }
+
+
+      document.getElementById("volume1Value").textContent = volume1.toFixed(2);
+      document.getElementById("volume2Value").textContent = volume2.toFixed(2);
+    }
+
+    document.querySelectorAll('input[type="range"]').forEach(slider => {
+      slider.addEventListener("input", handleSliderChange);
+    });
+  </script>
+</body>
+</html>

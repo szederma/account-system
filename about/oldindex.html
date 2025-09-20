@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us | Distanzuino</title>
+    <link rel="icon" type="image/jpg" href="/images/icon.png">
+
+    <link rel="stylesheet" href="/styles.css">
+
+    <script type="text/javascript" src="https://app.termly.io/resource-blocker/611984d8-f015-418c-b13f-dc82c88b1907?autoBlock=on"></script>
+
+
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3HEL3CR3RW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-3HEL3CR3RW');
+</script>
+
+<body>   
+    <div id="site-header"></div>
+
+
+    <section class="about-box-section">
+        <div class="about-box">
+          <div class="about-box-text">
+            <h2>About Us</h2>
+            <p><strong>Three 14-Year-Old Students from Hungary Invent a New Musical Instrument?</strong></p>
+            <p>We are <strong>Matyas Szederkenyi</strong>, <strong>Dora Szederkenyi</strong>, and <strong>Laura Kürtösi</strong> — three students from the German School of Budapest. We were in the eighth grade when we began working on what would later become the <strong>Distanzuino</strong> project. It all started a year earlier, in seventh grade, when we joined our school’s physics and robotics club. That’s where we first discovered the world of technology and programming — and from that moment on, we knew we wanted to create something of our own.</p>
+            <p>The idea began to take shape when we decided to enter the <strong>Jugend forscht</strong> competition. Since we’re all passionate about music, we knew we wanted to merge our two biggest interests: <strong>music and technology</strong>. Our concept evolved through countless experiments — and failures — until the <strong>Distanzuino</strong> was born: <strong>a digital musical instrument based on distance measurement</strong>.</p>
+            <p>Being long-time classmates and friends made teamwork natural and enjoyable. We quickly realized that we not only had a creative idea, but also the determination and skills to turn it into a working prototype.</p>
+            <p>Our goal wasn’t just to invent something new — we wanted to create a tool that helps young people explore music and learn the basics of technology in a <strong>fun, interactive</strong> way. We believe that these are essential skills for the future, and <strong>Distanzuino</strong> offers a playful introduction to both.</p>
+            <p>With this project, we’ve participated in several national and international competitions including <strong>Jugend Forscht</strong> and <strong>OTIO</strong> (Hungarian National Olympiad for Science and Innovation). Our mission now is to make the <strong>Distanzuino</strong> available to as many young people as possible — so they can experience the joy of making music while learning about technology, sensors, and creative thinking.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="creators-section">
+        <div class="creators-container">
+          <h2 class="section-title">Meet the Creators</h2>
+          <div class="creator-cards">
+            <div class="creator-card">
+              <img src="/images/about/matyas_szederkenyi.jpg" alt="Mátyás Szederkényi" class="creator-photo">
+              <h3>Matyas Szederkenyi</h3>
+              <p>Co-creator</p>
+            </div>
+            <div class="creator-card">
+              <img src="/images/about/dora_szederkenyi.jpg" alt="Dóra Szederkényi" class="creator-photo">
+              <h3>Dora Szederkenyi</h3>
+              <p>Co-creator</p>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+
+    <section class="contact-box-section">
+        <div class="contact-box">
+          <h2>Got any questions or ideas?</h2>
+          <p>Feel free to reach out — we’d love to hear from you.</p>
+          <form class="contact-form" action="https://formspree.io/f/xnnponbr" method="POST">
+            <input type="text" name="name" placeholder="Your Name" required>
+            <input type="email" name="_replyto" placeholder="Your Email" required>
+            <input type="text" name="subject" placeholder="Subject" required> <!-- NEW FIELD -->
+            <textarea name="message" placeholder="Your Message" required></textarea>
+            <input type="hidden" name="_redirect" value="https://distanzuino.com/about?sent=true">
+            <button type="submit">Send Message</button>
+          </form>                           
+      </section>
+      
+      
+    
+
+    <div id="site-footer"></div>
+
+    <script>
+    fetch('/header.html')
+        .then(res => res.text())
+        .then(data => {
+        document.getElementById('site-header').innerHTML = data;
+
+        // Init header-related JS after insertion
+        const mobileNavToggle = document.querySelector('.mobile-nav-toggle');
+        const nav = document.getElementById('nav');
+        
+        mobileNavToggle?.addEventListener('click', function() {
+            nav.classList.toggle('active');
+            mobileNavToggle.textContent = nav.classList.contains('active') ? '✕' : '☰';
+        });
+
+        document.addEventListener('click', function(event) {
+            if (!nav.contains(event.target) && !mobileNavToggle.contains(event.target)) {
+            nav.classList.remove('active');
+            mobileNavToggle.textContent = '☰';
+            }
+        });
+
+        document.querySelectorAll('nav a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                // only close if not a submenu toggle
+                if (!this.classList.contains('submenu-toggle')) {
+                    nav.classList.remove('active');
+                    mobileNavToggle.textContent = '☰';
+                }
+            });
+        });
+
+
+        window.addEventListener('scroll', () => {
+            const header = document.getElementById('header');
+            if (window.scrollY > 50) {
+            header.classList.add('scrolled');
+            } else {
+            header.classList.remove('scrolled');
+            }
+        });
+
+        const submenuToggle = document.querySelector('.submenu-toggle');
+        const submenuParent = submenuToggle?.closest('.has-submenu');
+
+        submenuToggle?.addEventListener('click', (e) => {
+        e.preventDefault();
+        submenuParent?.classList.toggle('open');
+        });
+
+        // Close submenu if clicked outside
+        document.addEventListener('click', (e) => {
+        if (!submenuParent.contains(e.target)) {
+            submenuParent.classList.remove('open');
+        }
+        });
+
+        submenuParent?.querySelectorAll('.submenu a').forEach(link => {
+            link.addEventListener('click', () => {
+                submenuParent.classList.remove('open');
+            });
+        });
+
+        });
+
+    // Load footer
+    fetch('/footer.html')
+        .then(res => res.text())
+        .then(data => document.getElementById('site-footer').innerHTML = data);
+        
+    
+    </script>
+
+    <script>
+        window.addEventListener("DOMContentLoaded", () => {
+        const params = new URLSearchParams(window.location.search);
+        const form = document.querySelector(".contact-form");
+    
+        if (params.get("sent") === "true" && form) {
+            // Show thank-you message
+            const successMsg = document.createElement("p");
+            successMsg.textContent = "Thank you! Your message has been sent.";
+            successMsg.style.color = "#00cc66";
+            successMsg.style.marginTop = "20px";
+            successMsg.style.fontWeight = "bold";
+            form.parentNode.insertBefore(successMsg, form);
+    
+            // Clean URL
+            const cleanURL = window.location.origin + window.location.pathname;
+            window.history.replaceState({}, document.title, cleanURL);
+        }
+        });
+    </script>
+    
+  
+  
+    
+  
+    
+</body>
+</html>

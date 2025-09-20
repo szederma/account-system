@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Chat App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            overscroll-behavior: none; /* Prevents pull-to-refresh issues on mobile */
+        }
+        #chat-messages::-webkit-scrollbar {
+            width: 8px;
+        }
+        #chat-messages::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        #chat-messages::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        #chat-messages::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        .message-bubble {
+            transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+        }
+        .message-bubble.animate-in {
+            transform: scale(1);
+            opacity: 1;
+        }
+        .initial-hidden {
+            transform: scale(0.95);
+            opacity: 0;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 to-slate-800 text-slate-100 flex flex-col items-center justify-center min-h-screen p-4 selection:bg-sky-500 selection:text-white">
+
+    <div class="bg-slate-800 shadow-2xl rounded-xl w-full max-w-2xl flex flex-col h-[90vh] md:h-[80vh]">
+        <header class="bg-slate-700/50 p-4 rounded-t-xl border-b border-slate-600">
+            <h1 class="text-2xl font-bold text-center text-sky-400">Galaxy Chat</h1>
+            <p class="text-xs text-center text-slate-400 mt-1">Your User ID: <span id="userIdDisplay" class="font-mono bg-slate-600 px-1.5 py-0.5 rounded">Loading...</span></p>
+        </header>
+
+        <div id="chat-messages" class="flex-grow p-6 space-y-4 overflow-y-auto bg-slate-800/70">
+            <div id="loading-messages" class="text-center text-slate-400 py-10">
+                <svg class="animate-spin h-8 w-8 text-sky-500 mx-auto mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                <p>Connecting to the stars...</p>
+            </div>
+        </div>
+
+        <footer class="bg-slate-700/50 p-4 rounded-b-xl border-t border-slate-600">
+            <form id="message-form" class="flex items-center space-x-3">
+                <input type="text" id="message-input" placeholder="Type your message..." class="flex-grow p-3 bg-slate-600 border border-slate-500 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all text-slate-100 placeholder-slate-400 disabled:opacity-50" autocomplete="off" disabled>
+                <button type="submit" id="send-button" class="bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2 focus:ring-offset-slate-800 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+                        <path d="M3.105 3.105a1.5 1.5 0 012.122-.001L19.43 14.645a1.5 1.5 0 01.001 2.122l-1.413 1.414a1.5 1.5 0 01-2.122 0L3.105 5.227a1.5 1.5 0 010-2.122z" />
+                        <path d="M4.518 14.645a1.5 1.5 0 01.001-2.122L16.227 3.105a1.5 1.5 0 012.122.001l1.414 1.413a1.5 1.5 0 010 2.122L7.043 18.36a1.5 1.5 0 01-2.122 0L3.506 16.947a1.5 1.5 0 01.001-2.122l.001-.001.001-.001.001-.001.001-.001zM14.81 5.227a1.5 1.5 0 012.122-.001l1.414 1.413a1.5 1.5 0 010 2.122L5.93 21.182a1.5 1.5 0 01-2.122 0l-1.414-1.414a1.5 1.5 0 010-2.122L14.81 5.227z" />
+                      </svg>
+                </button>
+            </form>
+        </footer>
+    </div>
+
+    <div id="custom-alert-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-slate-700 p-6 rounded-lg shadow-xl max-w-sm w-full">
+            <h3 id="custom-alert-title" class="text-lg font-semibold text-sky-400 mb-2">Notification</h3>
+            <p id="custom-alert-message" class="text-slate-300 mb-4">This is a custom alert message.</p>
+            <button id="custom-alert-close" class="bg-sky-500 hover:bg-sky-600 text-white font-medium py-2 px-4 rounded-lg transition-colors w-full">OK</button>
+        </div>
+    </div>
+
+
+    
+
+    <script type="module">
+        // Firebase SDK imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, serverTimestamp, Timestamp, doc, setDoc, getDoc, deleteDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- DOM Elements ---
+        const messageForm = document.getElementById('message-form');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const chatMessagesDiv = document.getElementById('chat-messages');
+        const userIdDisplay = document.getElementById('userIdDisplay');
+        const loadingMessagesDiv = document.getElementById('loading-messages');
+
+        // Modal DOM Elements (defined early)
+        const customAlertModal = document.getElementById('custom-alert-modal');
+        const customAlertTitle = document.getElementById('custom-alert-title');
+        const customAlertMessage = document.getElementById('custom-alert-message');
+        const customAlertClose = document.getElementById('custom-alert-close');
+        
+        // --- Custom Alert Functions ---
+        function showCustomAlert(title, message) {
+            if (customAlertTitle && customAlertMessage && customAlertModal) {
+                customAlertTitle.textContent = title;
+                customAlertMessage.textContent = message;
+                customAlertModal.classList.remove('hidden');
+            } else {
+                console.error("Custom alert elements not found. Alert:", title, message);
+            }
+        }
+        if (customAlertClose) {
+            customAlertClose.addEventListener('click', () => {
+                if (customAlertModal) customAlertModal.classList.add('hidden');
+            });
+        }
+
+        // --- Firebase Configuration ---
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-chat-app';
+        const rawFirebaseConfigFromEnv = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}'; // Renamed to avoid confusion
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        
+        let firebaseConfig; // This will hold the final config to be used
+
+        // THIS IS WHERE YOUR FIREBASE CONFIG GOES FOR LOCAL TESTING
+        // The script will use this if __firebase_config is not provided by the environment.
+        const userProvidedHardcodedConfig = {
+            apiKey: "AIzaSyAddXTzBxZk1Su6fNnsgRuNnWqFrq_ZjCY",
+            authDomain: "distanzuino-project.firebaseapp.com",
+            projectId: "distanzuino-project",
+            storageBucket: "distanzuino-project.firebasestorage.app",
+            messagingSenderId: "584745723160",
+            appId: "1:584745723160:web:97387a22f4b4b9fb9c6a6d",
+            measurementId: "G-EXT3ZQ10SV"
+        };
+
+        // Generic placeholder for comparison
+        const placeholderApiKey = "YOUR_API_KEY_PLACEHOLDER"; // A unique placeholder string
+
+        try {
+            if (rawFirebaseConfigFromEnv && rawFirebaseConfigFromEnv !== '{}') {
+                 firebaseConfig = JSON.parse(rawFirebaseConfigFromEnv);
+                 console.log("Using Firebase config from environment.");
+            } else {
+                // Environment did not provide config, so use the user's hardcoded one
+                firebaseConfig = userProvidedHardcodedConfig;
+                console.warn("Using user-provided hardcoded Firebase config for local testing.");
+                // Check if the hardcoded config is still the generic placeholder
+                if (firebaseConfig.apiKey === placeholderApiKey) {
+                     console.error("The hardcoded Firebase config is still a generic placeholder. Please update it with your actual project credentials.");
+                     showCustomAlert("Configuration Needed", "Please update the placeholder Firebase config in the HTML script with your actual project credentials.");
+                     firebaseConfig = { apiKey: "ERROR_NEEDS_REAL_CONFIG", authDomain: "ERROR", projectId: "ERROR" }; // Mark as invalid
+                }
+            }
+        } catch (e) {
+            console.error("Error processing Firebase config:", e);
+            showCustomAlert("Configuration Error", `Invalid Firebase configuration: ${e.message}. Chat functionality will be limited.`);
+            firebaseConfig = { apiKey: "ERROR_INVALID_CONFIG", authDomain: "ERROR", projectId: "ERROR" }; 
+        }
+
+        // --- Firebase Initialization ---
+        let app;
+        let auth;
+        let db;
+        let currentUserId = null;
+        let messagesCollectionRef;
+        let unsubscribeMessages = null; 
+
+        // Initialize Firebase only if the config is valid and not one of the error states
+        if (firebaseConfig && firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith("ERROR_")) {
+            try {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                setLogLevel('debug'); 
+                messagesCollectionRef = collection(db, `artifacts/${appId}/public/data/messages`);
+                console.log("Firebase initialized with projectId:", firebaseConfig.projectId, "App ID:", appId);
+                setupAuthListener();
+            } catch (error) {
+                console.error("Error initializing Firebase:", error);
+                showCustomAlert("Initialization Error", `Failed to initialize Firebase: ${error.message}. Check console & Firebase setup (Firestore, Auth).`);
+                disableChatFeatures();
+            }
+        } else {
+            console.error("Firebase is not configured correctly. API key is missing, a placeholder, or an error state.");
+            if (!firebaseConfig || !firebaseConfig.apiKey || firebaseConfig.apiKey === placeholderApiKey) {
+                 showCustomAlert("Firebase Not Configured", "The Firebase configuration in the script needs to be updated with your project's actual credentials for local testing.");
+            } else if (firebaseConfig.apiKey.startsWith("ERROR_")) {
+                 // Already handled by previous alerts, but log for clarity
+                 console.log("Firebase initialization skipped due to configuration errors shown earlier.");
+            }
+            disableChatFeatures();
+        }
+
+        // --- Authentication ---
+        function setupAuthListener() {
+            // ... (rest of the functions remain the same as the previous version) ...
+            if (!auth) {
+                console.error("Auth service is not available. Cannot set up auth listener.");
+                disableChatFeatures();
+                if(userIdDisplay) userIdDisplay.textContent = "Auth Error";
+                return;
+            }
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    currentUserId = user.uid;
+                    if(userIdDisplay) userIdDisplay.textContent = currentUserId;
+                    console.log("User authenticated:", currentUserId);
+                    if(messageInput) messageInput.disabled = false;
+                    if(sendButton) sendButton.disabled = false;
+                    loadMessages();
+                } else {
+                    console.log("User not authenticated, attempting to sign in...");
+                    try {
+                        if (initialAuthToken) {
+                            await signInWithCustomToken(auth, initialAuthToken);
+                            console.log("Signed in with custom token.");
+                        } else {
+                            await signInAnonymously(auth);
+                            console.log("Signed in anonymously.");
+                        }
+                    } catch (error) {
+                        console.error("Error signing in:", error);
+                        showCustomAlert("Authentication Error", `Failed to sign in: ${error.message}. Ensure Anonymous sign-in is enabled in Firebase.`);
+                        disableChatFeatures();
+                        if(userIdDisplay) userIdDisplay.textContent = "Sign-in Error";
+                    }
+                }
+            });
+        }
+
+        function disableChatFeatures() {
+            if(messageInput) messageInput.disabled = true;
+            if(sendButton) sendButton.disabled = true;
+            if (loadingMessagesDiv) loadingMessagesDiv.innerHTML = "<p>Chat disabled due to an error or misconfiguration. Check console.</p>";
+        }
+
+        // --- Sending Messages ---
+        if (messageForm) {
+            messageForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const messageText = messageInput.value.trim();
+
+                if (!messageText || !currentUserId || !messagesCollectionRef) {
+                    console.warn("Cannot send message: No text, user not authenticated, or DB not ready.");
+                    return;
+                }
+
+                if(sendButton) sendButton.disabled = true; 
+
+                try {
+                    await addDoc(messagesCollectionRef, {
+                        text: messageText,
+                        userId: currentUserId,
+                        timestamp: serverTimestamp(), 
+                        userName: `User-${currentUserId.substring(0, 6)}` 
+                    });
+                    if(messageInput) messageInput.value = ''; 
+                    console.log("Message sent:", messageText);
+                } catch (error) {
+                    console.error("Error sending message:", error);
+                    showCustomAlert("Send Error", `Failed to send message: ${error.message}. Check Firestore rules.`);
+                } finally {
+                    if(sendButton) sendButton.disabled = false; 
+                    if(messageInput) messageInput.focus();
+                }
+            });
+        }
+
+        // --- Displaying Messages ---
+        function loadMessages() {
+            if (!messagesCollectionRef) {
+                console.error("Messages collection reference is not initialized.");
+                if (loadingMessagesDiv) loadingMessagesDiv.innerHTML = "<p>Error loading messages: Not connected.</p>";
+                return;
+            }
+
+            if (unsubscribeMessages) {
+                unsubscribeMessages(); 
+            }
+            
+            // No orderBy here, will sort client-side
+            const q = query(messagesCollectionRef); 
+
+            unsubscribeMessages = onSnapshot(q, (snapshot) => {
+                if (loadingMessagesDiv) {
+                    loadingMessagesDiv.style.display = 'none'; 
+                }
+                
+                let messages = [];
+                snapshot.forEach(doc => {
+                    messages.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Sort messages by timestamp client-side
+                messages.sort((a, b) => {
+                    const tsA = a.timestamp instanceof Timestamp ? a.timestamp.toMillis() : (a.timestamp?.seconds * 1000 || 0);
+                    const tsB = b.timestamp instanceof Timestamp ? b.timestamp.toMillis() : (b.timestamp?.seconds * 1000 || 0);
+                    return tsA - tsB;
+                });
+
+                renderMessages(messages);
+
+            }, (error) => {
+                console.error("Error fetching messages:", error);
+                if (loadingMessagesDiv) {
+                     loadingMessagesDiv.innerHTML = `<p class="text-red-400">Error loading messages: ${error.message}. Check Firestore rules and DB existence.</p>`;
+                     loadingMessagesDiv.style.display = 'block';
+                }
+                showCustomAlert("Message Error", `Failed to load messages: ${error.message}`);
+            });
+        }
+
+        function renderMessages(messages) {
+            if (!chatMessagesDiv) return;
+            chatMessagesDiv.innerHTML = ''; 
+
+            if (messages.length === 0 && loadingMessagesDiv && loadingMessagesDiv.style.display === 'none') {
+                 const noMessagesEl = document.createElement('div');
+                 noMessagesEl.className = 'text-center text-slate-500 py-10';
+                 noMessagesEl.textContent = 'No messages yet. Be the first to say something!';
+                 chatMessagesDiv.appendChild(noMessagesEl);
+                 return;
+            }
+
+            messages.forEach(msg => {
+                if (!msg.text || !msg.userId) return; 
+
+                const messageWrapper = document.createElement('div');
+                messageWrapper.classList.add('flex', 'initial-hidden', 'message-bubble'); 
+
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('max-w-[70%]', 'p-3', 'rounded-xl', 'shadow');
+                
+                const messageTextP = document.createElement('p');
+                messageTextP.classList.add('text-sm', 'break-words');
+                messageTextP.textContent = msg.text;
+
+                const messageMetaSpan = document.createElement('span');
+                messageMetaSpan.classList.add('text-xs', 'mt-1', 'block', 'opacity-70');
+                
+                let timeString = "sending...";
+                if (msg.timestamp && msg.timestamp.toDate) { 
+                    timeString = msg.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                } else if (msg.timestamp && typeof msg.timestamp.seconds === 'number') { 
+                    try {
+                        timeString = new Date(msg.timestamp.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    } catch (e) { /* ignore */ }
+                }
+
+
+                if (msg.userId === currentUserId) {
+                    messageWrapper.classList.add('justify-end');
+                    messageDiv.classList.add('bg-sky-600', 'text-white', 'rounded-br-none');
+                    messageMetaSpan.textContent = `You • ${timeString}`;
+                    messageMetaSpan.classList.add('text-sky-200', 'text-right');
+                } else {
+                    messageWrapper.classList.add('justify-start');
+                    messageDiv.classList.add('bg-slate-600', 'text-slate-100', 'rounded-bl-none');
+                    const senderName = msg.userName || `User-${msg.userId.substring(0, 6)}`;
+                    messageMetaSpan.textContent = `${senderName} • ${timeString}`;
+                    messageMetaSpan.classList.add('text-slate-400');
+                }
+
+                messageDiv.appendChild(messageTextP);
+                messageDiv.appendChild(messageMetaSpan);
+                messageWrapper.appendChild(messageDiv);
+                chatMessagesDiv.appendChild(messageWrapper);
+
+                requestAnimationFrame(() => {
+                    messageWrapper.classList.add('animate-in');
+                });
+            });
+
+            chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
+        }
+        
+        if(messageInput) messageInput.focus();
+
+        window.addEventListener('beforeunload', () => {
+            if (unsubscribeMessages) {
+                unsubscribeMessages();
+                console.log("Unsubscribed from message updates.");
+            }
+        });
+
+    </script>
+</body>
+</html>

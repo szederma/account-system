@@ -1,0 +1,868 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Distanzuino Learn</title>
+  <meta name="description" content="An interactive learning lab that teaches every part of Distanzuino — step by step." />
+
+  <!-- BRAND THEME -->
+  <style>
+    :root{
+      --brand-red:#b52127;
+      --ink:#e9e9e9;
+      --bg:#111214;               /* deep charcoal */
+      --panel:#1a1c20;            /* card background */
+      --muted:#9ba0a8;
+      --accent:#38bdf8;           /* subtle cyan accents for education vibe */
+      --ok:#22c55e;               /* green success */
+      --warn:#f59e0b;
+      --err:#ef4444;
+      --shadow:0 8px 24px rgba(0,0,0,.35);
+      --radius:16px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;background:radial-gradient(1200px 600px at 70% -10%,rgba(181,33,39,.08),transparent),var(--bg);
+      color:var(--ink); font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;
+      -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    }
+    a{color:var(--accent);text-decoration:none}
+    img{max-width:100%;display:block}
+
+    /* HEADER */
+    .topbar{
+      position:sticky; top:0; z-index:40; backdrop-filter:saturate(120%) blur(10px);
+      background:linear-gradient(180deg,rgba(26,28,32,.9),rgba(26,28,32,.55));
+      border-bottom:1px solid rgba(255,255,255,.06);
+    }
+    .topwrap{
+      max-width:1200px; margin:0 auto; padding:12px 20px; display:flex; align-items:center; gap:14px;
+    }
+    .brand{display:flex; align-items:center; gap:12px}
+    .brand img{height:32px; width:auto; filter:drop-shadow(0 2px 6px rgba(0,0,0,.4))}
+    .brand h1{font-size:18px; margin:0; letter-spacing:.4px}
+    .badge{font-size:12px; padding:2px 8px; border-radius:999px; background:rgba(181,33,39,.2); color:#fff; border:1px solid rgba(181,33,39,.6)}
+    .progress{
+      margin-left:auto; display:flex; align-items:center; gap:10px;
+    }
+    .progressbar{
+      width:220px; height:8px; background:#0d0f12; border-radius:999px; overflow:hidden; box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);
+    }
+    .progressbar > i{display:block; height:100%; width:0%; background:linear-gradient(90deg,var(--brand-red),#ff6a6f); transition:width .35s ease}
+
+    /* LAYOUT */
+    .wrap{max-width:1200px; margin:0 auto; padding:24px 20px 80px}
+    .panel{
+      background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,0)) , var(--panel);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:var(--radius); box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .hero{
+      display:grid; grid-template-columns:1.2fr .8fr; gap:24px; padding:28px;
+    }
+    .hero h2{margin:.2rem 0 1rem; font-size:28px}
+    .muted{color:var(--muted)}
+    .cta{display:flex; gap:12px; margin-top:16px; flex-wrap:wrap}
+    .btn{
+      appearance:none; border:none; border-radius:12px; padding:12px 16px; cursor:pointer;
+      background:#1f2329; color:#fff; transition:transform .12s ease, background .2s ease, box-shadow .2s ease;
+      box-shadow:0 6px 16px rgba(0,0,0,.25);
+    }
+    .btn:hover{transform:translateY(-1px); background:#242931}
+    .btn.primary{background:linear-gradient(180deg,var(--brand-red),#7a171a); box-shadow:0 8px 22px rgba(181,33,39,.35)}
+    .btn.primary:hover{filter:brightness(1.1)}
+    .btn.ghost{background:transparent; border:1px solid rgba(255,255,255,.14)}
+
+    /* STEP FLOW */
+    .step{
+      display:none; opacity:0; transform:translateY(10px);
+      transition:opacity .3s ease, transform .3s ease;
+      padding:28px;
+    }
+    .step.active{display:block; opacity:1; transform:none}
+    .steptitle{display:flex; align-items:center; gap:10px; margin:0 0 10px}
+    .stepgrid{display:grid; gap:18px}
+    @media(min-width:920px){ .stepgrid.cols-2{grid-template-columns:1fr 1fr} .stepgrid.cols-3{grid-template-columns:repeat(3,1fr)} }
+
+    .crumbs{display:flex; gap:8px; flex-wrap:wrap; margin:0 0 14px}
+    .crumb{font-size:12px; padding:6px 10px; border-radius:999px; border:1px solid rgba(255,255,255,.1); color:var(--muted)}
+    .crumb.on{background:rgba(181,33,39,.15); color:#fff; border-color:rgba(181,33,39,.6)}
+
+    .nav{
+      display:flex; justify-content:space-between; align-items:center; gap:14px; padding:16px 0 0; border-top:1px dashed rgba(255,255,255,.12); margin-top:22px;
+    }
+
+    /* CARDS & CALL-OUTS */
+    .card{
+      background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.00)),#17191d;
+      border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:16px; box-shadow:0 12px 26px rgba(0,0,0,.25);
+    }
+    .callout{border-left:3px solid var(--brand-red); background:rgba(181,33,39,.08); padding:14px 16px; border-radius:8px}
+    .hint{font-size:13px; color:var(--muted)}
+    .kpi{display:flex; gap:14px; align-items:center}
+    .kpi b{font-size:22px}
+
+    /* BUILD - “wiring” board */
+    .board{
+      background:radial-gradient(600px 300px at 0% 0%,rgba(56,189,248,.08),transparent), #101317;
+      border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:16px; min-height:260px; position:relative; overflow:hidden;
+    }
+    .board .node{
+      position:absolute; background:#0f151c; border:1px solid rgba(255,255,255,.1); padding:10px 12px; border-radius:10px; cursor:pointer;
+      box-shadow:0 8px 18px rgba(0,0,0,.35); user-select:none;
+    }
+    .node.pin{background:#171717}
+    .wire{position:absolute; height:3px; background:linear-gradient(90deg,var(--accent),#7dd3fc); transform-origin:left center; border-radius:999px; box-shadow:0 0 10px rgba(56,189,248,.25)}
+    .node.good{outline:2px solid rgba(34,197,94,.7)}
+    .node.bad{outline:2px solid rgba(239,68,68,.7)}
+
+    /* CODE & SIMULATION */
+    .sl{display:grid; gap:12px}
+    .sl label{display:flex; justify-content:space-between; font-size:13px; color:var(--muted)}
+    .sl input[type=range]{width:100%}
+    .sim{
+      background:conic-gradient(from 180deg at 50% 120%, rgba(181,33,39,.15), rgba(181,33,39,0) 30%), #111417;
+      border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:18px; min-height:220px; position:relative; overflow:hidden;
+    }
+    .sim .hand{
+      position:absolute; left:50%; transform:translateX(-50%); width:120px; height:6px; border-radius:999px; background:linear-gradient(90deg,transparent,#fff,transparent);
+      box-shadow:0 0 20px rgba(255,255,255,.35); opacity:.85; transition:top .04s linear;
+    }
+    .sim .note{position:absolute; left:14px; top:14px; font-weight:700; opacity:.9}
+    .sim .scope{position:absolute; right:14px; bottom:14px; font:12px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color:var(--muted)}
+
+    /* QUIZ */
+    .quiz{display:grid; gap:12px}
+    .quiz .opt{padding:12px 14px; border-radius:12px; border:1px solid rgba(255,255,255,.1); cursor:pointer; background:#15171b}
+    .opt.correct{border-color:rgba(34,197,94,.6); background:rgba(34,197,94,.08)}
+    .opt.wrong{border-color:rgba(239,68,68,.6); background:rgba(239,68,68,.08)}
+
+    /* FOOTER */
+    footer{opacity:.6; font-size:13px; margin-top:28px}
+
+    /* MOTION bits */
+    .fadeUp{animation:fadeUp .5s ease both}
+    @keyframes fadeUp{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none}}
+    .pulse{animation:pulse 2s ease-in-out infinite}
+    @keyframes pulse{0%,100%{opacity:.85} 50%{opacity:.45}}
+  </style>
+</head>
+<body>
+  <!-- HEADER -->
+  <header class="topbar">
+    <div class="topwrap">
+      <div class="brand">
+        <img src="/images/logo.png" alt="Distanzuino logo" />
+        <h1>Distanzuino <span style="color:var(--brand-red)">Learn</span></h1>
+        <span class="badge">guided</span>
+      </div>
+      <div class="progress" aria-label="Course progress">
+        <span class="hint" id="progressLabel">0% • 0/8</span>
+        <div class="progressbar" aria-hidden="true"><i id="progressFill"></i></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- BODY -->
+  <main class="wrap">
+    <!-- HERO -->
+    <section class="panel hero fadeUp" id="hero">
+      <div>
+        <p class="badge" style="display:inline-block">Start here</p>
+        <h2>Welcome to <span style="color:var(--brand-red)">Distanzuino Learn</span></h2>
+        <p class="muted">A hands-on, step-by-step lab. We’ll explore every part, see the signal flow, wire a virtual device, tune parameters, play a simulation, check your understanding, and finish with a sandbox.</p>
+        <div class="kpi" style="margin-top:12px">
+          <div class="card"><b>8</b><div class="hint">guided steps</div></div>
+          <div class="card"><b>+ Badges</b><div class="hint">save progress locally</div></div>
+          <div class="card"><b>Live</b><div class="hint">Web Audio synth</div></div>
+        </div>
+        <div class="cta">
+          <button class="btn primary" id="startBtn">Begin the tour</button>
+          <button class="btn ghost" id="resumeBtn" title="Resume where you left off">Resume</button>
+        </div>
+        <p class="hint" style="margin-top:8px">Tip: headphones recommended 🎧</p>
+      </div>
+      <div class="card">
+        <div class="callout">
+          <strong>How it works</strong>
+          <ul class="muted" style="margin:8px 0 0 18px">
+            <li>Follow the steps in order.</li>
+            <li>Your progress is saved in your browser.</li>
+            <li>You can always go back to review.</li>
+          </ul>
+        </div>
+        <div style="height:14px"></div>
+        <div class="crumbs" id="crumbs"></div>
+      </div>
+    </section>
+
+    <!-- FLOW CONTAINER -->
+    <section class="panel fadeUp" id="flow" style="margin-top:22px">
+      <!-- Step 1: Tour -->
+      <div class="step" data-step="1" id="s1">
+        <h3 class="steptitle">Step 1 — Guided Tour</h3>
+        <div class="stepgrid cols-2">
+          <div class="card">
+            <p class="muted">Hover parts to learn. These are the core pieces you’ll meet again.</p>
+            <ul style="margin-left:18px">
+              <li><b>Distance sensor</b> — detects your hand position.</li>
+              <li><b>Microcontroller</b> — reads sensor & runs logic.</li>
+              <li><b>Sound engine</b> — turns numbers into notes.</li>
+              <li><b>Power</b> — keeps everything alive.</li>
+            </ul>
+          </div>
+          <div class="board" style="height:300px">
+            <div class="node" style="top:38px; left:28px" data-tip="Emits & reads back signal → distance.">IR/ToF Sensor</div>
+            <div class="node" style="top:90px; left:280px" data-tip="Brains of the device — code runs here.">Microcontroller</div>
+            <div class="node" style="top:190px; left:72px" data-tip="Maps distance → pitch/volume → sound.">Sound Engine</div>
+            <div class="node" style="top:220px; left:330px" data-tip="Battery / USB power.">Power</div>
+          </div>
+          <div class="card"><div class="callout"><b>Why this order?</b> It matches the real signal path. You’ll wire it next.</div></div>
+        </div>
+        <div class="nav">
+          <span></span>
+          <button class="btn primary" data-next>Continue</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Components deep dive -->
+      <div class="step" data-step="2" id="s2">
+        <h3 class="steptitle">Step 2 — Components Deep Dive</h3>
+        <div class="stepgrid cols-3">
+          <div class="card">
+            <h4>Distance Sensor</h4>
+            <p class="hint">Outputs a number ~ distance in cm.</p>
+            <ul class="muted" style="margin-left:18px">
+              <li>Range: 2–80 cm (typ.)</li>
+              <li>Noise: filtered by smoothing</li>
+              <li>Key params: <i>minDist, maxDist, sensitivity</i></li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>Microcontroller</h4>
+            <p class="hint">Reads sensor, applies mapping & smoothing.</p>
+            <ul class="muted" style="margin-left:18px">
+              <li>Sampling rate matters</li>
+              <li>Debounce fast changes</li>
+              <li>Map distance → pitch (Hz)</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>Sound Engine</h4>
+            <p class="hint">Web Audio → oscillator + envelope.</p>
+            <ul class="muted" style="margin-left:18px">
+              <li>Wave: sine by default</li>
+              <li>Attack/Release envelope</li>
+              <li>Volume from hand speed</li>
+            </ul>
+          </div>
+        </div>
+        <div class="nav">
+          <button class="btn" data-prev>Back</button>
+          <button class="btn primary" data-next>Continue</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Signal Path -->
+      <div class="step" data-step="3" id="s3">
+        <h3 class="steptitle">Step 3 — Signal Path</h3>
+        <div class="stepgrid cols-2">
+          <div class="card">
+            <p class="muted">Follow the data: <b>hand</b> → <b>distance</b> → <b>mapped pitch</b> → <b>sound</b>.</p>
+            <ol style="margin-left:18px">
+              <li>Sensor reads distance</li>
+              <li>Microcontroller smooths & maps</li>
+              <li>Sound engine plays note</li>
+            </ol>
+          </div>
+          <div class="board" id="sigBoard" style="height:220px">
+            <!-- animated wires drawn by JS -->
+          </div>
+        </div>
+        <div class="nav">
+          <button class="btn" data-prev>Back</button>
+          <button class="btn primary" data-next>Continue</button>
+        </div>
+      </div>
+
+      <!-- Step 4: Build (Virtual wiring) -->
+      <div class="step" data-step="4" id="s4">
+        <h3 class="steptitle">Step 4 — Virtual Build (Wire it!)</h3>
+        <div class="stepgrid cols-2">
+          <div class="board" id="buildBoard" aria-live="polite">
+            <!-- Parts -->
+            <div class="node" id="part-sensor" style="top:36px; left:30px">Sensor OUT</div>
+            <div class="node" id="part-mcu" style="top:90px; left:220px">MCU A0</div>
+            <div class="node" id="part-audio" style="top:180px; left:80px">Audio IN</div>
+            <div class="node" id="part-power" style="top:210px; left:320px">Power</div>
+            <!-- Pins -->
+            <div class="node pin" id="pin-1" style="top:62px; left:140px">→ A0</div>
+            <div class="node pin" id="pin-2" style="top:156px; left:165px">→ Audio</div>
+            <div class="node pin" id="pin-3" style="top:206px; left:250px">→ Vcc</div>
+          </div>
+          <div class="card">
+            <div class="callout"><b>Task:</b> Click the <i>correct pins</i> in order to connect <b>Sensor → MCU</b>, <b>MCU → Audio</b>, and <b>Power</b>.</div>
+            <p class="hint" id="buildHint">Connections made: <b>0/3</b></p>
+            <div class="hint">Wrong pin? It’ll flash red and won’t count.</div>
+          </div>
+        </div>
+        <div class="nav">
+          <button class="btn" data-prev>Back</button>
+          <button class="btn primary" data-next disabled id="buildNext">Continue</button>
+        </div>
+      </div>
+
+      <!-- Step 5: Code Playground (Parameters) -->
+      <div class="step" data-step="5" id="s5">
+        <h3 class="steptitle">Step 5 — Code Playground (Tune the mapping)</h3>
+        <div class="stepgrid cols-2">
+          <div class="card sl">
+            <label>Min distance <span><span id="minDistLbl">5</span> cm</span></label>
+            <input type="range" id="minDist" min="2" max="30" value="5" />
+            <label>Max distance <span><span id="maxDistLbl">60</span> cm</span></label>
+            <input type="range" id="maxDist" min="30" max="120" value="60" />
+            <label>Sensitivity <span><span id="sensLbl">0.75</span></span></label>
+            <input type="range" id="sensitivity" min="0" max="1" step="0.01" value="0.75" />
+            <label>Smoothing <span><span id="smoothLbl">0.20</span></span></label>
+            <input type="range" id="smoothing" min="0" max="0.9" step="0.01" value="0.2" />
+            <div class="callout"><b>Pseudo-code</b><pre class="hint">
+// read sensor
+d = clamp(readDistance(), minDist, maxDist)
+// normalize
+x = 1 - (d - minDist) / (maxDist - minDist)
+// smooth
+x = lerp(prevX, x, 1 - smoothing)
+// map to pitch (A3–A5)
+pitchHz = 220 * pow(2, x * 2)
+// volume by hand speed * sensitivity
+vol = clamp(speed * sensitivity, 0, 1)</pre></div>
+          </div>
+          <div class="card">
+            <div class="callout"><b>Why these?</b> They mirror the real firmware parameters. Your choices affect the simulation and quiz.</div>
+            <p class="hint">You’ll hear the result in the next step.</p>
+          </div>
+        </div>
+        <div class="nav">
+          <button class="btn" data-prev>Back</button>
+          <button class="btn primary" data-next>Continue</button>
+        </div>
+      </div>
+
+      <!-- Step 6: Simulation (play with your mouse) -->
+      <div class="step" data-step="6" id="s6">
+        <h3 class="steptitle">Step 6 — Simulation (Move your “hand”)</h3>
+        <div class="stepgrid cols-2">
+          <div class="sim" id="sim" tabindex="0" aria-label="Move mouse up/down to change pitch">
+            <div class="note" id="noteTxt">Note: —</div>
+            <div class="hand" id="hand" style="top:120px"></div>
+            <div class="scope" id="scope">Hz: — | Vol: —</div>
+          </div>
+          <div class="card">
+            <div class="callout"><b>Try this:</b> Move the mouse <i>up/down</i> inside the box. Click “Play” to enable sound. Press <b>Space</b> to gate on/off.</div>
+            <div class="cta" style="margin-top:10px">
+              <button class="btn primary" id="playBtn">Play</button>
+              <button class="btn" id="stopBtn">Stop</button>
+              <button class="btn ghost" id="waveBtn">Wave: sine</button>
+            </div>
+            <p class="hint">The mapping & smoothing use the values you chose in Step 5.</p>
+          </div>
+        </div>
+        <div class="nav">
+          <button class="btn" data-prev>Back</button>
+          <button class="btn primary" data-next>Continue</button>
+        </div>
+      </div>
+
+      <!-- Step 7: Quick Quiz -->
+      <div class="step" data-step="7" id="s7">
+        <h3 class="steptitle">Step 7 — Quick Check</h3>
+        <div class="quiz" id="quiz">
+          <!-- injected by JS -->
+        </div>
+        <div class="nav">
+          <button class="btn" data-prev>Back</button>
+          <button class="btn primary" id="quizNext" data-next disabled>Continue</button>
+        </div>
+      </div>
+
+      <!-- Step 8: Sandbox + Wrap -->
+      <div class="step" data-step="8" id="s8">
+        <h3 class="steptitle">Step 8 — Sandbox</h3>
+        <div class="stepgrid cols-2">
+          <div class="card">
+            <div class="sl">
+              <label>Attack <span><span id="atkLbl">0.02</span>s</span></label>
+              <input type="range" id="attack" min="0" max="0.25" step="0.01" value="0.02"/>
+              <label>Release <span><span id="relLbl">0.15</span>s</span></label>
+              <input type="range" id="release" min="0" max="0.7" step="0.01" value="0.15"/>
+              <label>Pitch range (octaves) <span><span id="octLbl">2</span></span></label>
+              <input type="range" id="octaves" min="1" max="3" step="1" value="2"/>
+              <div class="cta">
+                <button class="btn primary" id="sbxPlay">Play</button>
+                <button class="btn" id="sbxStop">Stop</button>
+              </div>
+            </div>
+          </div>
+          <div class="sim" id="sim2" tabindex="0" aria-label="Sandbox simulation">
+            <div class="hand" id="hand2" style="top:110px"></div>
+            <div class="scope" id="scope2">Sandbox • Move mouse • Space = gate</div>
+          </div>
+        </div>
+        <div class="callout" style="margin-top:14px">
+          <b>Badge earned:</b> <span id="badges"></span>
+        </div>
+        <div class="nav">
+          <button class="btn" data-prev>Back</button>
+          <button class="btn primary" id="finishBtn">Finish & Save</button>
+        </div>
+        <footer class="hint">All data saved only in your browser (localStorage). No tracking.</footer>
+      </div>
+    </section>
+  </main>
+
+  <script>
+  (()=>{
+
+    /* ========== STATE & STORAGE ========= */
+    const STORAGE_KEY = "dz_learn_v1";
+    const totalSteps = 8;
+    const els = {
+      progressFill: document.getElementById('progressFill'),
+      progressLabel: document.getElementById('progressLabel'),
+      crumbs: document.getElementById('crumbs'),
+      hero: document.getElementById('hero'),
+      flow: document.getElementById('flow'),
+      startBtn: document.getElementById('startBtn'),
+      resumeBtn: document.getElementById('resumeBtn'),
+      buildHint: document.getElementById('buildHint'),
+      buildNext: document.getElementById('buildNext'),
+      quizNext: document.getElementById('quizNext'),
+      badges: document.getElementById('badges'),
+    };
+    const qs=(s,root=document)=>root.querySelector(s);
+    const qsa=(s,root=document)=>[...root.querySelectorAll(s)];
+
+    let state = {
+      step: 1,
+      completed: {},
+      params: { minDist:5, maxDist:60, sensitivity:0.75, smoothing:0.2, wave:'sine', attack:0.02, release:0.15, octaves:2 },
+      badges: [],
+      quizScore: 0,
+    };
+    function load(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if(raw){ state = {...state, ...JSON.parse(raw)}; }
+      }catch{}
+    }
+    function save(){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    /* ========== PROGRESS UI ========= */
+    function renderCrumbs(){
+      els.crumbs.innerHTML = '';
+      for(let i=1;i<=totalSteps;i++){
+        const span=document.createElement('span');
+        span.className = 'crumb' + (i<=state.step ? ' on':'');
+        span.textContent = `Step ${i}`;
+        els.crumbs.appendChild(span);
+      }
+    }
+    function updateProgress(){
+      const completedCount = Object.keys(state.completed).length;
+      const pct = Math.round((Math.max(completedCount, state.step-1) / totalSteps) * 100);
+      els.progressFill.style.width = pct + '%';
+      els.progressLabel.textContent = `${pct}% • ${Math.max(completedCount, state.step-1)}/${totalSteps}`;
+    }
+
+    /* ========== NAVIGATION ========= */
+    function showStep(n, force=false){
+      // enforce strictly linear flow (unless resuming)
+      if(!force && n>1){
+        for(let i=1;i<n;i++){
+          if(!state.completed[i]) { n=i; break; }
+        }
+      }
+      state.step = n;
+      save();
+
+      qsa('.step').forEach(s=>s.classList.remove('active'));
+      const el = qs(`.step[data-step="${n}"]`);
+      if(el) el.classList.add('active');
+
+      renderCrumbs();
+      updateProgress();
+
+      // mark step started (for resume)
+      save();
+    }
+    function completeStep(n){
+      state.completed[n] = true;
+      save();
+    }
+
+    // Buttons
+    els.startBtn.addEventListener('click', ()=>{ els.hero.style.display='none'; showStep(1,true); });
+    els.resumeBtn.addEventListener('click', ()=>{
+      load();
+      els.hero.style.display='none';
+      // go to first incomplete step
+      for(let i=1;i<=totalSteps;i++){
+        if(!state.completed[i]) { showStep(i,true); return; }
+      }
+      showStep(totalSteps,true);
+    });
+
+    // delegate next/back
+    els.flow.addEventListener('click', (e)=>{
+      const next = e.target.closest('[data-next]');
+      const prev = e.target.closest('[data-prev]');
+      if(next){
+        const current = state.step;
+        // allow only if current is eligible (some steps gate next)
+        if(current===4 && !buildDone) return; // build gate
+        if(current===7 && !quizPassed) return; // quiz gate
+        completeStep(current);
+        showStep(Math.min(totalSteps, current+1), true);
+      }else if(prev){
+        showStep(Math.max(1, state.step-1), true);
+      }
+    });
+
+    /* ========== STEP 1: tour tooltips ========= */
+    qsa('#s1 .board .node').forEach(n=>{
+      n.addEventListener('mouseenter', ()=>{
+        const tip = n.dataset.tip;
+        if(!tip) return;
+        n.title = tip;
+      });
+    });
+
+    /* ========== STEP 3: animated signal path ========= */
+    const sigBoard = document.getElementById('sigBoard');
+    function drawSignal(){
+      sigBoard.innerHTML='';
+      const points = [
+        {x:40,y:40,label:'Hand → Sensor'},
+        {x:200,y:80,label:'Sensor → MCU'},
+        {x:340,y:120,label:'MCU → Sound'}
+      ];
+      let prev=null;
+      points.forEach((p,i)=>{
+        const dot=document.createElement('div');
+        dot.className='node';
+        dot.style.left=p.x+'px'; dot.style.top=p.y+'px';
+        dot.textContent=p.label;
+        sigBoard.appendChild(dot);
+        if(prev){
+          const dx=p.x-prev.x, dy=p.y-prev.y, len=Math.hypot(dx,dy), ang=Math.atan2(dy,dx)*180/Math.PI;
+          const wire=document.createElement('div');
+          wire.className='wire'; wire.style.left=prev.x+70+'px'; wire.style.top=prev.y+16+'px';
+          wire.style.width=(len-40)+'px'; wire.style.transform=`rotate(${ang}deg)`;
+          wire.style.opacity='.3';
+          sigBoard.appendChild(wire);
+          // animate a pulse
+          const pulse=document.createElement('div');
+          pulse.className='wire'; pulse.style.left=prev.x+70+'px'; pulse.style.top=prev.y+16+'px';
+          pulse.style.width='0px'; pulse.style.transform=`rotate(${ang}deg)`;
+          pulse.style.transition='width 1s ease';
+          sigBoard.appendChild(pulse);
+          setTimeout(()=>pulse.style.width=(len-40)+'px', 50 + i*200);
+        }
+        prev=p;
+      });
+    }
+    drawSignal();
+
+    /* ========== STEP 4: Build (simple wiring puzzle) ========= */
+    const buildPins = ['pin-1','pin-2','pin-3']; // correct order
+    let buildIdx=0, buildDone=false;
+    function flash(el, good){
+      el.classList.remove('good','bad');
+      el.offsetWidth; // reflow
+      el.classList.add(good?'good':'bad');
+      setTimeout(()=>el.classList.remove('good','bad'), 500);
+    }
+    buildPins.forEach((id,i)=>{
+      const el = document.getElementById(id);
+      el.addEventListener('click', ()=>{
+        if(buildIdx===i){
+          flash(el,true);
+          // draw a short wire to a logical neighbor
+          const start = el.getBoundingClientRect();
+          const board = document.getElementById('buildBoard').getBoundingClientRect();
+          const wire = document.createElement('div');
+          wire.className='wire';
+          wire.style.left=(start.left - board.left + 60)+'px';
+          wire.style.top=(start.top - board.top + 16)+'px';
+          wire.style.width='0px';
+          wire.style.transform='rotate(0deg)';
+          document.getElementById('buildBoard').appendChild(wire);
+          setTimeout(()=>wire.style.width='120px', 30);
+          buildIdx++;
+          els.buildHint.innerHTML = `Connections made: <b>${buildIdx}/3</b>`;
+          if(buildIdx===3){
+            buildDone = true;
+            els.buildNext.removeAttribute('disabled');
+          }
+        }else{
+          flash(el,false);
+        }
+      });
+    });
+
+    /* ========== STEP 5: Params ========= */
+    const minDist = document.getElementById('minDist');
+    const maxDist = document.getElementById('maxDist');
+    const sensitivity = document.getElementById('sensitivity');
+    const smoothing = document.getElementById('smoothing');
+    const lbl = id=>document.getElementById(id);
+    function updateParams(){
+      state.params.minDist = Number(minDist.value);
+      state.params.maxDist = Number(maxDist.value);
+      state.params.sensitivity = Number(sensitivity.value);
+      state.params.smoothing = Number(smoothing.value);
+      lbl('minDistLbl').textContent = state.params.minDist;
+      lbl('maxDistLbl').textContent = state.params.maxDist;
+      lbl('sensLbl').textContent = state.params.sensitivity.toFixed(2);
+      lbl('smoothLbl').textContent = state.params.smoothing.toFixed(2);
+      save();
+    }
+    [minDist,maxDist,sensitivity,smoothing].forEach(i=>i.addEventListener('input', updateParams));
+    updateParams();
+
+    /* ========== AUDIO ENGINE (shared) ========= */
+    const AudioEngine = ()=>{
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      let osc=null, gain=null, now=()=>ctx.currentTime;
+      let wave = state.params.wave || 'sine';
+      let attack = state.params.attack, release= state.params.release;
+
+      function setWave(w){ wave=w; if(osc) try{osc.type=w;}catch{}; state.params.wave=w; save(); }
+      function setEnv(a,r){ attack=a; release=r; state.params.attack=a; state.params.release=r; save(); }
+      function start(freq=220, vol=0.6){
+        if(osc) return;
+        osc = ctx.createOscillator(); gain = ctx.createGain();
+        osc.type = wave; osc.frequency.value = freq;
+        gain.gain.value = 0.0001;
+        osc.connect(gain).connect(ctx.destination);
+        osc.start();
+        const t=now();
+        gain.gain.cancelScheduledValues(t);
+        gain.gain.setValueAtTime(0.0001,t);
+        gain.gain.linearRampToValueAtTime(vol, t + attack);
+      }
+      function stop(){
+        if(!osc || !gain) return;
+        const t=now();
+        gain.gain.cancelScheduledValues(t);
+        gain.gain.setValueAtTime(gain.gain.value, t);
+        gain.gain.linearRampToValueAtTime(0.0001, t + release);
+        setTimeout(()=>{ try{osc.stop();}catch{}; osc.disconnect(); gain.disconnect(); osc=null; gain=null; }, (release*1000)+30);
+      }
+      function set(freq, vol){
+        if(!osc||!gain) return;
+        const t=now();
+        osc.frequency.setTargetAtTime(freq, t, 0.015);
+        gain.gain.setTargetAtTime(vol, t, 0.03);
+      }
+      function getCtx(){return ctx;}
+      return {start,stop,set,setWave,setEnv,getCtx};
+    };
+    const engine = AudioEngine();
+
+    /* ========== STEP 6: Simulation ========= */
+    const sim = document.getElementById('sim');
+    const hand = document.getElementById('hand');
+    const scope = document.getElementById('scope');
+    const noteTxt = document.getElementById('noteTxt');
+    const playBtn = document.getElementById('playBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const waveBtn = document.getElementById('waveBtn');
+
+    let simGate=false, lastY=null, speed=0, xSm=0;
+
+    function yToDistance(y){
+      // map Y in sim to distance between min/max
+      const rect = sim.getBoundingClientRect();
+      const t = 1 - ((y - rect.top) / rect.height); // 0..1 (bottom..top)
+      const d = state.params.minDist + (1 - t) * (state.params.maxDist - state.params.minDist);
+      return Math.max(state.params.minDist, Math.min(state.params.maxDist, d));
+    }
+    function mapToHz(x, octaves = 2){ // x: 0..1
+      return 220 * Math.pow(2, x * octaves); // A3 → A(3+octaves)
+    }
+    function formatNote(freq){
+      // rough MIDI map for display
+      const midi = 69 + 12*Math.log2(freq/440);
+      const names=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+      const n = Math.round(midi);
+      const name = names[(n+3)%12]; // bias so 440≈A4
+      const octave = Math.floor(n/12)-1;
+      return `${name}${octave}`;
+    }
+    function handleMove(y){
+      const d = yToDistance(y);
+      let x = 1 - (d - state.params.minDist) / (state.params.maxDist - state.params.minDist);
+      x = Math.max(0, Math.min(1, x));
+      // smoothing
+      xSm = xSm + (x - xSm) * (1 - state.params.smoothing);
+
+      // speed estimate
+      if(lastY!=null){
+        const dy = Math.abs(y - lastY);
+        speed = Math.min(1, dy/80);
+      }
+      lastY = y;
+
+      const freq = mapToHz(xSm, state.params.octaves || 2);
+      const vol = Math.min(1, speed * (state.params.sensitivity||0.75));
+      if(simGate) engine.set(freq, 0.08 + vol*0.5);
+      hand.style.top = (y - sim.getBoundingClientRect().top - 3) + 'px';
+      noteTxt.textContent = `Note: ${formatNote(freq)}`;
+      scope.textContent = `Hz: ${freq.toFixed(1)} | Vol: ${(0.08 + vol*0.5).toFixed(2)}`;
+    }
+
+    ['mousemove','touchmove'].forEach(evt=>{
+      sim.addEventListener(evt, (e)=>{
+        const y = (e.touches&&e.touches[0]) ? e.touches[0].clientY : e.clientY;
+        handleMove(y);
+      });
+    });
+    sim.addEventListener('mouseleave', ()=>{ speed=0; });
+    document.addEventListener('keydown', (e)=>{
+      if(state.step!==6 && state.step!==8) return;
+      if(e.code==='Space'){ e.preventDefault(); if(!simGate){engine.start(); simGate=true;} else {engine.stop(); simGate=false;} }
+    });
+    playBtn.addEventListener('click', ()=>{ engine.getCtx().resume(); engine.start(); simGate=true; });
+    stopBtn.addEventListener('click', ()=>{ engine.stop(); simGate=false; });
+    waveBtn.addEventListener('click', ()=>{
+      const waves=['sine','triangle','square','sawtooth'];
+      const i = waves.indexOf(state.params.wave||'sine');
+      const next = waves[(i+1)%waves.length];
+      engine.setWave(next);
+      waveBtn.textContent = `Wave: ${next}`;
+    });
+
+    /* ========= Step 8 sandbox controls share engine ========= */
+    const atk = document.getElementById('attack'), rel=document.getElementById('release'), oct=document.getElementById('octaves');
+    const atkLbl=document.getElementById('atkLbl'), relLbl=document.getElementById('relLbl'), octLbl=document.getElementById('octLbl');
+    function updEnv(){ atkLbl.textContent=Number(atk.value).toFixed(2); relLbl.textContent=Number(rel.value).toFixed(2); engine.setEnv(Number(atk.value), Number(rel.value)); state.params.attack=Number(atk.value); state.params.release=Number(rel.value); save(); }
+    function updOct(){ state.params.octaves = Number(oct.value); octLbl.textContent=oct.value; save(); }
+    atk.addEventListener('input', updEnv); rel.addEventListener('input', updEnv); oct.addEventListener('input', updOct);
+    updEnv(); updOct();
+
+    const sim2=document.getElementById('sim2'), hand2=document.getElementById('hand2'), scope2=document.getElementById('scope2');
+    let gate2=false, lastY2=null, xSm2=0, speed2=0;
+    function handleMove2(y){
+      const rect = sim2.getBoundingClientRect();
+      const t = 1 - ((y - rect.top) / rect.height); // 0..1
+      const d = state.params.minDist + (1 - t) * (state.params.maxDist - state.params.minDist);
+      let x = 1 - (d - state.params.minDist) / (state.params.maxDist - state.params.minDist);
+      x = Math.max(0,Math.min(1,x));
+      xSm2 = xSm2 + (x - xSm2) * (1 - state.params.smoothing);
+
+      if(lastY2!=null){
+        const dy = Math.abs(y - lastY2);
+        speed2 = Math.min(1, dy/75);
+      }
+      lastY2 = y;
+
+      const freq = 220 * Math.pow(2, xSm2 * (state.params.octaves||2));
+      const vol = Math.min(1, speed2*(state.params.sensitivity||0.75));
+      if(gate2) engine.set(freq, 0.08 + vol*0.5);
+      hand2.style.top = (y - rect.top - 3)+'px';
+      scope2.textContent = `Sandbox • Hz ${freq.toFixed(1)} • Vol ${(0.08 + vol*0.5).toFixed(2)}`;
+    }
+    ['mousemove','touchmove'].forEach(evt=>{
+      sim2.addEventListener(evt,(e)=>{
+        const y=(e.touches&&e.touches[0])? e.touches[0].clientY : e.clientY;
+        handleMove2(y);
+      });
+    });
+    document.getElementById('sbxPlay').addEventListener('click', ()=>{ engine.getCtx().resume(); engine.start(); gate2=true; });
+    document.getElementById('sbxStop').addEventListener('click', ()=>{ engine.stop(); gate2=false; });
+
+    /* ========== STEP 7: QUIZ ========= */
+    const quizEl = document.getElementById('quiz');
+    const questions = [
+      { q:'Which parameter primarily changes pitch range?', a:['smoothing','sensitivity','min/max distance','attack'], correct:2 },
+      { q:'What does smoothing do?', a:['Averages readings to reduce jitter','Increases volume','Adds echo','Changes oscillator type'], correct:0 },
+      { q:'Hand moves faster. Which increases most?', a:['Pitch','Volume','Release time','Waveform'], correct:1 }
+    ];
+    let quizPassed=false;
+    function renderQuiz(){
+      quizEl.innerHTML='';
+      state.quizScore = 0;
+      questions.forEach((it, qi)=>{
+        const card=document.createElement('div'); card.className='card';
+        const title=document.createElement('div'); title.textContent = `Q${qi+1}. ${it.q}`;
+        card.appendChild(title);
+        it.a.forEach((opt, oi)=>{
+          const btn=document.createElement('div'); btn.className='opt'; btn.textContent=opt;
+          btn.addEventListener('click', ()=>{
+            const correct = (oi===it.correct);
+            btn.classList.add(correct?'correct':'wrong');
+            if(correct){ state.quizScore++; } else {
+              // mark correct one
+              [...card.querySelectorAll('.opt')][it.correct].classList.add('correct');
+            }
+            // disable all
+            card.querySelectorAll('.opt').forEach(o=>o.style.pointerEvents='none');
+            checkQuiz();
+          });
+          card.appendChild(btn);
+        });
+        quizEl.appendChild(card);
+      });
+    }
+    function checkQuiz(){
+      const answered = [...quizEl.querySelectorAll('.opt')].filter(o=>o.style.pointerEvents==='none').length;
+      const needed = questions.length; // 1 pick each question
+      if(answered >= needed){
+        quizPassed = (state.quizScore >= 2); // pass with >= 2/3
+        els.quizNext.disabled = !quizPassed;
+        if(quizPassed && !state.badges.includes('Quiz Wiz')){ state.badges.push('Quiz Wiz'); save(); }
+      }
+    }
+
+    /* ========== BADGES / FINISH ========= */
+    function updateBadges(){
+      if(Object.keys(state.completed).length>=4 && !state.badges.includes('Builder')) state.badges.push('Builder');
+      if(state.quizScore>=2 && !state.badges.includes('Quiz Wiz')) state.badges.push('Quiz Wiz');
+      if(!state.badges.includes('Signal Surfer')) state.badges.push('Signal Surfer'); // earned by reaching sandbox
+      els.badges.textContent = state.badges.join(' • ');
+      save();
+    }
+    document.getElementById('finishBtn').addEventListener('click', ()=>{
+      completeStep(8);
+      updateBadges();
+      alert('Great job! Your progress and badges are saved in your browser.');
+      showStep(8,true);
+    });
+
+    /* ========== INIT ========= */
+    function syncUIFromState(){
+      // params UI → labels already in updateParams; also wave button
+      document.getElementById('waveBtn').textContent = `Wave: ${state.params.wave||'sine'}`;
+      document.getElementById('atkLbl').textContent = (state.params.attack??0.02).toFixed(2);
+      document.getElementById('relLbl').textContent = (state.params.release??0.15).toFixed(2);
+      document.getElementById('octLbl').textContent = (state.params.octaves??2);
+      els.badges.textContent = (state.badges||[]).join(' • ');
+      // rebuild quiz fresh
+      renderQuiz();
+      // progress & crumbs
+      renderCrumbs(); updateProgress();
+    }
+
+    load(); syncUIFromState();
+    showStep(1,true); // shown after clicking Begin/Resume anyway
+
+  })();
+  </script>
+</body>
+</html>

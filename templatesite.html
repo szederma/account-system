@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Distanzuino Learn</title>
+  <link rel="icon" type="image/png" href="/images/icon.png"/>
+  <link rel="stylesheet" href="/redesign.css"/>
+
+  <!-- Termly -->
+  <script type="text/javascript" src="https://app.termly.io/resource-blocker/611984d8-f015-418c-b13f-dc82c88b1907?autoBlock=on"></script>
+
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-3HEL3CR3RW"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){ dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-3HEL3CR3RW');
+  </script>
+</head>
+<body>
+  <!-- Header -->
+  <div id="site-header"></div>
+
+  <main>
+    <!-- Polished full-screen hero -->
+    <section class="coming-soon-section">
+      <!-- subtle background accents -->
+      <div class="cs-accent cs-accent-a" aria-hidden="true"></div>
+      <div class="cs-accent cs-accent-b" aria-hidden="true"></div>
+
+      <div class="coming-soon-card reveal-on-scroll">
+        <img src="/images/logo.png" alt="Distanzuino Logo" class="coming-soon-logo"/>
+        <h1 class="coming-soon-title">Template</h1>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <div id="site-footer"></div>
+
+  <!-- Back to top -->
+  <a href="#" class="back-to-top" aria-label="Back to Top" title="Back to Top">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+         viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 19V5M5 12l7-7 7 7"/>
+    </svg>
+  </a>
+
+  <script>
+    // --- Component Loader (same pattern as index) ---
+    const loadComponent = (url, elementId, callback) => {
+      fetch(url)
+        .then(res => res.ok ? res.text() : Promise.reject(`Component not found: ${url}`))
+        .then(html => {
+          const el = document.getElementById(elementId);
+          if (el) el.innerHTML = html;
+          if (callback) callback();
+        })
+        .catch(console.error);
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadComponent('/header.html', 'site-header', initializeHeader);
+      loadComponent('/footer.html', 'site-footer');
+
+      const backToTopButton = document.querySelector('.back-to-top');
+      if (backToTopButton) {
+        window.addEventListener('scroll', () => {
+          backToTopButton.classList.toggle('visible', window.scrollY > 300);
+        }, { passive: true });
+      }
+
+      // Gentle reveal on scroll
+      const revealOnScroll = () => {
+        document.querySelectorAll('.reveal-on-scroll').forEach(el => {
+          const trigger = window.innerHeight * 0.9;
+          if (el.getBoundingClientRect().top < trigger) {
+            el.classList.add('visible');
+          }
+        });
+      };
+      window.addEventListener('scroll', revealOnScroll, { passive: true });
+      revealOnScroll();
+    });
+
+    // --- Header behavior to match index ---
+    function initializeHeader() {
+      const header = document.getElementById('header') || document.querySelector('header#header');
+      if (!header) return;
+
+      const mobileToggle = header.querySelector('.mobile-nav-toggle');
+      const hasSubmenuItems = header.querySelectorAll('.has-submenu');
+      const body = document.body;
+
+      const onScroll = () => {
+        if (window.scrollY > 10) header.classList.add('scrolled');
+        else header.classList.remove('scrolled');
+      };
+      onScroll();
+      window.addEventListener('scroll', onScroll, { passive: true });
+
+      const applyLayout = () => {
+        const isMobile = window.innerWidth <= 1024;
+        header.classList.toggle('header-mobile-layout', isMobile);
+        if (!isMobile) {
+          header.classList.remove('menu-open');
+          body.classList.remove('no-scroll');
+          hasSubmenuItems.forEach(item => item.classList.remove('open'));
+        }
+      };
+      applyLayout();
+      window.addEventListener('resize', applyLayout);
+
+      if (mobileToggle) {
+        mobileToggle.addEventListener('click', (e) => {
+          e.stopPropagation();
+          header.classList.toggle('menu-open');
+          body.classList.toggle('no-scroll', header.classList.contains('menu-open'));
+        });
+      }
+
+      hasSubmenuItems.forEach(item => {
+        const opener = item.querySelector(':scope > a');
+        if (!opener) return;
+
+        opener.addEventListener('click', (e) => {
+          const submenu = item.querySelector(':scope > .submenu');
+          if (submenu) {
+            e.preventDefault();
+            hasSubmenuItems.forEach(i => { if (i !== item) i.classList.remove('open'); });
+            item.classList.toggle('open');
+          }
+        });
+
+        const submenuLinks = item.querySelectorAll('.submenu a');
+        submenuLinks.forEach(link => {
+          link.addEventListener('click', () => {
+            if (window.innerWidth > 1024) item.classList.remove('open');
+            if (window.innerWidth <= 1024) {
+              header.classList.remove('menu-open');
+              body.classList.remove('no-scroll');
+            }
+          });
+        });
+      });
+
+      header.querySelectorAll('nav > ul > li > a').forEach(link => {
+        link.addEventListener('click', () => {
+          const parentLi = link.parentElement;
+          const isOpener = parentLi && parentLi.classList.contains('has-submenu');
+          if (window.innerWidth <= 1024 && !isOpener) {
+            header.classList.remove('menu-open');
+            body.classList.remove('no-scroll');
+          }
+        });
+      });
+
+      document.addEventListener('click', (e) => {
+        const clickInsideHeader = header.contains(e.target);
+        if (!clickInsideHeader) {
+          hasSubmenuItems.forEach(i => i.classList.remove('open'));
+          if (header.classList.contains('menu-open')) {
+            header.classList.remove('menu-open');
+            body.classList.remove('no-scroll');
+          }
+        }
+      }, { capture: true });
+    }
+  </script>
+</body>
+</html>

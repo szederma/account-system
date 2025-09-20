@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Functionality | Distanzuino</title>
+    <link rel="icon" type="image/jpg" href="/images/icon.png">
+
+    <link rel="stylesheet" href="/styles.css">
+
+    <script type="text/javascript" src="https://app.termly.io/resource-blocker/611984d8-f015-418c-b13f-dc82c88b1907?autoBlock=on"></script>
+
+
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3HEL3CR3RW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-3HEL3CR3RW');
+</script>
+
+<body>   
+    <div id="site-header"></div>
+
+    <section id="how-it-works" class="how-it-works">
+        <div class="section-title">
+          <h2>How It Works</h2>
+          <p>From hand motion to music — here's how DistanzuinoBT turns gestures into real instrument sounds.</p>
+        </div>
+      
+        <div class="how-step">
+          <div class="step-icon step-number">1</div>
+          <div class="step-content">
+            <h3>Gesture Detection</h3>
+            <p>You place your hand over a note area on either side of the device. The <strong>VL53L1X laser sensors</strong> measure the exact distance from your hand in real time.</p>
+          </div>
+        </div>
+      
+        <div class="how-step">
+          <div class="step-icon step-number">2</div>
+          <div class="step-content">
+            <h3>Bluetooth Transmission</h3>
+            <p>An <strong>Arduino Nano</strong> reads the distance values and sends them via <strong>HM-10 Bluetooth module</strong> to your phone, tablet, or PC using <strong>Bluetooth Low Energy (BLE)</strong>.</p>
+          </div>
+        </div>
+      
+        <div class="how-step">
+          <div class="step-icon step-number">3</div>
+          <div class="step-content">
+            <h3>Web App Interpretation</h3>
+            <p>The <a href="https://distanzuino.com/bt" target="_blank">Distanzuino web application</a> receives the distances and converts them into tones based on pre-defined tone maps and instrument profiles.</p>
+          </div>
+        </div>
+      
+        <div class="how-step">
+          <div class="step-icon step-number">4</div>
+          <div class="step-content">
+            <h3>Realistic Sound Generation</h3>
+            <p>The web app plays tones using <strong>measured harmonics and attack-phase timing</strong> to match real instruments like the piano, flute, or cello. You hear the result through your device or other connected speakers.</p>
+          </div>
+        </div>
+      
+        <div class="how-step">
+          <div class="step-icon step-number">5</div>
+          <div class="step-content">
+            <h3>Customization</h3>
+            <p>You can adjust tones, volume, and instruments right in the browser. The app also shows which notes are playing real-time.</p>
+          </div>
+        </div>
+      </section>
+      
+      
+    
+
+    <div id="site-footer"></div>
+
+    <script>
+    fetch('/header.html')
+        .then(res => res.text())
+        .then(data => {
+        document.getElementById('site-header').innerHTML = data;
+
+        // Init header-related JS after insertion
+        const mobileNavToggle = document.querySelector('.mobile-nav-toggle');
+        const nav = document.getElementById('nav');
+        
+        mobileNavToggle?.addEventListener('click', function() {
+            nav.classList.toggle('active');
+            mobileNavToggle.textContent = nav.classList.contains('active') ? '✕' : '☰';
+        });
+
+        document.addEventListener('click', function(event) {
+            if (!nav.contains(event.target) && !mobileNavToggle.contains(event.target)) {
+            nav.classList.remove('active');
+            mobileNavToggle.textContent = '☰';
+            }
+        });
+
+        document.querySelectorAll('nav a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                // only close if not a submenu toggle
+                if (!this.classList.contains('submenu-toggle')) {
+                    nav.classList.remove('active');
+                    mobileNavToggle.textContent = '☰';
+                }
+            });
+        });
+
+
+        window.addEventListener('scroll', () => {
+            const header = document.getElementById('header');
+            if (window.scrollY > 50) {
+            header.classList.add('scrolled');
+            } else {
+            header.classList.remove('scrolled');
+            }
+        });
+
+        const submenuToggle = document.querySelector('.submenu-toggle');
+        const submenuParent = submenuToggle?.closest('.has-submenu');
+
+        submenuToggle?.addEventListener('click', (e) => {
+        e.preventDefault();
+        submenuParent?.classList.toggle('open');
+        });
+
+        // Close submenu if clicked outside
+        document.addEventListener('click', (e) => {
+        if (!submenuParent.contains(e.target)) {
+            submenuParent.classList.remove('open');
+        }
+        });
+
+        submenuParent?.querySelectorAll('.submenu a').forEach(link => {
+            link.addEventListener('click', () => {
+                submenuParent.classList.remove('open');
+            });
+        });
+
+        });
+
+    // Load footer
+    fetch('/footer.html')
+        .then(res => res.text())
+        .then(data => document.getElementById('site-footer').innerHTML = data);
+        
+    
+
+            
+        const howSteps = document.querySelectorAll('.how-step');
+        const revealHowItWorksOnScroll = () => {
+            const triggerBottom = window.innerHeight * 0.9;
+            howSteps.forEach(step => {
+                const stepTop = step.getBoundingClientRect().top;
+                if (stepTop < triggerBottom) {
+                    step.classList.add('visible');
+                }
+            });
+        };
+
+        window.addEventListener('scroll', revealHowItWorksOnScroll);
+        window.addEventListener('load', revealHowItWorksOnScroll);
+
+    </script>
+  
+    
+  
+    
+</body>
+</html>

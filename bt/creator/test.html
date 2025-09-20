@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Distanzuino — Creator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/png" href="/images/icon.png" />
+
+  <!-- Fonts & basic brand look (matches your BT app) -->
+  <style>
+    @font-face{
+      font-family:'Caros';
+      src:url('/caros/Caros-Bold.otf') format('opentype');
+      font-weight:700;font-style:normal;
+    }
+    :root{
+      --bg1:#101010; --bg2:#1c1c1c; --bg3:#2a2a2a;
+      --panel: rgba(35,35,35,.95);
+      --line: rgba(255,31,31,0.22);
+      --line-strong: rgba(255,31,31,0.42);
+      --text:#f0f0f0; --muted:#bdbdbd;
+      --accent:#ff1f1f; --accent2:#eb3333;
+      --radius:16px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      background:linear-gradient(135deg,var(--bg1) 0%,var(--bg2) 80%,var(--bg3) 100%);
+      color:var(--text); min-height:100vh; padding:clamp(12px,2.5vw,20px);
+      font-family:'Caros',system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,sans-serif;
+      font-weight:700;
+    }
+
+    /* Header */
+    .header{
+      max-width:1200px;margin:0 auto;
+      display:flex;align-items:center;justify-content:space-between;
+      gap:clamp(15px,3.5vw,25px);
+      padding:clamp(12px,2.5vw,20px); margin-bottom:clamp(16px,3vw,26px);
+    }
+    .brand{display:flex;align-items:center;gap:clamp(15px,3.5vw,25px)}
+    .brand img{width:clamp(50px,16vw,80px);border-radius:4px}
+    .brand h1{font-size:clamp(1.4rem,3.6vw,2.4rem);font-weight:700;white-space:nowrap}
+    .user{
+      display:flex;align-items:center;gap:10px
+    }
+    .chip{
+      font-weight:500;color:#e0e0e0;font-size:.9rem
+    }
+    .btn{
+      padding:.65rem 1.2rem;border:1px solid var(--line-strong);
+      border-radius:10px;background:linear-gradient(45deg,#e61a1a,#ff3b3b);
+      color:#fff;cursor:pointer;text-decoration:none;text-transform:uppercase;letter-spacing:.75px;
+      transition:.2s;
+    }
+    .btn:hover{transform:translateY(-2px);background:linear-gradient(45deg,#d31818,#eb3333)}
+
+    /* Layout */
+    .grid{max-width:1200px;margin:0 auto;display:grid;gap:clamp(10px,1.8vw,16px)}
+    .panel{
+      background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+      padding:clamp(12px,2.5vw,20px); transition:.25s;
+    }
+    .panel:hover{transform:translateY(-2px); border-color:var(--line-strong); background:rgba(40,40,40,.97)}
+
+    .toolbar{
+      display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between
+    }
+    .title{font-size:1.15rem;color:#fff}
+    .muted{font-weight:500;color:var(--muted);font-size:.95rem}
+
+    /* Cards */
+    .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:clamp(10px,1.8vw,16px)}
+    .card{
+      position:relative;overflow:hidden;min-height:160px;display:flex;flex-direction:column;gap:10px;
+      padding:16px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:#2b2b2b;
+      transition:.2s;
+    }
+    .card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.18)}
+    .card h3{font-size:1.05rem}
+    .card .row{display:flex;gap:8px;flex-wrap:wrap}
+    .ghost{
+      border:1px dashed rgba(255,255,255,.15);
+      background:repeating-linear-gradient(45deg,rgba(255,255,255,.03) 0 8px, transparent 8px 16px);
+      align-items:center;justify-content:center;text-align:center;cursor:pointer;
+    }
+    .ghost .plus{
+      width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:var(--accent);
+      color:#fff;font-size:34px;line-height:1;margin-bottom:10px;transition:.2s
+    }
+    .ghost:hover .plus{transform:scale(1.06)}
+
+    /* Editor modal */
+    .modal{
+      position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;place-items:center;z-index:9999
+    }
+    .modal.open{display:grid}
+    .sheet{
+      width:min(980px,96vw); background:#262626; border:1px solid var(--line-strong); border-radius:16px;
+      padding:18px; box-shadow:0 18px 70px rgba(0,0,0,.45);
+    }
+    .sheet .head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+    .sheet .head h2{font-size:1.2rem}
+    .sheet .grid2{display:grid;grid-template-columns:1fr;gap:14px}
+    @media(min-width:960px){.sheet .grid2{grid-template-columns:1.2fr .8fr}}
+
+    .input{width:100%;padding:.8rem 1rem;border-radius:10px;border:1px solid rgba(255,255,255,.12);
+      background:#303030;color:#fff;font-weight:600}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    canvas{display:block;width:100%;height:220px;background:#111;border:1px solid #444;border-radius:10px}
+
+    .pill{padding:.55rem .9rem;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:#333;color:#eee}
+    .btn.gray{background:linear-gradient(45deg,#505050,#606060); border-color:rgba(255,255,255,.25)}
+    .btn.danger{background:linear-gradient(45deg,#8b1a1a,#b52121); border-color:rgba(255,31,31,.45)}
+
+    /* Tiny helper */
+    .hint{font-size:.85rem;color:#bdbdbd}
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="brand">
+      <a href="https://distanzuino.com" target="_self"><img src="/images/logo.png" alt="Distanzuino"></a>
+      <h1>Creator</h1>
+    </div>
+    <div class="user">
+      <span id="userChip" class="chip" style="display:none"></span>
+      <button id="logoutBtn" class="btn" style="display:none">Logout</button>
+    </div>
+  </header>
+
+  <!-- Toolbar -->
+  <main class="grid">
+    <section class="panel toolbar">
+      <div>
+        <div class="title">Your custom tone modes</div>
+        <div class="muted" id="countText">Loading…</div>
+      </div>
+      <div class="row">
+        <button id="newModeBtn" class="btn" title="Create new tone mode">+ New</button>
+        <button id="refreshBtn" class="btn gray">Refresh</button>
+      </div>
+    </section>
+
+    <!-- List -->
+    <section class="panel">
+      <div class="cards" id="cards"></div>
+    </section>
+  </main>
+
+  <!-- Editor Modal -->
+  <div class="modal" id="editorModal" aria-hidden="true">
+    <div class="sheet" role="dialog" aria-modal="true">
+      <div class="head">
+        <h2 id="editorTitle">New tone mode</h2>
+        <div class="row">
+          <button id="closeEditor" class="btn gray">Close</button>
+          <button id="deleteMode" class="btn danger" style="display:none">Delete</button>
+        </div>
+      </div>
+      <div class="grid2">
+        <div>
+          <label class="muted" for="modeName">Name</label>
+          <input id="modeName" class="input" placeholder="e.g. Warm Triangle Lead" />
+          <div style="height:12px"></div>
+          <label class="muted">Harmonic gain curve (drag the points)</label>
+          <canvas id="curve" height="220"></canvas>
+          <div class="row" style="justify-content:space-between;margin-top:10px">
+            <span class="hint">Harmonics: 6 • Range 0.0–1.0</span>
+            <div class="row">
+              <button id="flattenBtn" class="btn gray" title="Set all points equal">Flatten</button>
+              <button id="resetBtn" class="btn gray" title="Reset to default">Reset</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="panel" style="height:100%;">
+            <div class="title" style="margin-bottom:8px">Quick test</div>
+            <div class="muted" style="margin-bottom:10px">Play a short phrase using this mode.</div>
+            <div class="row" style="margin-bottom:10px">
+              <span class="pill">Tempo</span>
+              <input id="bpm" class="input" type="number" min="40" max="220" value="96" style="max-width:110px">
+              <span class="pill">Wave</span>
+              <select id="wave" class="input" style="max-width:160px">
+                <option value="triangle">Triangle (warm)</option>
+                <option value="sine">Sine (pure)</option>
+                <option value="sawtooth">Saw (bright)</option>
+                <option value="square">Square (hollow)</option>
+              </select>
+            </div>
+            <div class="row">
+              <button id="playBtn" class="btn">Play / Test</button>
+              <button id="stopBtn" class="btn gray">Stop</button>
+            </div>
+            <div style="height:12px"></div>
+            <div class="muted" id="previewState">Idle</div>
+          </div>
+        </div>
+      </div>
+      <div class="row" style="justify-content:flex-end;margin-top:14px">
+        <button id="saveBtn" class="btn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase (v10+ modular) -->
+  <script type="module">
+
+    function normalizeName(name) {
+        return name.trim().toLowerCase().replace(/[\s_]+/g, "-").replace(/[^a-z0-9-]/g, "").replace(/-+/g, "-");
+    }
+    function toneModeDocId(uid, name) {
+        // deterministic doc id => guarantees one name per user
+        return `${uid}__${normalizeName(name)}`;
+    }
+
+
+    /************  AUTH GATE + FIREBASE  ************/
+    // 1) Fill in your Firebase project settings here
+    const firebaseConfig = {
+        apiKey: "AIzaSyAddXTzBxZk1Su6fNnsgRuNnWqFrq_ZjCY", // Replace with your actual API key
+        authDomain: "distanzuino-project.firebaseapp.com",
+        projectId: "distanzuino-project",
+        storageBucket: "distanzuino-project.appspot.com",
+        messagingSenderId: "584745723160",
+        appId: "1:584745723160:web:97387a22f4b4b9fb9c6a6d"
+    };
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getAuth, onAuthStateChanged, signOut
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import {
+      getFirestore, collection, query, where, orderBy, getDocs,
+      addDoc, setDoc, doc, serverTimestamp, deleteDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // Elements
+    const userChip = document.getElementById('userChip');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const cards = document.getElementById('cards');
+    const countText = document.getElementById('countText');
+    const newModeBtn = document.getElementById('newModeBtn');
+    const refreshBtn = document.getElementById('refreshBtn');
+
+    // Editor
+    const editorModal = document.getElementById('editorModal');
+    const closeEditor = document.getElementById('closeEditor');
+    const deleteMode = document.getElementById('deleteMode');
+    const editorTitle = document.getElementById('editorTitle');
+    const modeName = document.getElementById('modeName');
+    const curveCanvas = document.getElementById('curve');
+    const flattenBtn = document.getElementById('flattenBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const saveBtn = document.getElementById('saveBtn');
+
+    const playBtn = document.getElementById('playBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const bpmInput = document.getElementById('bpm');
+    const waveSelect = document.getElementById('wave');
+    const previewState = document.getElementById('previewState');
+
+    // State
+    let currentUser = null;
+    let editingId = null;            // Firestore doc id when editing
+    let gains = [0.8, 0.6, 0.4, 0.3, 0.2, 0.1]; // default curve
+    let dragIndex = null;
+
+    // Auth gate
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        // Not logged in -> redirect to login
+        window.location.href = "https://distanzuino.com/login";
+        return;
+      }
+      currentUser = user;
+      userChip.textContent = user.email || "Signed in";
+      userChip.style.display = "";
+      logoutBtn.style.display = "";
+      await loadModes();
+    });
+
+    logoutBtn.addEventListener('click', async () => {
+      await signOut(auth);
+      // after signout, user will hit the gate again
+    });
+
+    /************  LIST + CRUD  ************/
+    function emptyCardsView() {
+      cards.innerHTML = `
+        <div class="card ghost" id="ghostNew">
+          <div>
+            <div class="plus">+</div>
+            <h3>Create a new tone mode</h3>
+            <p class="muted" style="font-weight:500;margin-top:6px">
+              Save unlimited custom sounds to your account.
+            </p>
+          </div>
+        </div>
+      `;
+      document.getElementById('ghostNew').addEventListener('click', () => openEditor());
+      countText.textContent = '0 saved modes';
+    }
+
+    async function loadModes() {
+    try {
+        if (!currentUser) return;
+        cards.innerHTML = '<div class="muted">Loading your modes…</div>';
+        const q = query(
+        collection(db, "toneModes"),
+        where("uid", "==", currentUser.uid),
+        orderBy("updatedAt", "desc")
+        );
+        const snap = await getDocs(q);
+        if (snap.empty) { emptyCardsView(); return; }
+        cards.innerHTML = "";
+        let i = 0;
+        snap.forEach(docSnap => {
+        i++;
+        const data = docSnap.data();
+        const el = document.createElement('div');
+        el.className = "card";
+        el.innerHTML = `
+            <h3>${escapeHtml(data.name || 'Untitled')}</h3>
+            <div class="muted" style="font-weight:500">Harmonics: ${Array.isArray(data.gains) ? data.gains.length : 0}</div>
+            <div class="row" style="margin-top:auto">
+            <button class="btn" data-action="test">Play / Test</button>
+            <button class="btn gray" data-action="edit">Edit</button>
+            </div>
+        `;
+        el.querySelector('[data-action="edit"]').addEventListener('click', () => openEditor(docSnap.id, data));
+        el.querySelector('[data-action="test"]').addEventListener('click', () => {
+        playPreview(data.gains || gains, data.wave || 'triangle', Number(bpmInput.value) || 96);
+        });
+        cards.appendChild(el);
+        });
+        countText.textContent = `${i} saved mode${i===1?'':'s'}`;
+        const ghost = document.createElement('div');
+        ghost.className = "card ghost";
+        ghost.innerHTML = `<div><div class="plus">+</div><h3>New tone mode</h3></div>`;
+        ghost.addEventListener('click', () => openEditor());
+        cards.appendChild(ghost);
+    } catch (err) {
+        console.error("loadModes error:", err);
+        cards.innerHTML = `<div class="muted">Error loading modes: ${escapeHtml(err.message||String(err))}</div>`;
+    }
+    }
+
+    saveBtn.addEventListener('click', async () => {
+        try {
+            if (!currentUser) return;
+
+            const rawName = modeName.value.trim();
+            if (!rawName) {
+            alert("Please give your mode a name.");
+            modeName.focus();
+            return;
+            }
+
+            const name = rawName; // keep original casing for display
+            const newDocId = toneModeDocId(currentUser.uid, name);
+
+            // inside saveBtn.addEventListener('click', async () => { ... })
+            const nowPayload = {
+            uid: currentUser.uid,
+            name,
+            gains: gains.map(x => Number(x.toFixed(3))),
+            wave: document.getElementById('wave').value,  // ← save wave
+            updatedAt: serverTimestamp(),
+            };
+
+            if (editingId) {
+            // If user didn’t change the name (id stays same), just update
+            const sameId = editingId === newDocId;
+            if (sameId) {
+                await setDoc(doc(db, "toneModes", editingId), nowPayload, { merge: true });
+            } else {
+                // Renamed: enforce uniqueness by new deterministic ID
+                // Check if the target name is already taken by the same user
+                const newDocRef = doc(db, "toneModes", newDocId);
+                const newDocSnap = await getDocs(query(
+                collection(db, "toneModes"),
+                where("uid", "==", currentUser.uid),
+                where("name", "==", name)
+                ));
+                if (!newDocSnap.empty) {
+                alert("You already have a mode with this name. Choose a different name.");
+                return;
+                }
+                // Create new doc with new id, copy fields + createdAt once
+                await setDoc(newDocRef, { ...nowPayload, createdAt: serverTimestamp() });
+                // Delete old doc
+                await deleteDoc(doc(db, "toneModes", editingId));
+                editingId = newDocId;
+            }
+            } else {
+            // Creating new: check for duplicate name first
+            const dupSnap = await getDocs(query(
+                collection(db, "toneModes"),
+                where("uid", "==", currentUser.uid),
+                where("name", "==", name)
+            ));
+            if (!dupSnap.empty) {
+                alert("You already have a mode with this name. Choose a different name.");
+                return;
+            }
+            // Use deterministic doc id so name is unique per user
+            await setDoc(doc(db, "toneModes", newDocId), { ...nowPayload, createdAt: serverTimestamp() });
+            editingId = newDocId;
+            }
+
+            showModal(false);
+            await loadModes();
+        } catch (err) {
+            console.error("save error:", err);
+            alert(`Save failed: ${err.message || err}`);
+        }
+    });
+
+
+
+    newModeBtn.addEventListener('click', () => openEditor());
+    refreshBtn.addEventListener('click', () => loadModes());
+
+    /************  EDITOR  ************/
+    function openEditor(id=null, data=null) {
+    editingId = id;
+    editorTitle.textContent = id ? "Edit tone mode" : "New tone mode";
+    deleteMode.style.display = id ? "" : "none";
+    modeName.value = data?.name || "";
+    gains = Array.isArray(data?.gains) && data.gains.length ? data.gains.slice(0,6) : [0.8,0.6,0.4,0.3,0.2,0.1];
+    waveSelect.value = data?.wave || "triangle";  // ← add this line
+    showModal(true);
+    drawCurve();
+    }
+
+    function showModal(open){ editorModal.classList.toggle('open', !!open); editorModal.setAttribute('aria-hidden', open ? 'false' : 'true'); }
+    closeEditor.addEventListener('click', () => showModal(false));
+
+    // Delete
+    deleteMode.addEventListener('click', async () => {
+      if (!editingId) return;
+      if (!confirm("Delete this tone mode?")) return;
+      await deleteDoc(doc(db, "toneModes", editingId));
+      showModal(false);
+      await loadModes();
+    });
+
+
+    /************  CURVE EDITOR (6 draggable points)  ************/
+    const ctx = curveCanvas.getContext('2d');
+    function resizeCurve(){
+      curveCanvas.width = curveCanvas.parentElement.clientWidth;
+      curveCanvas.height = 220;
+      drawCurve();
+    }
+    function drawCurve(){
+      const w = curveCanvas.width, h = curveCanvas.height;
+      ctx.clearRect(0,0,w,h);
+
+      // grid
+      ctx.strokeStyle = "#333"; ctx.lineWidth = 1;
+      for (let i=0;i<=10;i++){
+        const y = h-20 - i*((h-40)/10);
+        ctx.beginPath(); ctx.moveTo(40,y); ctx.lineTo(w,y); ctx.stroke();
+      }
+      for (let i=0;i<gains.length;i++){
+        const x = 40 + (w-60)/(gains.length-1)*i;
+        ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h-20); ctx.stroke();
+      }
+
+      // axes
+      ctx.strokeStyle="#666";
+      ctx.beginPath(); ctx.moveTo(40,0); ctx.lineTo(40,h); ctx.moveTo(0,h-20); ctx.lineTo(w,h-20); ctx.stroke();
+
+      // labels
+      ctx.fillStyle="#888"; ctx.font="12px system-ui, sans-serif";
+      for (let i=0;i<=10;i++){ const y=h-20 - i*((h-40)/10); ctx.fillText((i/10).toFixed(1), 8, y+3); }
+      for (let i=0;i<gains.length;i++){ const x=40 + (w-60)/(gains.length-1)*i; ctx.fillText(String(i+1), x-4, h-5); }
+
+      // curve
+      ctx.strokeStyle="#ff4c4c"; ctx.lineWidth=2;
+      ctx.beginPath();
+      gains.forEach((g,i)=>{
+        const x=40 + (w-60)/(gains.length-1)*i;
+        const y=h-20 - g*(h-40);
+        if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }); ctx.stroke();
+
+      // points
+      gains.forEach((g,i)=>{
+        const x=40 + (w-60)/(gains.length-1)*i;
+        const y=h-20 - g*(h-40);
+        ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2); ctx.fillStyle="#fff"; ctx.fill(); ctx.strokeStyle="#ff4c4c"; ctx.stroke();
+      });
+    }
+    function pointerPos(e){
+      const r = curveCanvas.getBoundingClientRect();
+      const cx = (e.touches?e.touches[0].clientX:e.clientX) - r.left;
+      const cy = (e.touches?e.touches[0].clientY:e.clientY) - r.top;
+      return {x:cx,y:cy};
+    }
+    function down(e){
+      const {x,y} = pointerPos(e);
+      const w = curveCanvas.width, h = curveCanvas.height;
+      gains.forEach((g,i)=>{
+        const px=40 + (w-60)/(gains.length-1)*i;
+        const py=h-20 - g*(h-40);
+        if (Math.hypot(px-x,py-y) < 12) dragIndex = i;
+      });
+    }
+    function move(e){
+      if (dragIndex==null) return;
+      e.preventDefault();
+      const {y} = pointerPos(e);
+      const h = curveCanvas.height;
+      const val = Math.max(0, Math.min(1, (h-20 - y)/(h-40)));
+      gains[dragIndex] = val;
+      drawCurve();
+    }
+    function up(){ dragIndex = null; }
+    curveCanvas.addEventListener('mousedown',down);
+    curveCanvas.addEventListener('mousemove',move);
+    curveCanvas.addEventListener('mouseup',up);
+    curveCanvas.addEventListener('mouseleave',up);
+    curveCanvas.addEventListener('touchstart',down,{passive:true});
+    curveCanvas.addEventListener('touchmove',move,{passive:false});
+    curveCanvas.addEventListener('touchend',up);
+    window.addEventListener('resize', resizeCurve);
+    // helpers
+    resetBtn.addEventListener('click', ()=>{ gains=[0.8,0.6,0.4,0.3,0.2,0.1]; drawCurve(); });
+    flattenBtn.addEventListener('click', ()=>{
+      const avg = gains.reduce((a,b)=>a+b,0)/gains.length;
+      gains = gains.map(()=>avg); drawCurve();
+    });
+
+    // Open empty once (for initial sizing)
+    const ro = new ResizeObserver(()=> drawCurve());
+    ro.observe(curveCanvas);
+
+    /************  PREVIEW SYNTH  ************/
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let currentNodes = [];
+    function noteFreq(semitonesFromA4){
+      return 440 * Math.pow(2, semitonesFromA4/12);
+    }
+    function midiFreq(m){
+      return 440 * Math.pow(2,(m-69)/12);
+    }
+
+    function playHarmonicStack(freq, duration, _gains, type='triangle'){
+      // _gains[0..5] map to harmonics 1..6
+      const master = audioCtx.createGain(); master.gain.value = 0.7; master.connect(audioCtx.destination);
+      const nodes = [master];
+      for (let i=0;i<_gains.length;i++){
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.type = i===0 ? type : (type==='sine'?'sine':type); // keep simple mapping
+        osc.frequency.setValueAtTime(freq*(i+1), audioCtx.currentTime);
+        g.gain.setValueAtTime(_gains[i], audioCtx.currentTime);
+        osc.connect(g); g.connect(master); osc.start();
+        g.gain.linearRampToValueAtTime(0, audioCtx.currentTime + duration*0.95);
+        osc.stop(audioCtx.currentTime + duration);
+        nodes.push(osc,g);
+      }
+      currentNodes.push(nodes);
+    }
+
+    function playPreview(_gains, type, bpm){
+      stopPreview();
+      previewState.textContent = "Playing…";
+      const beat = 60/Math.max(40,Math.min(220,bpm)); // seconds per beat
+      // simple phrase: C4 E4 G4 C5  | G4 E4 D4 C4
+      const midi = [60,64,67,72, 67,64,62,60];
+      midi.forEach((m,i)=>{
+        const t = audioCtx.currentTime + i*(beat*0.75);
+        const dur = beat*0.6;
+        // schedule via setTimeout to simplify (not sample-accurate but OK here)
+        setTimeout(()=> playHarmonicStack(midiFreq(m), dur, _gains, type), (i*(beat*0.75))*1000);
+      });
+      // auto-clear state
+      setTimeout(()=> previewState.textContent = "Idle", (midi.length*(beat*0.75)+0.1)*1000);
+    }
+    function stopPreview(){
+      currentNodes.forEach(nodes=>{
+        nodes.forEach(n=>{
+          try{
+            if (n.stop) n.stop();
+            if (n.disconnect) n.disconnect();
+          }catch(_){}
+        });
+      });
+      currentNodes = [];
+      previewState.textContent = "Stopped";
+    }
+    playBtn.addEventListener('click', ()=> playPreview(gains, waveSelect.value, Number(bpmInput.value)||96));
+    stopBtn.addEventListener('click', stopPreview);
+
+    // Modal close on backdrop click
+    editorModal.addEventListener('click', (e)=>{ if (e.target === editorModal) showModal(false); });
+
+    // Utility
+    function escapeHtml(s){return s.replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m]))}
+
+    // Initialize canvas size when modal opens
+    const ob = new MutationObserver(()=>{ if (editorModal.classList.contains('open')) resizeCurve(); });
+    ob.observe(editorModal,{attributes:true,attributeFilter:['class']});
+  </script>
+</body>
+</html>

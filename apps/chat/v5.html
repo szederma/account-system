@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chat</title>
+  <style>
+    :root {
+      --dark-bg: #23272A; /* Darker Gray */
+      --darker-bg: #2C2F33; /* Slightly Lighter Gray for containers */
+      --accent-primary: #7289DA; /* Discord-like Blurple */
+      --text-primary: #FFFFFF; /* White */
+      --text-secondary: #99AAB5; /* Grayish Blue */
+      --input-bg: #40444B; /* Darker Input Background */
+      --border-color: rgba(114, 137, 218, 0.3); /* Accent-based Border */
+      --message-bg-own: #4A5A9A; /* Darker Shade of Accent */
+      --message-bg-other: #3A3F44; /* Neutral Dark Bubble */
+      --scrollbar-thumb-bg: var(--accent-primary);
+      --scrollbar-track-bg: var(--darker-bg);
+      --hover-accent: #677BC4;
+      --active-room-bg: var(--input-bg);
+    }
+
+    @font-face {
+      font-family: 'Caros';
+      src: local('Caros'), local('Caros-Regular'); 
+    }
+
+    body {
+      background-color: var(--dark-bg);
+      color: var(--text-primary);
+      font-family: 'Caros', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      line-height: 1.6;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #loading, #initial-room-prompt {
+      position: fixed;
+      inset: 0;
+      background: var(--dark-bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      padding: 20px;
+      text-align: center;
+    }
+    #initial-room-prompt button {
+        background: var(--accent-primary);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+        margin: 10px;
+        font-size: 1rem;
+    }
+    #initial-room-prompt button:hover {
+        background: var(--hover-accent);
+    }
+    #initial-room-prompt input {
+        padding: 10px;
+        margin-top: 10px;
+        border-radius: 5px;
+        border: 1px solid var(--border-color);
+        background: var(--input-bg);
+        color: var(--text-primary);
+        width: 80%;
+        max-width: 300px;
+    }
+
+    .app-layout {
+        display: flex;
+        width: 100%;
+        height: 100%;
+    }
+
+    #rooms-sidebar {
+        width: 250px;
+        background-color: var(--darker-bg);
+        padding: 20px;
+        border-right: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+        color: var(--text-primary);
+    }
+    #rooms-sidebar h2 {
+        font-size: 1.4rem;
+        color: var(--accent-primary);
+        margin-top: 0;
+        margin-bottom: 10px;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 10px;
+    }
+    #rooms-sidebar #user-info {
+        margin-bottom: 20px;
+        font-size: 0.9rem;
+    }
+    #rooms-sidebar #user-info a {
+        color: var(--accent-primary);
+        text-decoration: none;
+    }
+    #rooms-sidebar #user-info a:hover {
+        text-decoration: underline;
+    }
+    #rooms-sidebar #userIdDisplay { font-weight: bold; }
+
+    #rooms-list {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 20px 0;
+        overflow-y: auto;
+        flex-grow: 1;
+    }
+    #rooms-list li {
+        padding: 10px 12px;
+        margin-bottom: 8px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        font-size: 0.95rem;
+    }
+    #rooms-list li:hover {
+        background-color: var(--input-bg);
+    }
+    #rooms-list li.active {
+        background-color: var(--active-room-bg);
+        font-weight: bold;
+        color: var(--accent-primary);
+    }
+
+    .room-actions button {
+        width: 100%;
+        padding: 10px;
+        background: var(--accent-primary);
+        border: none;
+        color: white;
+        border-radius: 6px;
+        font-weight: bold;
+        cursor: pointer;
+        margin-bottom: 10px;
+        font-size: 0.9rem;
+    }
+    .room-actions button:hover {
+        background: var(--hover-accent);
+    }
+
+
+    .chat-container {
+      flex-grow: 1;
+      background: var(--dark-bg); 
+      display: flex;
+      flex-direction: column;
+      height: 100vh; 
+    }
+
+    header.chat-header {
+      padding: 15px 20px;
+      background: var(--darker-bg);
+      border-bottom: 1px solid var(--border-color);
+      text-align: center;
+    }
+    header.chat-header h1 {
+      font-size: 1.5rem;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    #chat-messages {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 20px;
+      gap: 12px;
+      display: flex;
+      flex-direction: column;
+      scrollbar-width: thin;
+      scrollbar-color: var(--scrollbar-thumb-bg) var(--scrollbar-track-bg);
+    }
+    #chat-messages::-webkit-scrollbar { width: 8px; }
+    #chat-messages::-webkit-scrollbar-track { background: var(--scrollbar-track-bg); }
+    #chat-messages::-webkit-scrollbar-thumb {
+      background-color: var(--scrollbar-thumb-bg);
+      border-radius: 10px;
+      border: 2px solid var(--scrollbar-track-bg);
+    }
+
+    .message-bubble {
+      padding: 10px 15px;
+      border-radius: 18px;
+      max-width: 75%;
+      word-wrap: break-word;
+      line-height: 1.4;
+    }
+    .message-bubble.own {
+      background: var(--message-bg-own);
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+      color: var(--text-primary);
+    }
+    .message-bubble.other {
+      background: var(--message-bg-other);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+      color: var(--text-primary);
+    }
+    .message-info {
+      font-size: 0.75rem;
+      opacity: 0.7;
+      margin-top: 5px;
+      color: var(--text-secondary); 
+    }
+     .message-bubble.own .message-info { color: #c0c0e0; } 
+     .message-bubble.other .message-info { color: var(--text-secondary); }
+
+
+    #message-form {
+      display: flex;
+      padding: 15px 20px;
+      border-top: 1px solid var(--border-color);
+      gap: 10px;
+      background: var(--darker-bg);
+    }
+    #message-input {
+      flex: 1;
+      padding: 12px 15px;
+      border-radius: 20px;
+      border: 1px solid var(--border-color);
+      background: var(--input-bg);
+      color: var(--text-primary);
+      outline: none;
+      font-size: 0.95rem;
+    }
+    #message-input:focus { border-color: var(--accent-primary); }
+    #send-button {
+      padding: 10px 20px;
+      background: var(--accent-primary);
+      border: none;
+      color: white;
+      border-radius: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    #send-button:hover { background: var(--hover-accent); }
+    #send-button:disabled, #message-input:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .modal {
+        display: none; 
+        position: fixed;
+        z-index: 10000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.6);
+        align-items: center;
+        justify-content: center;
+    }
+    .modal-content {
+        background-color: var(--darker-bg);
+        margin: auto;
+        padding: 30px;
+        border-radius: 10px;
+        width: 90%;
+        max-width: 400px;
+        text-align: center;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    .modal-content h3 { color: var(--accent-primary); margin-top: 0; }
+    .modal-content input {
+        width: calc(100% - 22px);
+        padding: 10px;
+        margin-bottom: 15px;
+        border-radius: 5px;
+        border: 1px solid var(--border-color);
+        background: var(--input-bg);
+        color: var(--text-primary);
+    }
+    .modal-content button {
+        background: var(--accent-primary); color: white; border: none;
+        padding: 10px 15px; border-radius: 5px; cursor: pointer; margin: 5px;
+    }
+    .modal-content button:hover { background: var(--hover-accent); }
+    .modal-content button.cancel { background: #6c757d; }
+    .modal-content button.cancel:hover { background: #5a6268; }
+
+  </style>
+</head>
+<body>
+
+    <div id="loading">
+        <p>Initializing Chat...</p>
+    </div>
+
+    <div id="initial-room-prompt" style="display: none;">
+        <h2>Welcome, <span id="userIdDisplay"></span>!</h2>
+        <p>Get started by creating a new chat room or joining an existing one.</p>
+        <div id="create-room-section">
+            <input type="text" id="new-room-name-prompt" placeholder="Enter new room name">
+            <button id="create-room-btn-prompt">Create Room</button>
+        </div>
+        <p style="margin: 20px 0;">OR</p>
+        <div id="join-room-section">
+            <input type="text" id="join-room-code-prompt" placeholder="Enter room code">
+            <button id="join-room-btn-prompt">Join Room</button>
+        </div>
+        <div id="profile-settings" style="margin-top: 40px;">
+            <a href="/chat/profile" style="color: var(--text-secondary); text-decoration: none;">Profile Settings</a>
+        </div>
+    </div>
+      
+    <div class="app-layout" id="main-app" style="display: none;">
+        <aside id="rooms-sidebar">
+            <h2>Rooms</h2>
+            <div id="user-info">
+                Welcome, <span id="userIdDisplay"></span>! (<a href="/chat/profile">Profile</a>)
+            </div>
+            <ul id="rooms-list">
+                
+            </ul>
+            <div class="room-actions">
+                <button id="open-create-room-modal">Create New Room</button>
+                <button id="open-join-room-modal">Join Room by Code</button>
+            </div>
+        </aside>
+
+        <div class="chat-container">
+            <header class="chat-header">
+                <h1 id="current-room-name">Select a Room</h1>
+            </header>
+
+            <div id="chat-messages">
+             
+            </div>
+
+            <form id="message-form">
+                <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off" disabled />
+                <button type="submit" id="send-button" disabled>Send</button>
+            </form>
+        </div>
+    </div>
+
+
+    <div id="createRoomModal" class="modal">
+      <div class="modal-content">
+        <h3>Create New Chat Room</h3>
+        <input type="text" id="modal-new-room-name" placeholder="Enter room name (e.g., Study Group)">
+        <button id="confirm-create-room">Create</button>
+        <button class="cancel" onclick="document.getElementById('createRoomModal').style.display='none'">Cancel</button>
+      </div>
+    </div>
+
+
+    <div id="joinRoomModal" class="modal">
+      <div class="modal-content">
+        <h3>Join Chat Room</h3>
+        <input type="text" id="modal-join-room-code" placeholder="Enter room code">
+        <button id="confirm-join-room">Join</button>
+        <button class="cancel" onclick="document.getElementById('joinRoomModal').style.display='none'">Cancel</button>
+      </div>
+    </div>
+
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, serverTimestamp, query, onSnapshot, doc, getDoc, setDoc, updateDoc, where, limit, writeBatch, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"; // Added getDocs
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAddXTzBxZk1Su6fNnsgRuNnWqFrq_ZjCY", 
+            authDomain: "distanzuino-project.firebaseapp.com",
+            projectId: "distanzuino-project",
+            storageBucket: "distanzuino-project.appspot.com",
+            messagingSenderId: "584745723160",
+            appId: "1:584745723160:web:97387a22f4b4b9fb9c6a6d"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const messageForm = document.getElementById("message-form");
+        const messageInput = document.getElementById("message-input");
+        const sendButton = document.getElementById("send-button");
+        const chatMessages = document.getElementById("chat-messages");
+        const userIdDisplay = document.getElementById("userIdDisplay");
+        const loadingDiv = document.getElementById("loading");
+        const initialRoomPromptDiv = document.getElementById("initial-room-prompt");
+        const mainAppDiv = document.getElementById("main-app");
+        
+        const roomsList = document.getElementById("rooms-list");
+        const currentRoomNameHeader = document.getElementById("current-room-name");
+
+        const createRoomModal = document.getElementById("createRoomModal");
+        const joinRoomModal = document.getElementById("joinRoomModal");
+        document.getElementById("open-create-room-modal").onclick = () => createRoomModal.style.display = "flex";
+        document.getElementById("open-join-room-modal").onclick = () => joinRoomModal.style.display = "flex";
+        
+        document.getElementById("confirm-create-room").onclick = () => handleCreateRoom(document.getElementById("modal-new-room-name").value);
+        document.getElementById("confirm-join-room").onclick = () => handleJoinRoom(document.getElementById("modal-join-room-code").value);
+        
+        // Ensure correct ID is used for the input field in the prompt
+        document.getElementById("create-room-btn-prompt").onclick = () => handleCreateRoom(document.getElementById("new-room-name-prompt").value, true); 
+        document.getElementById("join-room-btn-prompt").onclick = () => handleJoinRoom(document.getElementById("join-room-code-prompt").value, true);
+
+
+        let currentUsername = "Anonymous";
+        let currentUserId = null;
+        let currentRoomId = null;
+        let unsubscribeMessages = null;
+        let unsubscribeUserRooms = null;
+
+        function generateRoomCode(length = 6) {
+            const characters = 'ABCDEFGHIJKLMNPQRSTUVWXYZ123456789';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += characters.charAt(Math.floor(Math.random() * characters.length));
+            }
+            return result;
+        }
+
+        async function checkRoomCodeExists(code) {
+            const q = query(collection(db, "rooms"), where("code", "==", code), limit(1));
+            const querySnapshot = await getDocs(q); // Corrected: getDocs for a query
+            return !querySnapshot.empty;
+        }
+
+        async function handleCreateRoom(roomName, fromPrompt = false) {
+            roomName = roomName ? roomName.trim() : ""; // Ensure roomName is not null before trim
+            if (!roomName) {
+                alert("Please enter a room name.");
+                return;
+            }
+            if (!currentUserId) {
+                alert("User not identified. Cannot create room.");
+                return;
+            }
+            console.log(`Attempting to create room: "${roomName}" by user: ${currentUserId}`);
+
+
+            let newRoomCode = generateRoomCode();
+            let attempts = 0;
+            try {
+                while (await checkRoomCodeExists(newRoomCode) && attempts < 10) {
+                    newRoomCode = generateRoomCode();
+                    attempts++;
+                    console.log(`Generated new room code attempt ${attempts}: ${newRoomCode}`);
+                }
+                if (attempts >= 10) {
+                    alert("Failed to generate a unique room code. Please try again.");
+                    console.error("Failed to generate unique room code after 10 attempts.");
+                    return;
+                }
+                console.log(`Final unique room code: ${newRoomCode}`);
+
+                const roomData = {
+                    name: roomName,
+                    code: newRoomCode,
+                    createdByUid: currentUserId,
+                    createdAt: serverTimestamp(),
+                    members: { [currentUserId]: currentUsername }
+                };
+                console.log("Room data to be created:", roomData);
+
+                const roomRef = await addDoc(collection(db, "rooms"), roomData);
+                console.log("Room created successfully with ID:", roomRef.id);
+
+                const userDocRef = doc(db, "users", currentUserId);
+                await updateDoc(userDocRef, {
+                    [`joinedRooms.${roomRef.id}`]: roomName 
+                });
+                console.log("User document updated with new room.");
+                
+                alert(`Room "${roomName}" created! Code: ${newRoomCode}. You can share this code with others to join.`);
+                if (fromPrompt) {
+                    initialRoomPromptDiv.style.display = "none";
+                    mainAppDiv.style.display = "flex";
+                }
+                createRoomModal.style.display = "none";
+                document.getElementById("modal-new-room-name").value = "";
+                document.getElementById("new-room-name-prompt").value = "";
+
+                if (!currentRoomId || fromPrompt) {
+                   await selectRoom(roomRef.id, roomName);
+                }
+
+            } catch (error) {
+                console.error("Error creating room:", error);
+                alert("Failed to create room: " + error.message + "\nCheck console for details.");
+            }
+        }
+
+        async function handleJoinRoom(roomCode, fromPrompt = false) {
+            roomCode = roomCode ? roomCode.trim().toUpperCase() : ""; // Ensure roomCode is not null
+            if (!roomCode) {
+                alert("Please enter a room code.");
+                return;
+            }
+            if (!currentUserId) {
+                alert("User not identified. Cannot join room.");
+                return;
+            }
+            console.log(`Attempting to join room with code: "${roomCode}" by user: ${currentUserId}`);
+
+            try {
+                const q = query(collection(db, "rooms"), where("code", "==", roomCode), limit(1));
+                const querySnapshot = await getDocs(q);
+
+                if (querySnapshot.empty) {
+                    alert("Invalid room code. Please check and try again.");
+                    console.warn("Invalid room code entered:", roomCode);
+                    return;
+                }
+
+                const roomToJoinDoc = querySnapshot.docs[0];
+                const roomToJoinId = roomToJoinDoc.id;
+                const roomToJoinData = roomToJoinDoc.data();
+                console.log("Found room to join:", roomToJoinId, roomToJoinData);
+
+                // Check if already a member (in user's joinedRooms or room's members)
+                const userDocSnap = await getDoc(doc(db, "users", currentUserId));
+                if (userDocSnap.exists() && userDocSnap.data().joinedRooms && userDocSnap.data().joinedRooms[roomToJoinId]) {
+                    alert(`You are already in room "${roomToJoinData.name}".`);
+                    // Optionally select the room
+                     if (fromPrompt) {
+                        initialRoomPromptDiv.style.display = "none";
+                        mainAppDiv.style.display = "flex";
+                        await selectRoom(roomToJoinId, roomToJoinData.name);
+                    }
+                    joinRoomModal.style.display = "none";
+                    document.getElementById("modal-join-room-code").value = "";
+                    document.getElementById("join-room-code-prompt").value = "";
+                    return;
+                }
+
+
+                const batch = writeBatch(db);
+                const userDocRef = doc(db, "users", currentUserId);
+                batch.update(userDocRef, {
+                    [`joinedRooms.${roomToJoinId}`]: roomToJoinData.name
+                });
+
+                const roomDocRef = doc(db, "rooms", roomToJoinId);
+                batch.update(roomDocRef, {
+                    [`members.${currentUserId}`]: currentUsername
+                });
+
+                await batch.commit();
+                console.log("Successfully joined room and updated user/room docs.");
+                
+                alert(`Successfully joined room "${roomToJoinData.name}"!`);
+                 if (fromPrompt) {
+                    initialRoomPromptDiv.style.display = "none";
+                    mainAppDiv.style.display = "flex";
+                }
+                joinRoomModal.style.display = "none";
+                document.getElementById("modal-join-room-code").value = "";
+                document.getElementById("join-room-code-prompt").value = "";
+                
+                if (!currentRoomId || fromPrompt) {
+                   await selectRoom(roomToJoinId, roomToJoinData.name);
+                }
+
+            } catch (error) {
+                console.error("Error joining room:", error);
+                alert("Failed to join room: " + error.message + "\nCheck console for details.");
+            }
+        }
+        
+        function renderRoomsList(roomsData) {
+            roomsList.innerHTML = "";
+            if (!roomsData || Object.keys(roomsData).length === 0) {
+                const li = document.createElement("li");
+                li.textContent = "No rooms. Create or join one!";
+                li.style.opacity = "0.7";
+                roomsList.appendChild(li);
+                return false; 
+            }
+
+            Object.entries(roomsData).forEach(([id, name]) => {
+                const li = document.createElement("li");
+                li.textContent = name;
+                li.dataset.roomId = id;
+                if (id === currentRoomId) {
+                    li.classList.add("active");
+                }
+                li.onclick = () => selectRoom(id, name);
+                roomsList.appendChild(li);
+            });
+            return true; 
+        }
+
+        async function selectRoom(roomId, roomName) {
+            if (currentRoomId === roomId && chatMessages.innerHTML !== "" && !chatMessages.innerHTML.includes("Loading messages...")) { // Avoid redundant load if already selected and messages shown
+                 // Still update active class in case it was somehow lost
+                document.querySelectorAll("#rooms-list li").forEach(li => {
+                    li.classList.toggle("active", li.dataset.roomId === roomId);
+                });
+                currentRoomNameHeader.textContent = roomName || "Chat"; // Ensure header is correct
+                console.log(`Room ${roomId} already selected.`);
+                return;
+            }
+            console.log(`Selecting room: ${roomId} (${roomName})`);
+
+
+            currentRoomId = roomId;
+            currentRoomNameHeader.textContent = roomName || "Chat";
+            messageInput.disabled = false;
+            sendButton.disabled = false;
+            chatMessages.innerHTML = '<p style="text-align:center; color: var(--text-secondary);">Loading messages...</p>';
+
+            document.querySelectorAll("#rooms-list li").forEach(li => {
+                li.classList.toggle("active", li.dataset.roomId === roomId);
+            });
+
+            if (unsubscribeMessages) {
+                console.log("Unsubscribing from previous room messages.");
+                unsubscribeMessages();
+                unsubscribeMessages = null;
+            }
+
+            const messagesColRef = collection(db, "rooms", roomId, "messages");
+            const q_msg = query(messagesColRef, orderBy("timestamp", "asc")); // Renamed to q_msg
+            
+            console.log(`Setting up snapshot listener for messages in room ${roomId}`);
+            unsubscribeMessages = onSnapshot(q_msg, (snapshot) => { // Used q_msg
+                console.log(`Received message snapshot for room ${roomId}. Docs count: ${snapshot.docs.length}`);
+                const initialLoad = chatMessages.innerHTML.includes("Loading messages..."); 
+                chatMessages.innerHTML = ""; 
+                if (snapshot.empty) {
+                    chatMessages.innerHTML = '<p style="text-align:center; color: var(--text-secondary);">No messages yet. Be the first to say something!</p>';
+                } else {
+                    snapshot.forEach(docSnap => {
+                        const msg = docSnap.data();
+                        displayMessage(msg);
+                    });
+                }
+                if (initialLoad || isScrolledToBottom()) {
+                     chatMessages.scrollTop = chatMessages.scrollHeight;
+                }
+            }, error => {
+                console.error(`Error fetching messages for room ${roomId}:`, error);
+                chatMessages.innerHTML = `<p style="color:var(--accent-primary); padding: 20px; text-align: center;">Error loading messages: ${error.message}</p>`;
+                currentRoomId = null; // Deselect room on error
+                messageInput.disabled = true;
+                sendButton.disabled = true;
+            });
+        }
+        
+        function displayMessage(msg) {
+            const div = document.createElement("div");
+            div.classList.add("message-bubble");
+            div.classList.add(msg.userId === currentUserId ? "own" : "other");
+            
+            const textContent = msg.text ? msg.text.replace(/</g, "&lt;").replace(/>/g, "&gt;") : ""; // Basic XSS protection
+
+            div.innerHTML = `
+                <div>${textContent}</div>
+                <div class="message-info">
+                    ${msg.userName || `User-${msg.userId?.substring(0, 6) || "?"}`} • ${msg.timestamp?.toDate?.().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || "sending..."}
+                </div>`;
+            chatMessages.appendChild(div);
+        }
+
+        function isScrolledToBottom() {
+            if (!chatMessages.lastChild) return true;
+            return chatMessages.scrollHeight - chatMessages.clientHeight <= chatMessages.scrollTop + chatMessages.lastChild.offsetHeight + 50; 
+        }
+
+
+        onAuthStateChanged(auth, async (user) => {
+            console.log("Auth state changed. User:", user);
+
+            if (unsubscribeMessages) { unsubscribeMessages(); unsubscribeMessages = null; }
+            if (unsubscribeUserRooms) { unsubscribeUserRooms(); unsubscribeUserRooms = null; }
+            currentRoomId = null; 
+            roomsList.innerHTML = "";
+            chatMessages.innerHTML = "";
+            currentRoomNameHeader.textContent = "Select a Room";
+            messageInput.disabled = true; // Disable by default until a room is selected
+            sendButton.disabled = true;
+
+
+            if (!user) {
+                console.warn("No user logged in. Redirecting to login...");
+                loadingDiv.textContent = "Redirecting to login...";
+                initialRoomPromptDiv.style.display = "none";
+                mainAppDiv.style.display = "none";
+                window.location.replace("/chat/login"); 
+                return;
+            }
+
+            currentUserId = user.uid;
+            loadingDiv.textContent = "Fetching user data...";
+            let userDocSnapshot;
+            let userExistsInDb = false;
+            try {
+                for (let i = 0; i < 3; i++) { 
+                    userDocSnapshot = await getDoc(doc(db, "users", user.uid));
+                    if (userDocSnapshot.exists()) {
+                        userExistsInDb = true;
+                        break;
+                    }
+                    await new Promise(r => setTimeout(r, 500));
+                }
+
+                if (!userExistsInDb) {
+                    console.error(`User document for UID ${user.uid} not found in Firestore. Chat access denied.`);
+                    loadingDiv.innerHTML = `<p style="color:var(--accent-primary); padding: 20px; text-align: center;">Your user data could not be found.<br/>Please try logging out and back in, or contact support.<br/><button id="logout-on-fail" style="margin-top:10px; padding: 8px 15px; background: var(--accent-primary); color:white; border:none; border-radius:5px; cursor:pointer;">Logout</button></p>`;
+                    document.getElementById("logout-on-fail")?.addEventListener('click', () => {
+                        signOut(auth).then(() => window.location.replace("/chat/login"));
+                    });
+                    return;
+                }
+
+                const userData = userDocSnapshot.data();
+                currentUsername = (userData && userData.username && userData.username.trim()) 
+                                ? userData.username.trim() 
+                                : `User-${user.uid.slice(0, 6)}`;
+                userIdDisplay.textContent = currentUsername;
+                loadingDiv.style.display = "none"; 
+
+                const userRoomsRef = doc(db, "users", user.uid);
+                unsubscribeUserRooms = onSnapshot(userRoomsRef, (docSnap) => {
+                    const userDataLive = docSnap.data();
+                    const joinedRooms = userDataLive?.joinedRooms || {};
+                    console.log("User's joined rooms updated:", joinedRooms);
+                    
+                    const haveRooms = renderRoomsList(joinedRooms);
+
+                    if (!haveRooms) {
+                        mainAppDiv.style.display = "none";
+                        initialRoomPromptDiv.style.display = "flex";
+                        currentRoomId = null; // Ensure no room is considered active
+                        messageInput.disabled = true;
+                        sendButton.disabled = true;
+                        currentRoomNameHeader.textContent = "Create or Join a Room";
+                        chatMessages.innerHTML = '<p style="text-align:center; color: var(--text-secondary);">Welcome! Please create or join a room to start chatting.</p>';
+
+                    } else {
+                        initialRoomPromptDiv.style.display = "none";
+                        mainAppDiv.style.display = "flex";
+                        if (!currentRoomId || !joinedRooms[currentRoomId]) { // If no room selected, or selected room was left/deleted
+                            const firstRoomId = Object.keys(joinedRooms)[0];
+                            if (firstRoomId) {
+                                console.log("Auto-selecting first available room:", firstRoomId);
+                                selectRoom(firstRoomId, joinedRooms[firstRoomId]);
+                            } else { // Should be caught by !haveRooms, but safety net
+                                currentRoomNameHeader.textContent = "No Rooms Available";
+                                messageInput.disabled = true;
+                                sendButton.disabled = true;
+                                chatMessages.innerHTML = '<p style="text-align:center; color: var(--text-secondary);">You are not part of any rooms yet.</p>';
+                            }
+                        } else {
+                            // If currentRoomId is still valid, ensure its name is up-to-date in header
+                            // and re-apply active class, though selectRoom should handle this.
+                            if(joinedRooms[currentRoomId]) {
+                                currentRoomNameHeader.textContent = joinedRooms[currentRoomId];
+                            }
+                            console.log(`Current room ${currentRoomId} is still valid.`);
+                        }
+                    }
+                }, error => {
+                    console.error("Error listening to user's rooms:", error);
+                    loadingDiv.innerHTML = `<p style="color:var(--accent-primary); padding: 20px; text-align: center;">Error loading your room list: ${error.message}.</p>`;
+                });
+
+            } catch (err) {
+                console.error("Error during auth state handling or Firestore fetch:", err);
+                loadingDiv.innerHTML = `<p style="color:var(--accent-primary); padding: 20px; text-align: center;">Critical error initializing chat: ${err.message}.<br/>Try refreshing or logging out and back in.</p>`;
+            }
+        });
+
+
+    messageForm.onsubmit = async (e) => {
+        e.preventDefault();
+        if (!currentUserId || !currentRoomId) {
+            alert("You must be logged in and in a room to send messages.");
+            return;
+        }
+
+        const messageText = messageInput.value.trim();
+        if (!messageText) return;
+
+        const tempSendButtonText = sendButton.textContent;
+        sendButton.disabled = true;
+        sendButton.textContent = "Sending...";
+        messageInput.disabled = true;
+
+        try {
+            await addDoc(collection(db, "rooms", currentRoomId, "messages"), {
+                text: messageText,
+                userId: currentUserId,
+                userName: currentUsername,
+                timestamp: serverTimestamp()
+            });
+            messageInput.value = "";
+            chatMessages.scrollTop = chatMessages.scrollHeight; // Scroll after sending
+        } catch (err) {
+            console.error("Failed to send message:", err);
+            alert("Failed to send message: " + err.message);
+        } finally {
+            sendButton.disabled = false;
+            sendButton.textContent = tempSendButtonText;
+            messageInput.disabled = false;
+            messageInput.focus();
+        }
+      };
+
+      // Close modals if clicked outside content
+        window.onclick = function(event) {
+            if (event.target == createRoomModal) {
+                createRoomModal.style.display = "none";
+            }
+            if (event.target == joinRoomModal) {
+                joinRoomModal.style.display = "none";
+            }
+        }
+    </script>
+</body>
+</html>

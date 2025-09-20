@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Schulplaner — Stundenplan · Aufgaben · Studienplan · Prüfungen · Kalender</title>
+<style>
+  :root{
+    --bg:#0b1020; --panel:#0f172a; --text:#e6eaf2; --muted:#9aa3b2;
+    --line:rgba(255,255,255,.08);
+    --accent:#7aa2ff; --accent-soft:rgba(122,162,255,.16); --accent-soft-2:rgba(122,162,255,.10);
+    --ok:#22c55e; --warn:#f59e0b; --danger:#ef4444;
+    --radius:16px; --shadow:0 12px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;background:linear-gradient(180deg,#0a0f1e,#0b1020);
+    color:var(--text);
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial;
+    -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+    padding:20px
+  }
+  .app{max-width:1200px;margin:0 auto}
+
+  header.appbar{
+    position:sticky;top:0;z-index:50;margin-bottom:18px;
+    background:rgba(15,23,42,.85);backdrop-filter:blur(8px);
+    border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:14px 18px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center
+  }
+  .title{font-size:20px;font-weight:800;letter-spacing:.2px}
+  .subtitle{color:var(--muted);font-size:13px}
+  .chips{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .chip{font-size:12px;padding:8px 10px;border-radius:999px;border:1px solid var(--line);
+        background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
+        font-variant-numeric:tabular-nums}
+  .chip-acc{border-color:rgba(122,162,255,.4)}
+  .btn{
+    display:inline-flex;align-items:center;gap:8px;
+    border:1px solid var(--line);border-radius:12px;padding:10px 12px;
+    background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
+    color:var(--text);cursor:pointer;user-select:none;
+    transition:transform .15s ease,opacity .2s ease,background .2s ease
+  }
+  .btn:hover{transform:translateY(-1px)}
+  .btn:active{transform:translateY(0)}
+  .btn-accent{border-color:rgba(122,162,255,.45);background:linear-gradient(180deg,var(--accent-soft),var(--accent-soft-2))}
+  .btn-ghost{background:transparent}
+  .btn-sm{padding:8px 10px;border-radius:10px;font-size:12px}
+
+  .tabs{display:flex;gap:8px;flex-wrap:wrap}
+  .tab{
+    padding:10px 12px;border-radius:12px;border:1px solid var(--line);
+    font-weight:700;font-size:13px;cursor:pointer;opacity:.85;
+    background:rgba(255,255,255,.03);transition:background .25s ease, opacity .2s ease, transform .2s ease
+  }
+  .tab:hover{opacity:1;transform:translateY(-1px)}
+  .tab.active{background:linear-gradient(180deg,var(--accent-soft),var(--accent-soft-2));border-color:rgba(122,162,255,.5)}
+
+  .card{
+    background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
+    border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:16px;margin-bottom:16px
+  }
+  h2{margin:0 0 10px;font-size:16px;letter-spacing:.2px}
+  .muted{color:var(--muted);font-size:13px}
+  .grid{display:grid;gap:16px}
+  .grid.cols-2{grid-template-columns:1fr 1fr}
+  .grid.cols-3{grid-template-columns:1fr 1fr 1fr}
+  @media (max-width:980px){ .grid.cols-2,.grid.cols-3{grid-template-columns:1fr} }
+
+  .now-card .subject{ font-size: clamp(22px, 4vw, 28px); font-weight: 900; letter-spacing: .3px; }
+  .badge{font-size:12px;padding:6px 8px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.03);font-weight:600}
+  .badge-accent{border-color:rgba(122,162,255,.5);background:linear-gradient(180deg, var(--accent-soft), var(--accent-soft-2))}
+  .upnext{ margin-top:8px; font-size:13px; color:var(--muted); }
+  .upnext strong{ color:#eaf0ff; }
+
+  .grid-wrap{overflow:auto;border-radius:calc(var(--radius)-6px);border:1px solid var(--line)}
+  table.timetable{width:100%;border-collapse:separate;border-spacing:0;background:rgba(255,255,255,.02)}
+  thead th{position:sticky;top:0;background:rgba(11,16,32,.96);border-bottom:1px solid var(--line);font-size:13px;text-align:left;padding:10px 12px}
+  thead th:first-child{width:160px}
+  tbody th,tbody td{border-bottom:1px solid var(--line);padding:12px;vertical-align:top;transition:background .35s ease, color .25s ease, transform .25s ease}
+  tbody tr:nth-child(odd) td,tbody tr:nth-child(odd) th{background:rgba(255,255,255,.01)}
+  tbody tr:hover td{background:rgba(255,255,255,.02)}
+  .period{color:var(--muted);font-size:13px}
+  .cell .subject{font-weight:800;letter-spacing:.2px}
+  .cell .details{color:var(--muted);font-size:12px;margin-top:4px}
+  .empty{color:var(--muted);font-style:italic}
+  .cell.current{ background: linear-gradient(180deg, var(--accent-soft), var(--accent-soft-2)); border-left: 2px solid var(--accent); }
+  .cell.current .subject{ font-weight:900; }
+  .cell.current .details{ color:#dbe5ff; font-weight:600; }
+
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media (max-width:720px){ .row{grid-template-columns:1fr} }
+  .input, select, textarea{
+    width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);
+    background:rgba(255,255,255,.03);color:var(--text);font-size:14px;outline:none
+  }
+  .input::placeholder, textarea::placeholder{color:#9aa3b2}
+  textarea{min-height:80px;resize:vertical}
+  .task{border:1px solid var(--line);border-radius:14px;padding:12px;background:rgba(255,255,255,.02);transition:transform .2s ease}
+  .task:hover{transform:translateY(-1px)}
+  .task-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .task-title{font-weight:800}
+  .progress{height:8px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden;border:1px solid var(--line)}
+  .progress > span{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#9fb8ff);width:0;transition:width .3s ease}
+  .subtasks{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
+  .subtasks .subrow{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+  .subtasks input[type="text"]{flex:1}
+  .tag{font-size:11px;border:1px solid var(--line);border-radius:10px;padding:4px 8px;background:rgba(255,255,255,.03)}
+  .task-footer{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:8px;flex-wrap:wrap}
+  .pill{padding:4px 8px;border-radius:999px;border:1px solid var(--line);font-size:12px;background:rgba(255,255,255,.03)}
+  .pill.deadline-soon{border-color:rgba(245,158,11,.6);background:rgba(245,158,11,.1)}
+  .pill.deadline-urgent{border-color:rgba(239,68,68,.6);background:rgba(239,68,68,.1)}
+
+  .win{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+  .win input{max-width:110px}
+  .list{display:grid;gap:10px}
+  .session{display:flex;gap:8px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:12px;padding:10px;background:rgba(255,255,255,.02)}
+  .session .left{display:flex;gap:10px;align-items:center}
+  .session .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+
+  /* Kalender */
+  .cal-wrap{display:grid;gap:10px}
+  .cal-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+  .cal-dow,.cal-day{
+    border:1px solid var(--line);border-radius:12px; padding:10px; min-height:90px;
+    background:rgba(255,255,255,.02)
+  }
+  .cal-dow{font-weight:800;text-align:center;background:rgba(255,255,255,.04)}
+  .cal-day .dnum{font-weight:800}
+  .cal-day.muted{opacity:.55}
+  .pill-mini{display:inline-block;margin-top:6px;font-size:10px;border-radius:999px;border:1px solid var(--line);padding:2px 6px}
+  .p-class{border-color:rgba(122,162,255,.4);background:rgba(122,162,255,.12)}
+  .p-exam{border-color:rgba(239,68,68,.5);background:rgba(239,68,68,.12)}
+  .p-event{border-color:rgba(245,158,11,.6);background:rgba(245,158,11,.1)}
+  .p-study{border-color:rgba(34,197,94,.5);background:rgba(34,197,94,.12)}
+
+  .toasts{position:fixed;right:20px;bottom:20px;display:flex;flex-direction:column;gap:10px;z-index:60}
+  .toast{min-width:240px;max-width:340px;background:#111729;border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:var(--shadow);opacity:.98;animation:slidein .25s ease both}
+  @keyframes slidein{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
+  .fade { transition: opacity .25s ease; opacity: 1; will-change: opacity; }
+  .fade.hide { opacity: 0; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="appbar">
+    <div>
+      <div class="title">Schulplaner <span class="subtitle">— Stundenplan · Aufgaben · Studienplan · Prüfungen · Kalender</span></div>
+      <div class="subtitle" id="todayStr"></div>
+    </div>
+    <div class="chips">
+      <div class="chip chip-acc">Jetzt: <span id="nowStatus">–</span></div>
+      <div class="chip" id="clock">--:--</div>
+      <button class="btn btn-sm btn-accent" id="notifyBtn">Benachrichtigungen aktivieren</button>
+    </div>
+  </header>
+
+  <div class="card">
+    <div class="tabs">
+      <div class="tab active" data-tab="heute">Heute</div>
+      <div class="tab" data-tab="woche">Woche</div>
+      <div class="tab" data-tab="aufgaben">Aufgaben</div>
+      <div class="tab" data-tab="pruefungen">Prüfungen & Ereignisse</div>
+      <div class="tab" data-tab="fenster">Lernfenster & Einstellungen</div>
+      <div class="tab" data-tab="kalender">Kalender</div>
+    </div>
+  </div>
+
+  <!-- HEUTE -->
+  <section class="tabpanel" id="tab-heute">
+    <div class="grid cols-2">
+      <section class="card now-card">
+        <h2>Aktuell / Gleich</h2>
+        <div id="nowBox" class="fade"><div class="muted">Lade …</div></div>
+        <div id="upnextBox" class="upnext fade"></div>
+        <div id="todayHighlights" class="upnext" style="margin-top:8px"></div>
+      </section>
+
+      <section class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <h2>Lernplan für heute</h2>
+          <div>
+            <button class="btn btn-sm btn-accent" id="genToday">Plan erzeugen</button>
+            <button class="btn btn-sm btn-ghost" id="clearToday">Leeren</button>
+          </div>
+        </div>
+        <div id="todayPlan" class="list muted">Noch keine Sitzungen. Klicke „Plan erzeugen“.</div>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2>Stundenplan — Heute</h2>
+      <div class="grid-wrap">
+        <table class="timetable" id="ttToday"><thead></thead><tbody></tbody></table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Schnell Aufgabe hinzufügen</h2>
+      <div class="row" style="margin-bottom:10px">
+        <input class="input" id="qaTitle" placeholder="Titel (z. B. Biologie Arbeitsblatt)" />
+        <select class="input" id="qaSubject"></select>
+      </div>
+      <div class="row" style="margin-bottom:10px">
+        <input class="input" id="qaDeadline" type="datetime-local" />
+        <input class="input" id="qaEst" type="number" min="5" step="5" placeholder="Zeitbedarf (Minuten)" />
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+        <label class="tag"><input type="checkbox" id="qaSR" /> Spaced Repetition (Auto-Reviews)</label>
+        <select class="input" id="qaPriority" style="max-width:200px">
+          <option value="2">Priorität: Normal</option>
+          <option value="3">Priorität: Hoch</option>
+          <option value="1">Priorität: Niedrig</option>
+        </select>
+      </div>
+      <button class="btn btn-accent" id="qaAdd">Hinzufügen</button>
+    </section>
+  </section>
+
+  <!-- WOCHE -->
+  <section class="tabpanel" id="tab-woche" style="display:none">
+    <section class="card">
+      <h2>Wochen-Stundenplan</h2>
+      <div class="grid-wrap">
+        <table class="timetable" id="grid"><thead id="thead"></thead><tbody id="tbody"></tbody></table>
+      </div>
+    </section>
+
+    <section class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <h2>Wochen-Lernplan</h2>
+        <div>
+          <button class="btn btn-sm btn-accent" id="genWeek">Woche erzeugen</button>
+          <button class="btn btn-sm btn-ghost" id="clearWeek">Leeren</button>
+        </div>
+      </div>
+      <div class="grid cols-3">
+        <div id="weekPlan" class="grid cols-1"></div>
+        <div id="weekExams" class="card"><h3 style="margin:0 0 8px;font-size:14px">Diese Woche — Prüfungen</h3><div id="weekExamsList" class="list"></div></div>
+        <div id="weekEvents" class="card"><h3 style="margin:0 0 8px;font-size:14px">Diese Woche — Ereignisse</h3><div id="weekEventsList" class="list"></div></div>
+      </div>
+    </section>
+  </section>
+
+  <!-- AUFGABEN -->
+  <section class="tabpanel" id="tab-aufgaben" style="display:none">
+    <section class="card">
+      <h2>Aufgabe hinzufügen</h2>
+      <div class="row" style="margin-bottom:10px">
+        <input class="input" id="tTitle" placeholder="Titel (z. B. Mathe Übungsblatt 3)" />
+        <select class="input" id="tSubject"></select>
+      </div>
+      <div class="row" style="margin-bottom:10px">
+        <input class="input" id="tDeadline" type="datetime-local" />
+        <input class="input" id="tEst" type="number" min="5" step="5" placeholder="Zeitbedarf (Minuten)" />
+      </div>
+      <div class="row" style="margin-bottom:10px">
+        <select class="input" id="tPriority">
+          <option value="2">Priorität: Normal</option>
+          <option value="3">Priorität: Hoch</option>
+          <option value="1">Priorität: Niedrig</option>
+        </select>
+        <input class="input" id="tNotes" placeholder="Notizen (optional)" />
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <label class="tag"><input type="checkbox" id="tSR"/> Spaced Repetition (2/6/14 Tage)</label>
+        <button class="btn btn-accent" id="addTask">Hinzufügen</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <h2>Aufgaben</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <select class="input" id="filterSubject" style="max-width:220px"><option value="">Alle Fächer</option></select>
+          <select class="input" id="sortBy" style="max-width:220px">
+            <option value="due">Sortierung: Fällig</option>
+            <option value="priority">Sortierung: Priorität</option>
+            <option value="progress">Sortierung: Fortschritt</option>
+          </select>
+        </div>
+      </div>
+      <div id="tasks" class="grid"></div>
+    </section>
+  </section>
+
+  <!-- PRÜFUNGEN & EREIGNISSE -->
+  <section class="tabpanel" id="tab-pruefungen" style="display:none">
+    <section class="card">
+      <h2>Prüfung hinzufügen</h2>
+      <div class="row" style="margin-bottom:10px">
+        <select class="input" id="xSubject"></select>
+        <input class="input" id="xTitle" placeholder="Thema (z. B. Physik: Elektrizität)" />
+      </div>
+      <div class="row" style="margin-bottom:10px">
+        <input class="input" id="xDate" type="datetime-local" />
+        <select class="input" id="xPriority">
+          <option value="2">Wichtigkeit: Normal</option>
+          <option value="3">Wichtigkeit: Hoch</option>
+          <option value="1">Wichtigkeit: Niedrig</option>
+        </select>
+      </div>
+      <div class="row" style="margin-bottom:10px">
+        <input class="input" id="xWeight" type="number" min="0" step="1" placeholder="Gewichtung (optional)" />
+        <input class="input" id="xNotes" placeholder="Notizen (optional)" />
+      </div>
+      <button class="btn btn-accent" id="addExam">Prüfung speichern</button>
+    </section>
+
+    <section class="card">
+      <h2>Ereignis hinzufügen</h2>
+      <div class="row" style="margin-bottom:10px">
+        <input class="input" id="eTitle" placeholder="Titel (z. B. Deutsch-Vortrag)" />
+        <input class="input" id="eLocation" placeholder="Ort (optional)" />
+      </div>
+      <div class="row" style="margin-bottom:10px">
+        <input class="input" id="eFrom" type="datetime-local" />
+        <input class="input" id="eTo" type="datetime-local" />
+      </div>
+      <div class="row" style="margin-bottom:10px">
+        <select class="input" id="eSubject"><option value="">— Fach (optional) —</option></select>
+        <input class="input" id="eNotes" placeholder="Notizen (optional)" />
+      </div>
+      <button class="btn btn-accent" id="addEvent">Ereignis speichern</button>
+    </section>
+
+    <section class="card">
+      <div class="grid cols-2">
+        <div>
+          <h2>Prüfungen</h2>
+          <div id="examsList" class="list"></div>
+        </div>
+        <div>
+          <h2>Ereignisse</h2>
+          <div id="eventsList" class="list"></div>
+        </div>
+      </div>
+    </section>
+  </section>
+
+  <!-- LERNFENSTER & EINSTELLUNGEN -->
+  <section class="tabpanel" id="tab-fenster" style="display:none">
+    <section class="card">
+      <h2>Tägliche Lernfenster</h2>
+      <div class="muted" style="margin-bottom:8px">Hier legst du fest, wann du typischerweise lernen kannst. Der Planer füllt diese Fenster mit Sessions.</div>
+      <div id="wins"></div>
+      <div class="row">
+        <div>
+          <label class="muted">Standard-Sitzungslänge (Minuten)</label>
+          <input class="input" id="sessionLen" type="number" min="15" step="5" value="30"/>
+        </div>
+        <div>
+          <label class="muted">Max. Sitzungen pro Tag</label>
+          <input class="input" id="maxSessions" type="number" min="1" step="1" value="4"/>
+        </div>
+      </div>
+      <div class="spacer" style="height:6px"></div>
+      <button class="btn btn-accent" id="saveWins">Einstellungen speichern</button>
+    </section>
+
+    <section class="card">
+      <h2>Benachrichtigungen</h2>
+      <div class="muted">Kleiner Anstoß, wenn eine Lernsitzung beginnt. Funktioniert, solange die Seite geöffnet ist.</div>
+      <div class="spacer" style="height:6px"></div>
+      <button class="btn btn-accent" id="reqPerm">Berechtigung anfragen</button>
+    </section>
+  </section>
+
+  <!-- KALENDER -->
+  <section class="tabpanel" id="tab-kalender" style="display:none">
+    <section class="card">
+      <div class="cal-wrap">
+        <div class="cal-head">
+          <button class="btn btn-sm" id="calPrev">⟵</button>
+          <div>
+            <h2 id="calTitle" style="display:inline-block;margin-right:8px"></h2>
+            <span class="muted" id="calSubtitle"></span>
+          </div>
+          <button class="btn btn-sm" id="calNext">⟶</button>
+        </div>
+        <div class="cal-grid" id="calDow"></div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+    </section>
+    <section class="card">
+      <h2>Tag auswählen</h2>
+      <div id="calDayDetails" class="list"></div>
+    </section>
+  </section>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+/* ========= Grunddaten (Stundenplan) ========= */
+var DATA = {"className": "10b", "schoolYear": "2025/26", "days": ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"], "periods": [{"no": 1, "start": "7:40", "end": "8:25"}, {"no": 2, "start": "8:30", "end": "9:15"}, {"no": 3, "start": "9:35", "end": "10:20"}, {"no": 4, "start": "10:25", "end": "11:10"}, {"no": 5, "start": "11:25", "end": "12:10"}, {"no": 6, "start": "12:15", "end": "13:00"}, {"no": 7, "start": "13:05", "end": "13:50"}, {"no": 8, "start": "13:50", "end": "14:35"}, {"no": 9, "start": "14:45", "end": "15:25"}, {"no": 10, "start": "15:25", "end": "16:05"}], "entries": {"Montag": [{"subject": "Physik", "room": "PhR1", "teacher": "H\u00f6m"}, {"subject": "Physik", "room": "PhR1", "teacher": "H\u00f6m"}, {"subject": "Ungarisch", "room": "R10b", "teacher": "Gor"}, {"subject": "Ungarisch", "room": "R10b", "teacher": "Gor"}, {"subject": "UGeschichte", "room": "R10b", "teacher": "Kua"}, {"subject": "UGeschichte", "room": "R10b", "teacher": "Kua"}, {"subject": "", "room": "", "teacher": ""}, {"subject": "Kunst", "room": "WR", "teacher": "Zee"}, {"subject": "Kunst", "room": "WR", "teacher": "Zee"}, {"subject": "", "room": "", "teacher": ""}], "Dienstag": [{"subject": "DaF", "room": "R10b", "teacher": "Hed"}, {"subject": "Mathe", "room": "R10b", "teacher": "Wam"}, {"subject": "Geschichte", "room": "R10b", "teacher": "Kaz"}, {"subject": "Physik", "room": "PhR1", "teacher": "H\u00f6m"}, {"subject": "UChemie", "room": "ChR", "teacher": "Vaz"}, {"subject": "UChemie", "room": "ChR", "teacher": "Vaz"}, {"subject": "UBiologie", "room": "BioR1", "teacher": "Vaz"}, {"subject": "UBiologie", "room": "BioR1", "teacher": "Vaz"}, {"subject": "", "room": "", "teacher": ""}, {"subject": "", "room": "", "teacher": ""}], "Mittwoch": [{"subject": "Geschichte", "room": "R10b", "teacher": "Kaz"}, {"subject": "Geschichte", "room": "R10b", "teacher": "Kaz"}, {"subject": "Englisch", "room": "R10b", "teacher": "Eij"}, {"subject": "Englisch", "room": "R10b", "teacher": "Eij"}, {"subject": "Ungarisch", "room": "R10b", "teacher": "Gor"}, {"subject": "Mathe", "room": "R10b", "teacher": "Wam"}, {"subject": "Spanisch", "room": "R9a", "teacher": "Csb"}, {"subject": "", "room": "", "teacher": ""}, {"subject": "", "room": "", "teacher": ""}, {"subject": "", "room": "", "teacher": ""}], "Donnerstag": [{"subject": "Deutsch", "room": "R10b", "teacher": "Frt"}, {"subject": "Deutsch", "room": "R10b", "teacher": "Frt"}, {"subject": "Sport", "room": "TH2", "teacher": "Gog"}, {"subject": "Sport", "room": "TH2", "teacher": "Gog"}, {"subject": "Sozialkunde", "room": "R10b", "teacher": "Bau"}, {"subject": "Sozialkunde", "room": "R10b", "teacher": "Bau"}, {"subject": "Ungarisch", "room": "R10b", "teacher": "Gor"}, {"subject": "Spanisch", "room": "R9a", "teacher": "Csb"}, {"subject": "Religion", "room": "R10b", "teacher": "Pak"}, {"subject": "Religion", "room": "R10b", "teacher": "Pak"}], "Freitag": [{"subject": "Spanisch", "room": "R9a", "teacher": "Csb"}, {"subject": "Spanisch", "room": "R9a", "teacher": "Csb"}, {"subject": "Mathe", "room": "R10b", "teacher": "Wam"}, {"subject": "Mathe", "room": "R10b", "teacher": "Wam"}, {"subject": "Deutsch", "room": "R10b", "teacher": "Frt"}, {"subject": "Deutsch", "room": "R10b", "teacher": "Frt"}, {"subject": "Englisch", "room": "R10b", "teacher": "Eij"}, {"subject": "KL", "room": "R10b", "teacher": "Kaz"}, {"subject": "Erdkunde", "room": "R10b", "teacher": "Kaz"}, {"subject": "Erdkunde", "room": "R10b", "teacher": "Kaz"}]}};
+
+const DAYS_DE = ["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
+const DAYS_SHORT = { "Montag":"Mo", "Dienstag":"Di", "Mittwoch":"Mi", "Donnerstag":"Do", "Freitag":"Fr", "Samstag":"Sa", "Sonntag":"So" };
+
+/* ========= Helfer ========= */
+function pad(n){return String(n).padStart(2,'0');}
+function parseHHMM(s){ const [h,m]=String(s||'').split(':').map(Number); return {h:h||0,m:m||0}; }
+function minutes(t){ return t.h*60+t.m; }
+function toHHMM(min){ const h=Math.floor(min/60), m=min%60; return pad(h)+":"+pad(m); }
+function todayNameDE(){ return DAYS_DE[new Date().getDay()]; }
+function getNow(){ const d=new Date(); return {h:d.getHours(), m:d.getMinutes()}; }
+function inRange(now,s,e){ const n=minutes(now), a=minutes(s), b=minutes(e); return n>=a && n<b; }
+function gentleSwap(el, html){ if(!el) return; if(el.__lastHTML===html) return; el.classList.add('fade','hide'); setTimeout(()=>{ el.innerHTML=html; el.__lastHTML=html; el.classList.remove('hide'); },150); }
+function isoDate(d){ return (d instanceof Date? d:new Date(d)).toISOString().slice(0,10); }
+
+/* ========= Storage ========= */
+const storage = {
+  get(k,def){ try{ return JSON.parse(localStorage.getItem(k) || JSON.stringify(def)); }catch{ return def; } },
+  set(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
+};
+let tasks = storage.get('tasks', []);
+let studyWins = storage.get('studyWins', {
+  Montag:[["16:00","19:00"]], Dienstag:[["16:00","19:00"]], Mittwoch:[["16:00","19:00"]],
+  Donnerstag:[["16:00","19:00"]], Freitag:[["16:00","19:00"]], Samstag:[["10:00","12:00"],["16:00","18:00"]], Sonntag:[["10:00","12:00"],["16:00","18:00"]]
+});
+let settings = storage.get('settings', {sessionLen:30, maxSessions:4});
+let planned = storage.get('planned', { today:[], week:[] });
+let exams = storage.get('exams', []);   // {id, subject, title, dateISO, priority, weight, notes}
+let events = storage.get('events', []); // {id, title, fromISO, toISO?, subject?, location?, notes}
+
+/* ========= UI Referenzen ========= */
+const el = s=>document.querySelector(s);
+const els= s=>Array.from(document.querySelectorAll(s));
+
+/* ========= Uhr & Datum ========= */
+function updateClock(){
+  const d=new Date();
+  el('#clock').textContent = pad(d.getHours())+":"+pad(d.getMinutes());
+  el('#todayStr').textContent = d.toLocaleDateString('de-DE',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'});
+}
+
+/* ========= Stundenplan (heute/wochentabelle) ========= */
+function buildPeriods(){ return (DATA.periods||[]).map(p=>({no:p.no, startObj:parseHHMM(p.start), endObj:parseHHMM(p.end), start:p.start, end:p.end})); }
+function getEntry(day,idx){ const arr=(DATA.entries&&DATA.entries[day])? DATA.entries[day] : []; return (idx>=0&&idx<arr.length)? arr[idx] : null; }
+
+function renderTodayTimetable(){
+  const ttHead=el('#ttToday thead'), ttBody=el('#ttToday tbody');
+  const day = todayNameDE(); ttHead.innerHTML=''; ttBody.innerHTML='';
+  const trh=document.createElement('tr');
+  trh.innerHTML = `<th>Stunde</th><th>${day}</th>`;
+  ttHead.appendChild(trh);
+  const periods=buildPeriods(), now=getNow();
+  for(const p of periods){
+    const tr=document.createElement('tr');
+    const th=`<strong>${p.no}.</strong> <span class="muted">${p.start}–${p.end}</span>`;
+    const entry=getEntry(day,p.no-1);
+    const cell = entry && entry.subject ? `<div class="subject">${entry.subject}</div><div class="details">${entry.room||''}${(entry.room&&entry.teacher)?' · ':''}${entry.teacher||''}</div>` : '<span class="empty">– frei –</span>';
+    tr.innerHTML = `<th class="period">${th}</th><td class="cell ${inRange(now,p.startObj,p.endObj)?'current':''}">${cell}</td>`;
+    ttBody.appendChild(tr);
+  }
+}
+
+function buildGrid(){
+  const thead=el('#thead'), tbody=el('#tbody');
+  thead.innerHTML=''; tbody.innerHTML='';
+  const trh=document.createElement('tr'); trh.innerHTML='<th>Stunde</th>'+(DATA.days||[]).map(d=>`<th>${d}</th>`).join('');
+  thead.appendChild(trh);
+  const periods=buildPeriods();
+  for(const p of periods){
+    const tr=document.createElement('tr');
+    const left=`<strong>${p.no}.</strong> <span class="muted">${p.start}–${p.end}</span>`;
+    let cols='';
+    (DATA.days||[]).forEach(day=>{
+      const e=getEntry(day,p.no-1), subj=e?.subject||'', room=e?.room?.trim()||'', teacher=e?.teacher?.trim()||'';
+      cols += `<td class="cell" data-day="${day}" data-period="${p.no}">${ subj ? `<div class="subject">${subj}</div><div class="details">${room}${(room&&teacher)?' · ':''}${teacher}</div>` : '<span class="empty">– frei –</span>'}</td>`;
+    });
+    tr.innerHTML = `<th class="period">${left}</th>${cols}`;
+    tbody.appendChild(tr);
+  }
+}
+
+function findTimeline(day){
+  const periods=buildPeriods(), segs=[];
+  for(const p of periods){
+    const entry=getEntry(day,p.no-1);
+    if(entry && entry.subject && entry.subject.trim()) segs.push({type:'class', p, entry, start:p.startObj, end:p.endObj});
+  }
+  for(let i=0;i<periods.length-1;i++){
+    const a=periods[i], b=periods[i+1];
+    const gap=minutes(b.startObj)-minutes(a.endObj);
+    if(gap>0) segs.push({type:'break', start:a.endObj, end:b.startObj});
+  }
+  segs.sort((a,b)=>minutes(a.start)-minutes(b.start));
+  return segs;
+}
+function findCurrentThing(day){
+  const now=getNow(); return findTimeline(day).find(seg=>inRange(now, seg.start, seg.end))||null;
+}
+function findNextThings(day){
+  const now=getNow(); const t=findTimeline(day); return t.filter(seg=>minutes(seg.start)>minutes(now));
+}
+
+function updateNow(){
+  const day = todayNameDE();
+  const current=findCurrentThing(day);
+  const next=findNextThings(day)[0];
+  const nextClass=findNextThings(day).find(s=>s.type==='class');
+
+  if(!DATA.days.includes(day)){
+    gentleSwap(el('#nowBox'), '<div class="muted">Heute kein Unterricht.</div>');
+    gentleSwap(el('#upnextBox'), ''); el('#nowStatus').textContent='Frei';
+  }else if(!current){
+    if(next){
+      const mins = minutes(next.start)-minutes(getNow());
+      const label = next.type==='class' ? (next.entry?.subject || 'Unterricht') : 'Pause';
+      gentleSwap(el('#nowBox'), `<div class="subject">Gerade frei</div><div class="badge">Tag: ${day}</div>`);
+      let extra='';
+      if(next.type==='break' && nextClass){
+        const mins2 = minutes(nextClass.start)-minutes(getNow());
+        extra = `<br><span class="muted">Danach: <strong>${nextClass.entry?.subject||'Unterricht'}</strong> in ${mins2} Min</span>`;
+      }
+      gentleSwap(el('#upnextBox'), `Als Nächstes: <strong>${label}</strong> in ${mins} Min${extra}`);
+      el('#nowStatus').textContent='Frei';
+    }else{
+      gentleSwap(el('#nowBox'), '<div class="muted">Für heute nichts mehr.</div>');
+      gentleSwap(el('#upnextBox'), ''); el('#nowStatus').textContent='Frei';
+    }
+  }else{
+    if(current.type==='class'){
+      const e=current.entry||{};
+      gentleSwap(el('#nowBox'),
+        `<div class="subject">${e.subject||'—'}</div>
+         <div class="badge badge-accent">Zeit: ${current.p.start}–${current.p.end}</div>
+         ${e.room?` <span class="badge badge-accent">Raum: ${e.room}</span>`:''}
+         ${e.teacher?` <span class="badge badge-accent">Lehrer: ${e.teacher}</span>`:''}`
+      );
+      el('#nowStatus').textContent=e.subject||'Unterricht';
+    }else{
+      const end=current.end;
+      const rest=Math.max(0, minutes(end)-minutes(getNow()));
+      gentleSwap(el('#nowBox'), `<div class="subject">Pause</div><span class="badge badge-accent">Ende: ${pad(end.h)}:${pad(end.m)}</span> <span class="badge">~${rest} Min</span>`);
+      el('#nowStatus').textContent='Pause';
+    }
+    if(next){
+      const minsN = minutes(next.start)-minutes(getNow());
+      const labelN = next.type==='class' ? (next.entry?.subject||'Unterricht') : 'Pause';
+      let extraN='';
+      if(next.type==='break' && nextClass){
+        const mins2 = minutes(nextClass.start)-minutes(getNow());
+        extraN = `<br><span class="muted">Danach: <strong>${nextClass.entry?.subject||'Unterricht'}</strong> in ${mins2} Min</span>`;
+      }
+      gentleSwap(el('#upnextBox'), `Als Nächstes: <strong>${labelN}</strong> in ${minsN} Min${extraN}`);
+    }else gentleSwap(el('#upnextBox'),'');
+  }
+
+  renderTodayHighlights();
+}
+
+/* ========= Fächerliste ========= */
+function allSubjects(){
+  const set=new Set();
+  Object.keys(DATA.entries).forEach(day=>{
+    DATA.entries[day].forEach(e=>{ if(e.subject && e.subject.trim()) set.add(e.subject.trim()); });
+  });
+  return Array.from(set).sort();
+}
+function fillSubjectSelects(){
+  const subs=allSubjects();
+  const add=(sel, withEmpty=false)=>{
+    sel.innerHTML='';
+    if(withEmpty){ const o=document.createElement('option'); o.value=''; o.textContent='Alle Fächer'; sel.appendChild(o); }
+    subs.forEach(s=>{ const o=document.createElement('option'); o.value=s; o.textContent=s; sel.appendChild(o); });
+    const other=document.createElement('option'); other.value='Other'; other.textContent='Andere'; sel.appendChild(other);
+  };
+  add(el('#tSubject')); add(el('#qaSubject')); add(el('#filterSubject'), true);
+  // Prüfungen & Events
+  add(el('#xSubject')); 
+  const eSub = el('#eSubject'); eSub.innerHTML='<option value="">— Fach (optional) —</option>'+subs.map(s=>`<option value="${s}">${s}</option>`).join('')+'<option value="Other">Andere</option>';
+}
+
+/* ========= Aufgaben ========= */
+function uid(){ return Math.random().toString(36).slice(2,10); }
+function taskProgress(t){ if(!t.subtasks||t.subtasks.length===0) return t.progress||0; const d=t.subtasks.filter(s=>s.done).length; return Math.round((d/t.subtasks.length)*100); }
+function dueBadge(t){
+  const now=Date.now(), due=new Date(t.deadline).getTime();
+  const diff = Math.floor((due-now)/86400000);
+  const cls = diff<0?'deadline-urgent': diff<=2?'deadline-soon':'';
+  const txt = diff<0? 'Überfällig' : (diff===0?'Heute fällig': (diff===1?'Morgen fällig':`In ${diff} Tagen fällig`));
+  return `<span class="pill ${cls}">${txt}</span>`;
+}
+function addTaskFromForm(prefix){
+  const title = el('#'+prefix+'Title').value.trim();
+  let subject = el('#'+prefix+'Subject').value;
+  const deadline = el('#'+prefix+'Deadline').value;
+  const est = parseInt(el('#'+prefix+'Est').value||'0',10);
+  const prio = parseInt((el('#'+prefix+'Priority')?.value)||'2',10);
+  const notes = (el('#'+prefix+'Notes')?.value||'').trim();
+  const sr = !!(el('#'+prefix+'SR')?.checked);
+
+  if(!title || !deadline || est<=0){ toast('Bitte Titel, Fälligkeit und Zeitbedarf angeben.','warn'); return; }
+  if(subject==='Other') subject='(Andere)';
+
+  const t = {id:uid(), title, subject, deadline:new Date(deadline).toISOString(),
+             estMin:est, progress:0, subtasks:[], priority:prio, notes, createdAt:new Date().toISOString(), done:false};
+  tasks.push(t);
+
+  if(sr){
+    [2,6,14].forEach(d=>{
+      const copy={...t, id:uid(), title:`Wiederholung: ${title}`, estMin:Math.max(10, Math.round(est*0.4)), deadline:new Date(Date.now()+d*86400000).toISOString(), priority:2, notes:'(Auto SR)'};
+      copy.subtasks=[{id:uid(), text:'Einmal wiederholen', done:false}];
+      tasks.push(copy);
+    });
+  }
+  storage.set('tasks', tasks);
+  renderTasks(); clearTaskForm(prefix);
+  toast('Aufgabe hinzugefügt.');
+}
+function clearTaskForm(prefix){
+  ['Title','Deadline','Est','Notes'].forEach(k=>{ const x=el('#'+prefix+k); if(x) x.value=''; });
+  const subj=el('#'+prefix+'Subject'); if(subj) subj.selectedIndex=0;
+  const pr=el('#'+prefix+'Priority'); if(pr) pr.value='2';
+  const sr=el('#'+prefix+'SR'); if(sr) sr.checked=false;
+}
+function renderTasks(){
+  const list=el('#tasks'); const subjectFilter=el('#filterSubject').value; const sortBy=el('#sortBy').value;
+  let arr=[...tasks];
+  if(subjectFilter) arr=arr.filter(t=>t.subject===subjectFilter);
+  arr.sort((a,b)=>{
+    if(sortBy==='priority') return (b.priority||2)-(a.priority||2);
+    if(sortBy==='progress') return taskProgress(b)-taskProgress(a);
+    return new Date(a.deadline)-new Date(b.deadline);
+  });
+  if(arr.length===0){ list.innerHTML='<div class="muted">Noch keine Aufgaben.</div>'; return; }
+  list.innerHTML='';
+  arr.forEach(t=>{
+    const p=taskProgress(t);
+    const card=document.createElement('div'); card.className='task';
+    card.innerHTML=`
+      <div class="task-head">
+        <div class="task-title">${t.title}</div>
+        <div class="tag">${t.subject}</div>
+      </div>
+      <div class="muted" style="margin:6px 0">${t.notes? t.notes:''}</div>
+      <div class="progress" title="${p}%"><span style="width:${p}%"></span></div>
+      <div class="task-footer">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          ${dueBadge(t)} <span class="pill">~${t.estMin} Min</span>
+          <span class="pill">Priorität: ${t.priority===3?'Hoch':t.priority===1?'Niedrig':'Normal'}</span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-sm btn-accent" data-act="add-sub" data-id="${t.id}">Teilaufgabe</button>
+          <button class="btn btn-sm btn-ghost" data-act="start" data-id="${t.id}">Start ${Math.min(30, Math.max(15, settings.sessionLen))}m</button>
+          <button class="btn btn-sm btn-ghost" data-act="done" data-id="${t.id}">Erledigt</button>
+          <button class="btn btn-sm btn-ghost" data-act="del" data-id="${t.id}">Löschen</button>
+        </div>
+      </div>
+      <div class="subtasks" id="subs-${t.id}">
+        ${ (t.subtasks||[]).map(s=>`
+          <div class="subrow">
+            <input type="checkbox" data-act="toggle-sub" data-id="${t.id}" data-sid="${s.id}" ${s.done?'checked':''}/>
+            <input type="text" class="input" value="${s.text}" data-act="edit-sub" data-id="${t.id}" data-sid="${s.id}"/>
+            <button class="btn btn-sm" data-act="del-sub" data-id="${t.id}" data-sid="${s.id}">Entfernen</button>
+          </div>
+        `).join('') }
+      </div>
+    `;
+    list.appendChild(card);
+  });
+}
+el('#tasks').addEventListener('click',(e)=>{
+  const btn=e.target.closest('button'); if(!btn) return;
+  const id=btn.getAttribute('data-id'); const act=btn.getAttribute('data-act');
+  const t = tasks.find(x=>x.id===id); if(!t) return;
+  if(act==='del'){ tasks=tasks.filter(x=>x.id!==id); storage.set('tasks',tasks); renderTasks(); toast('Aufgabe gelöscht.'); return; }
+  if(act==='done'){ t.progress=100; t.done=true; t.subtasks?.forEach(s=>s.done=true); storage.set('tasks',tasks); renderTasks(); toast('Stark! ✅'); return; }
+  if(act==='add-sub'){ t.subtasks=t.subtasks||[]; t.subtasks.push({id:uid(), text:'', done:false}); storage.set('tasks',tasks); renderTasks(); return; }
+  if(act==='start'){
+    const start=new Date(); const end=new Date(start.getTime()+Math.min(30, Math.max(15, settings.sessionLen))*60000);
+    const s={id:uid(), dayDE: todayNameDE(), dateISO: start.toISOString(), start: pad(start.getHours())+':'+pad(start.getMinutes()), end: pad(end.getHours())+':'+pad(end.getMinutes()), subject:t.subject, taskId:t.id};
+    planned.today.push(s); storage.set('planned',planned); renderTodayPlan(); notify(`Start ${t.subject}: ${t.title}`, `Lerne bis ${s.end}`);
+  }
+});
+el('#tasks').addEventListener('change',(e)=>{
+  const cb = e.target.closest('input[type="checkbox"][data-act="toggle-sub"]');
+  if(cb){ const id=cb.getAttribute('data-id'), sid=cb.getAttribute('data-sid');
+    const t=tasks.find(x=>x.id===id); const sub=t?.subtasks?.find(s=>s.id===sid); if(!t||!sub) return;
+    sub.done=cb.checked; t.progress=taskProgress(t); storage.set('tasks',tasks); renderTasks();
+  }
+});
+el('#tasks').addEventListener('input',(e)=>{
+  const tx=e.target.closest('input[type="text"][data-act="edit-sub"]'); if(!tx) return;
+  const id=tx.getAttribute('data-id'), sid=tx.getAttribute('data-sid');
+  const t=tasks.find(x=>x.id===id); const sub=t?.subtasks?.find(s=>s.id===sid); if(!t||!sub) return;
+  sub.text=tx.value; storage.set('tasks',tasks);
+});
+el('#tasks').addEventListener('click',(e)=>{
+  const btn=e.target.closest('button[data-act="del-sub"]'); if(!btn) return;
+  const id=btn.getAttribute('data-id'), sid=btn.getAttribute('data-sid');
+  const t=tasks.find(x=>x.id===id); if(!t) return; t.subtasks=(t.subtasks||[]).filter(s=>s.id!==sid);
+  storage.set('tasks',tasks); renderTasks();
+});
+
+/* ========= Lernfenster & Planer ========= */
+const weekDE = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag","Sonntag"];
+function winRow(day,from,to,idx){
+  const d=document.createElement('div'); d.className='win';
+  d.innerHTML=`
+    <input class="input" type="time" value="${from}" data-day="${day}" data-idx="${idx}" data-k="from"/>
+    <span class="muted">bis</span>
+    <input class="input" type="time" value="${to}" data-day="${day}" data-idx="${idx}" data-k="to"/>
+    <button class="btn btn-sm" data-day="${day}" data-idx="${idx}">Entfernen</button>
+  `;
+  d.querySelectorAll('input').forEach(inp=>{
+    inp.onchange=()=>{
+      const day=inp.getAttribute('data-day'), i=+inp.getAttribute('data-idx'), k=inp.getAttribute('data-k');
+      if(k==='from') studyWins[day][i][0]=inp.value; else studyWins[day][i][1]=inp.value;
+      storage.set('studyWins',studyWins);
+    };
+  });
+  d.querySelector('button').onclick=(ev)=>{
+    const day=ev.target.getAttribute('data-day'), i=+ev.target.getAttribute('data-idx');
+    studyWins[day].splice(i,1); storage.set('studyWins',studyWins); renderWins();
+  };
+  return d;
+}
+function renderWins(){
+  const box=el('#wins'); box.innerHTML='';
+  weekDE.forEach(day=>{
+    const group=document.createElement('div'); group.className='card';
+    group.innerHTML=`<h3 style="margin:0 0 8px;font-size:14px">${day} <span class="muted">(Lernfenster)</span></h3>`;
+    const wrap=document.createElement('div'); group.appendChild(wrap);
+    (studyWins[day]||[]).forEach((w,i)=>wrap.appendChild(winRow(day, w[0], w[1], i)));
+    const add=document.createElement('button'); add.className='btn btn-sm'; add.textContent='Fenster hinzufügen';
+    add.onclick=()=>{ (studyWins[day]=studyWins[day]||[]).push(["16:00","18:00"]); storage.set('studyWins',studyWins); renderWins(); };
+    group.appendChild(add);
+    box.appendChild(group);
+  });
+}
+el('#saveWins').onclick=()=>{
+  settings.sessionLen = Math.max(15, parseInt(el('#sessionLen').value||'30',10));
+  settings.maxSessions = Math.max(1, parseInt(el('#maxSessions').value||'4',10));
+  storage.set('settings', settings);
+  toast('Einstellungen gespeichert.');
+};
+
+function sessionsForDay(date, dayDE){
+  const wins=(studyWins[dayDE]||[]).map(w=>({start:parseHHMM(w[0]), end:parseHHMM(w[1])}));
+  const blocks=[];
+  wins.forEach(w=>{
+    let cur=minutes(w.start), end=minutes(w.end);
+    while(cur+settings.sessionLen<=end && blocks.length<settings.maxSessions){
+      const sMin=cur, eMin=cur+settings.sessionLen;
+      blocks.push({start:toHHMM(sMin), end:toHHMM(eMin)});
+      cur=eMin;
+    }
+  });
+  return blocks.map(b=>({dateISO:date.toISOString(), dayDE, start:b.start, end:b.end}));
+}
+function planForRange(days=7){
+  const now=new Date();
+  const candidates = tasks.filter(t=>!t.done && (t.estMin>0)).map(t=>({...t, remaining:t.estMin*(1-taskProgress(t)/100)}))
+    .sort((a,b)=> new Date(a.deadline)-new Date(b.deadline) || (b.priority||2)-(a.priority||2));
+  const sessions=[];
+  for(let d=0; d<days; d++){
+    const date=new Date(now); date.setHours(0,0,0,0); date.setDate(now.getDate()+d);
+    const dayDE = DAYS_DE[date.getDay()];
+    const blocks = sessionsForDay(date, dayDE);
+    blocks.forEach(b=>{
+      const task = candidates.find(x=>x.remaining>0 && new Date(x.deadline)>=date);
+      if(task){ task.remaining=Math.max(0, task.remaining-settings.sessionLen);
+        sessions.push({id:uid(), ...b, subject:task.subject||'(Lernen)', taskId:task.id});
+      }
+    });
+  }
+  return sessions;
+}
+
+/* ========= Heute/Woche Plan Rendering ========= */
+function renderTodayPlan(){
+  const box=el('#todayPlan');
+  const tISO=new Date().toISOString().slice(0,10);
+  const items = planned.today.filter(s=>(s.dateISO||'').slice(0,10)===tISO);
+  if(items.length===0){ box.classList.add('muted'); box.innerHTML='Noch keine Sitzungen. Klicke „Plan erzeugen“.'; return; }
+  box.classList.remove('muted'); box.innerHTML='';
+  items.forEach(s=>{
+    const t=tasks.find(x=>x.id===s.taskId);
+    const row=document.createElement('div'); row.className='session';
+    row.innerHTML=`
+      <div class="left"><div class="dot"></div>
+        <div><div><strong>${s.start}–${s.end}</strong> · ${s.subject}</div>
+        <div class="muted">${t? t.title : '(ohne Verknüpfung)'}</div></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" data-sid="${s.id}" data-act="bing">Zum Start erinnern</button>
+        <button class="btn btn-sm btn-ghost" data-sid="${s.id}" data-act="del-sess">Entfernen</button>
+      </div>`;
+    box.appendChild(row);
+  });
+}
+el('#todayPlan').addEventListener('click',(e)=>{
+  const b=e.target.closest('button'); if(!b) return;
+  const id=b.getAttribute('data-sid'), act=b.getAttribute('data-act');
+  if(act==='del-sess'){ planned.today=planned.today.filter(x=>x.id!==id); storage.set('planned',planned); renderTodayPlan(); }
+  if(act==='bing'){ const s=planned.today.find(x=>x.id===id); if(!s) return; scheduleNotificationForSession(s); toast('Erinnerung geplant.'); }
+});
+
+function renderWeekPlan(){
+  const box=el('#weekPlan'); box.innerHTML='';
+  const group={}; planned.week.forEach(s=>{ const k=(s.dateISO||'').slice(0,10); group[k]=group[k]||[]; group[k].push(s); });
+  for(let i=0;i<7;i++){
+    const d=new Date(); d.setDate(d.getDate()+i); const key=isoDate(d); const dayDE=DAYS_DE[d.getDay()];
+    const col=document.createElement('div'); col.className='card';
+    col.innerHTML=`<h3 style="margin:0 0 8px;font-size:14px">${dayDE} <span class="muted">(${d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'})})</span></h3>`;
+    const list=document.createElement('div'); list.className='list';
+    (group[key]||[]).forEach(s=>{
+      const t=tasks.find(x=>x.id===s.taskId);
+      const row=document.createElement('div'); row.className='session';
+      row.innerHTML=`<div class="left"><div class="dot"></div><div><strong>${s.start}–${s.end}</strong> · ${s.subject} <span class="muted">— ${t? t.title:''}</span></div></div>
+      <button class="btn btn-sm btn-ghost" data-sid="${s.id}" data-act="del-week">Entfernen</button>`;
+      list.appendChild(row);
+    });
+    if((group[key]||[]).length===0) list.innerHTML='<div class="muted">Keine Sitzungen geplant.</div>';
+    col.appendChild(list); box.appendChild(col);
+  }
+}
+el('#weekPlan').addEventListener('click',(e)=>{
+  const btn=e.target.closest('button[data-act="del-week"]'); if(!btn) return;
+  const id=btn.getAttribute('data-sid'); planned.week=planned.week.filter(x=>x.id!==id); storage.set('planned',planned); renderWeekPlan();
+});
+
+/* ========= Prüfungen & Ereignisse ========= */
+function renderExams(){
+  const box=el('#examsList'); if(!box) return;
+  if(exams.length===0){ box.innerHTML='<div class="muted">Noch keine Prüfungen.</div>'; return; }
+  const sorted=[...exams].sort((a,b)=> new Date(a.dateISO)-new Date(b.dateISO) || (b.priority||2)-(a.priority||2));
+  box.innerHTML='';
+  sorted.forEach(x=>{
+    const d=new Date(x.dateISO);
+    const row=document.createElement('div'); row.className='session';
+    row.innerHTML=`
+      <div class="left"><div class="dot"></div>
+        <div><strong>${d.toLocaleDateString('de-DE')} ${pad(d.getHours())}:${pad(d.getMinutes())}</strong> · ${x.subject} — <span class="muted">${x.title||''}</span></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <span class="pill">Wichtigkeit: ${x.priority===3?'Hoch':x.priority===1?'Niedrig':'Normal'}</span>
+        ${x.weight?`<span class="pill">Gewichtung: ${x.weight}</span>`:''}
+        <button class="btn btn-sm btn-ghost" data-xid="${x.id}" data-xact="del">Löschen</button>
+      </div>`;
+    box.appendChild(row);
+  });
+}
+el('#examsList')?.addEventListener('click',(e)=>{
+  const b=e.target.closest('button[data-xact="del"]'); if(!b) return;
+  const id=b.getAttribute('data-xid'); exams=exams.filter(x=>x.id!==id); storage.set('exams',exams); renderExams(); renderCalendars(); renderWeekSidebars(); renderTodayHighlights();
+});
+
+function renderEvents(){
+  const box=el('#eventsList'); if(!box) return;
+  if(events.length===0){ box.innerHTML='<div class="muted">Noch keine Ereignisse.</div>'; return; }
+  const sorted=[...events].sort((a,b)=> new Date(a.fromISO)-new Date(b.fromISO));
+  box.innerHTML='';
+  sorted.forEach(ev=>{
+    const f=new Date(ev.fromISO), t=ev.toISO? new Date(ev.toISO):null;
+    const row=document.createElement('div'); row.className='session';
+    row.innerHTML=`
+      <div class="left"><div class="dot"></div>
+        <div><strong>${f.toLocaleDateString('de-DE')} ${pad(f.getHours())}:${pad(f.getMinutes())}${t?`–${pad(t.getHours())}:${pad(t.getMinutes())}`:''}</strong>
+        · ${ev.title} ${ev.subject?`<span class="muted">(${ev.subject})</span>`:''} ${ev.location?`<span class="muted">— ${ev.location}</span>`:''}</div>
+      </div>
+      <button class="btn btn-sm btn-ghost" data-eid="${ev.id}" data-eact="del">Löschen</button>`;
+    box.appendChild(row);
+  });
+}
+el('#eventsList')?.addEventListener('click',(e)=>{
+  const b=e.target.closest('button[data-eact="del"]'); if(!b) return;
+  const id=b.getAttribute('data-eid'); events=events.filter(x=>x.id!==id); storage.set('events',events); renderEvents(); renderCalendars(); renderWeekSidebars(); renderTodayHighlights();
+});
+
+function addExam(){
+  const subject = el('#xSubject').value || '(Fach)';
+  const title = (el('#xTitle').value||'').trim();
+  const date = el('#xDate').value; const prio=parseInt(el('#xPriority').value||'2',10);
+  const weight = parseInt(el('#xWeight').value||'0',10); const notes=(el('#xNotes').value||'').trim();
+  if(!date || !title){ toast('Bitte Datum/Zeit und Thema angeben.','warn'); return; }
+  exams.push({id:uid(), subject, title, dateISO:new Date(date).toISOString(), priority:prio, weight:weight||undefined, notes});
+  storage.set('exams',exams); renderExams(); renderCalendars(); renderWeekSidebars(); renderTodayHighlights();
+  ['#xTitle','#xDate','#xWeight','#xNotes'].forEach(s=>el(s).value=''); toast('Prüfung gespeichert.');
+}
+function addEvent(){
+  const title=(el('#eTitle').value||'').trim(); const from=el('#eFrom').value; const to=el('#eTo').value;
+  const subject=el('#eSubject').value||''; const location=(el('#eLocation').value||'').trim(); const notes=(el('#eNotes').value||'').trim();
+  if(!title || !from){ toast('Bitte Titel und Startzeit angeben.','warn'); return; }
+  events.push({id:uid(), title, fromISO:new Date(from).toISOString(), toISO: to? new Date(to).toISOString() : undefined, subject:subject||undefined, location:location||undefined, notes:notes||undefined});
+  storage.set('events',events); renderEvents(); renderCalendars(); renderWeekSidebars(); renderTodayHighlights();
+  ['#eTitle','#eFrom','#eTo','#eNotes','#eLocation'].forEach(s=>el(s).value=''); el('#eSubject').value='';
+  toast('Ereignis gespeichert.');
+}
+el('#addExam').onclick=addExam; el('#addEvent').onclick=addEvent;
+
+/* ========= Heute: Highlights (Prüfungen/Ereignisse) ========= */
+function renderTodayHighlights(){
+  const box=el('#todayHighlights'); if(!box) return;
+  const today=isoDate(new Date());
+  const ex=exams.filter(x=>isoDate(x.dateISO)===today).sort((a,b)=> new Date(a.dateISO)-new Date(b.dateISO));
+  const ev=events.filter(e=>isoDate(e.fromISO)<=today && isoDate(e.toISO||e.fromISO)>=today)
+                 .sort((a,b)=> new Date(a.fromISO)-new Date(b.fromISO));
+  if(ex.length===0 && ev.length===0){ box.innerHTML=''; return; }
+  let html='';
+  if(ex.length){ html+=`<div class="muted"><strong>Heute Prüfungen:</strong> ${ex.map(x=>`${x.subject} — ${x.title} (${new Date(x.dateISO).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})})`).join(', ')}</div>`; }
+  if(ev.length){ html+=`<div class="muted"><strong>Heute Ereignisse:</strong> ${ev.map(e=>`${e.title}${e.subject?` (${e.subject})`:''} ${new Date(e.fromISO).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}`).join(', ')}</div>`; }
+  box.innerHTML = html;
+}
+
+/* ========= Woche: Seitenleisten (Prüfungen/Ereignisse) ========= */
+function renderWeekSidebars(){
+  const start=new Date(); start.setHours(0,0,0,0);
+  const end=new Date(start); end.setDate(end.getDate()+6);
+  const ex=exams.filter(x=> new Date(x.dateISO)>=start && new Date(x.dateISO)<=end)
+                .sort((a,b)=> new Date(a.dateISO)-new Date(b.dateISO));
+  const ev=events.filter(e=> new Date(e.fromISO)<=end && new Date(e.toISO||e.fromISO)>=start)
+                 .sort((a,b)=> new Date(a.fromISO)-new Date(b.fromISO));
+  const exBox=el('#weekExamsList'); const evBox=el('#weekEventsList');
+  exBox.innerHTML = ex.length? ex.map(x=>`<div class="session"><div class="left"><div class="dot"></div><div><strong>${new Date(x.dateISO).toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit'})}</strong> · ${x.subject} — <span class="muted">${x.title}</span></div></div></div>`).join('') : '<div class="muted">Keine Prüfungen diese Woche.</div>';
+  evBox.innerHTML = ev.length? ev.map(e=>`<div class="session"><div class="left"><div class="dot"></div><div><strong>${new Date(e.fromISO).toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit'})}</strong> · ${e.title}${e.subject?` <span class="muted">(${e.subject})</span>`:''}</div></div></div>`).join('') : '<div class="muted">Keine Ereignisse diese Woche.</div>';
+}
+
+/* ========= Kalender ========= */
+let calMonth = new Date(); calMonth.setDate(1);
+function renderCalendars(){
+  // Kopf
+  el('#calTitle').textContent = calMonth.toLocaleDateString('de-DE',{month:'long', year:'numeric'});
+  el('#calSubtitle').textContent = 'Alle: Unterricht · Prüfungen · Ereignisse · Lernplan';
+
+  // Wochentage
+  const dow=el('#calDow'); dow.innerHTML='';
+  ['Mo','Di','Mi','Do','Fr','Sa','So'].forEach(s=>{ const d=document.createElement('div'); d.className='cal-dow'; d.textContent=s; dow.appendChild(d); });
+
+  // Gitter
+  const grid=el('#calGrid'); grid.innerHTML='';
+  const first=new Date(calMonth); const firstDay=(first.getDay()+6)%7; // Mo=0
+  const showStart=new Date(first); showStart.setDate(first.getDate()-firstDay);
+  for(let i=0;i<42;i++){
+    const d=new Date(showStart); d.setDate(showStart.getDate()+i);
+    const inMonth = d.getMonth()===calMonth.getMonth();
+    const cell=document.createElement('div'); cell.className='cal-day'+(inMonth?'':' muted'); cell.setAttribute('data-date', isoDate(d));
+    cell.innerHTML = `<div class="dnum">${d.getDate()}.</div>`;
+    // Marker: Prüfungen/Ereignisse/Plan
+    const dayStr=isoDate(d);
+    const hasExam = exams.some(x=>isoDate(x.dateISO)===dayStr);
+    const hasEvent = events.some(e=> isoDate(e.fromISO)<=dayStr && isoDate(e.toISO||e.fromISO)>=dayStr);
+    const hasPlan = planned.week.some(s=> isoDate(s.dateISO)===dayStr) || planned.today.some(s=> isoDate(s.dateISO)===dayStr);
+    if(hasExam) cell.innerHTML += `<div class="pill-mini p-exam">Prüfung</div>`;
+    if(hasEvent) cell.innerHTML += `<div class="pill-mini p-event">Ereignis</div>`;
+    if(hasPlan) cell.innerHTML += `<div class="pill-mini p-study">Lernplan</div>`;
+    grid.appendChild(cell);
+  }
+
+  renderCalDayDetails(new Date());
+}
+function renderCalDayDetails(date){
+  const dayStr=isoDate(date); const box=el('#calDayDetails'); box.innerHTML='';
+  const items=[];
+  // Prüfungen
+  exams.filter(x=>isoDate(x.dateISO)===dayStr).forEach(x=>{
+    const d=new Date(x.dateISO);
+    items.push(`<div class="session"><div class="left"><div class="dot"></div><div><strong>${pad(d.getHours())}:${pad(d.getMinutes())}</strong> · Prüfung · ${x.subject} — <span class="muted">${x.title}</span></div></div></div>`);
+  });
+  // Ereignisse
+  events.filter(e=> isoDate(e.fromISO)<=dayStr && isoDate(e.toISO||e.fromISO)>=dayStr).forEach(ev=>{
+    const f=new Date(ev.fromISO); const t=ev.toISO? new Date(ev.toISO):null;
+    items.push(`<div class="session"><div class="left"><div class="dot"></div><div><strong>${pad(f.getHours())}:${pad(f.getMinutes())}${t?`–${pad(t.getHours())}:${pad(t.getMinutes())}`:''}</strong> · Ereignis · ${ev.title}${ev.subject?` <span class="muted">(${ev.subject})</span>`:''}</div></div></div>`);
+  });
+  // Lernplan
+  const allSess=[...planned.today, ...planned.week].filter(s=> isoDate(s.dateISO)===dayStr);
+  allSess.forEach(s=> items.push(`<div class="session"><div class="left"><div class="dot"></div><div><strong>${s.start}–${s.end}</strong> · Lernen · <span class="muted">${(tasks.find(t=>t.id===s.taskId)?.title)||s.subject}</span></div></div></div>`));
+  // Unterricht (optional kleine Markierung)
+  const dow=DAYS_DE[new Date(dayStr).getDay()];
+  const periods=(DATA.periods||[]); const hasClasses=(DATA.entries||{})[dow];
+  if(hasClasses){
+    items.push(`<div class="muted">Unterricht: ${(hasClasses.filter(e=>e.subject).map(e=>e.subject)).slice(0,4).join(', ')}${hasClasses.length>4?' …':''}</div>`);
+  }
+  box.innerHTML = items.length? items.join('') : '<div class="muted">Keine Einträge für diesen Tag.</div>';
+}
+el('#calPrev').onclick=()=>{ calMonth.setMonth(calMonth.getMonth()-1); renderCalendars(); };
+el('#calNext').onclick=()=>{ calMonth.setMonth(calMonth.getMonth()+1); renderCalendars(); };
+el('#calGrid')?.addEventListener('click',(e)=>{
+  const cell=e.target.closest('.cal-day'); if(!cell) return;
+  const d=new Date(cell.getAttribute('data-date')); renderCalDayDetails(d);
+});
+
+/* ========= Benachrichtigungen ========= */
+function notify(title, body){ try{ if(Notification?.permission==='granted'){ new Notification(title,{body}); } toast(`${title}<br><span class="muted">${body||''}</span>`);}catch{} }
+el('#notifyBtn').onclick=()=>{ Notification?.requestPermission().then(p=>toast('Erlaubnis: '+p)); };
+el('#reqPerm').onclick=()=>{ Notification?.requestPermission().then(p=>toast('Erlaubnis: '+p)); };
+function scheduleNotificationForSession(s){
+  try{
+    const [h,m]=s.start.split(':').map(Number);
+    const d=new Date(s.dateISO); d.setHours(h,m,0,0);
+    const delay = d.getTime() - Date.now();
+    if(delay>0 && delay<6*3600*1000){
+      setTimeout(()=>{ 
+        const t=tasks.find(x=>x.id===s.taskId);
+        notify(`Start ${s.subject}`, t? t.title : 'Lerneinheit');
+      }, delay);
+    }
+  }catch{}
+}
+
+/* ========= Toast ========= */
+function toast(msg, kind='info'){
+  const box=el('#toasts'); const t=document.createElement('div'); t.className='toast';
+  t.innerHTML = `<div style="font-weight:700;margin-bottom:4px">${ kind==='warn'?'Hinweis': (kind==='err'?'Fehler':'Info') }</div><div>${msg}</div>`;
+  box.appendChild(t);
+  setTimeout(()=>{ t.style.opacity='0'; setTimeout(()=>t.remove(),300); }, 3500);
+}
+
+/* ========= Buttons Planer ========= */
+el('#genToday').onclick=()=>{
+  const d=new Date(); d.setHours(0,0,0,0);
+  const dayDE = DAYS_DE[d.getDay()];
+  const blocks = sessionsForDay(d, dayDE);
+  if(blocks.length===0){ toast('Für heute sind keine Lernfenster gesetzt.','warn'); return; }
+  const cands=[...tasks].filter(t=>!t.done && t.estMin>0).map(t=>({...t, remaining:t.estMin*(1-taskProgress(t)/100)}))
+    .sort((a,b)=> new Date(a.deadline)-new Date(b.deadline) || (b.priority||2)-(a.priority||2));
+  planned.today = [];
+  blocks.forEach(b=>{
+    const t = cands.find(x=>x.remaining>0 && new Date(x.deadline)>=d);
+    if(t){ t.remaining=Math.max(0, t.remaining-settings.sessionLen);
+      planned.today.push({id:uid(), dayDE, dateISO:d.toISOString(), start:b.start, end:b.end, subject:t.subject||'(Lernen)', taskId:t.id});
+    }
+  });
+  storage.set('planned', planned); renderTodayPlan(); toast('Tagesplan erzeugt.');
+  planned.today.forEach(scheduleNotificationForSession);
+  renderCalendars();
+};
+el('#clearToday').onclick=()=>{ planned.today=[]; storage.set('planned', planned); renderTodayPlan(); renderCalendars(); };
+
+el('#genWeek').onclick=()=>{
+  planned.week = planForRange(7);
+  storage.set('planned', planned); renderWeekPlan(); renderWeekSidebars(); renderCalendars();
+  toast('Wochenplan erzeugt.');
+};
+el('#clearWeek').onclick=()=>{ planned.week=[]; storage.set('planned', planned); renderWeekPlan(); renderWeekSidebars(); renderCalendars(); };
+
+/* ========= Tabs ========= */
+els('.tab').forEach(t=>{
+  t.onclick=()=>{
+    els('.tab').forEach(x=>x.classList.remove('active')); t.classList.add('active');
+    const id=t.getAttribute('data-tab'); els('.tabpanel').forEach(p=>p.style.display='none'); el('#tab-'+id).style.display='';
+    if(id==='kalender') renderCalendars();
+  };
+});
+
+/* ========= Init ========= */
+function init(){
+  updateClock(); setInterval(updateClock,1000);
+  buildGrid(); renderTodayTimetable(); fillSubjectSelects();
+  renderTasks(); renderWins(); renderTodayPlan(); renderWeekPlan(); renderWeekSidebars(); renderExams(); renderEvents();
+  updateNow(); setInterval(updateNow,1000);
+}
+init();
+</script>
+</body>
+</html>

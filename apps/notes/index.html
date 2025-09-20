@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ink & Ideas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles for a more polished look */
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Styling for the rich text editor */
+        .ProseMirror {
+            outline: none;
+            height: 100%;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+
+        .ProseMirror p {
+            margin-bottom: 1rem;
+        }
+        
+        .ProseMirror h1, .ProseMirror h2, .ProseMirror h3 {
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        /* Hide the canvas and editor by default, JS will show the active one */
+        #drawing-canvas, #editor-container {
+            display: none;
+        }
+
+        /* Style for the active note in the sidebar */
+        .note-item.active {
+            background-color: #4A5568; /* a slightly lighter gray for selection */
+        }
+        
+        /* Custom scrollbar for a modern feel */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1A202C;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4A5568;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #718096;
+        }
+
+        /* Basic editor toolbar styles */
+        #editor-toolbar {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background-color: #2D3748;
+            border-bottom: 1px solid #4A5568;
+        }
+
+        #editor-toolbar button {
+            background-color: #4A5568;
+            color: white;
+            border: none;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            font-weight: 500;
+        }
+         #editor-toolbar button:hover {
+            background-color: #718096;
+         }
+    </style>
+</head>
+<body class="bg-slate-900 text-white overflow-hidden h-screen">
+
+    <div class="flex h-full">
+        <!-- Sidebar for Note Management -->
+        <aside class="w-1/3 md:w-1/4 lg:w-1/5 h-full bg-slate-800 p-4 flex flex-col border-r border-slate-700">
+            <header class="flex items-center justify-between mb-4">
+                <h1 class="text-xl font-bold">Ink & Ideas</h1>
+            </header>
+            <button id="new-note-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-4 rounded-lg mb-4 flex items-center justify-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                New Note
+            </button>
+            <div id="notes-list" class="flex-grow overflow-y-auto pr-2">
+                <!-- Note items will be dynamically inserted here -->
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="w-2/3 md:w-3/4 lg:w-4/5 h-full flex flex-col">
+            <div id="main-content-area" class="flex-grow flex flex-col h-full bg-slate-900">
+                <!-- Top bar with Title and Mode Toggle -->
+                <div class="flex items-center justify-between p-4 border-b border-slate-700 bg-slate-800">
+                    <input type="text" id="note-title-input" placeholder="Note Title" class="bg-transparent text-2xl font-bold w-full focus:outline-none">
+                    <div id="mode-toggle" class="flex items-center space-x-2">
+                        <button id="write-mode-btn" class="bg-slate-700 hover:bg-slate-600 py-2 px-4 rounded-lg flex items-center gap-2">
+                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                            Write
+                        </button>
+                        <button id="draw-mode-btn" class="bg-slate-700 hover:bg-slate-600 py-2 px-4 rounded-lg flex items-center gap-2">
+                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3 16.826a1 1 0 0 0 .586 1.71l8.318 1.483a1 1 0 0 0 1.15-1.15l1.483-8.318a1 1 0 0 0-1.71-.586Z"/></svg>
+                            Draw
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Editor and Canvas Container -->
+                <div class="flex-grow relative overflow-hidden">
+                    <!-- Text Editor Container -->
+                    <div id="editor-container" class="h-full">
+                        <div id="editor-toolbar">
+                             <!-- Basic text formatting buttons can be added here -->
+                        </div>
+                        <div id="text-editor" class="ProseMirror h-full" contenteditable="true"></div>
+                    </div>
+                    <!-- Drawing Canvas -->
+                    <canvas id="drawing-canvas" class="bg-white rounded-lg"></canvas>
+                </div>
+            </div>
+             <div id="placeholder" class="flex-grow items-center justify-center flex-col text-slate-500 hidden">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6s.5-1 2-1h16c1.5 0 2 1 2 1v12s-.5 1-2 1H4c-1.5 0-2-1-2-1Z"/><path d="m15 15-5-5"/><path d="m10 15 5-5"/></svg>
+                <h2 class="mt-4 text-2xl font-medium">No note selected</h2>
+                <p>Create a new note or select one from the list.</p>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        // --- DOM ELEMENT REFERENCES ---
+        const notesListEl = document.getElementById('notes-list');
+        const newNoteBtn = document.getElementById('new-note-btn');
+        const noteTitleInput = document.getElementById('note-title-input');
+        const textEditor = document.getElementById('text-editor');
+        const editorContainer = document.getElementById('editor-container');
+        const canvas = document.getElementById('drawing-canvas');
+        const writeModeBtn = document.getElementById('write-mode-btn');
+        const drawModeBtn = document.getElementById('draw-mode-btn');
+        const mainContentArea = document.getElementById('main-content-area');
+        const placeholder = document.getElementById('placeholder');
+        
+        const ctx = canvas.getContext('2d');
+
+        // --- STATE MANAGEMENT ---
+        let notes = [];
+        let activeNoteId = null;
+        let currentMode = 'write'; // 'write' or 'draw'
+        let isDrawing = false;
+
+        // --- LOCAL STORAGE ---
+        const STORAGE_KEY = 'ink-and-ideas-notes';
+
+        function saveNotes() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+        }
+
+        function loadNotes() {
+            const storedNotes = localStorage.getItem(STORAGE_KEY);
+            if (storedNotes) {
+                notes = JSON.parse(storedNotes);
+            }
+        }
+
+        // --- RENDERING ---
+        
+        /**
+         * Renders the list of notes in the sidebar.
+         */
+        function renderNotesList() {
+            notesListEl.innerHTML = ''; // Clear existing list
+            // Sort notes by last modified date, newest first
+            const sortedNotes = [...notes].sort((a, b) => b.lastModified - a.lastModified);
+
+            if (sortedNotes.length === 0) {
+                 notesListEl.innerHTML = `<p class="text-slate-400 text-center">No notes yet.</p>`;
+                 return;
+            }
+
+            sortedNotes.forEach(note => {
+                const item = document.createElement('div');
+                item.className = `note-item p-3 mb-2 rounded-lg cursor-pointer hover:bg-slate-700 flex justify-between items-center ${note.id === activeNoteId ? 'active' : ''}`;
+                item.dataset.id = note.id;
+
+                const titleSpan = document.createElement('span');
+                titleSpan.textContent = note.title || 'Untitled Note';
+                titleSpan.className = 'truncate';
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500 hover:text-red-400"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`;
+                deleteBtn.className = 'delete-btn flex-shrink-0 ml-2';
+                deleteBtn.dataset.id = note.id;
+
+                item.appendChild(titleSpan);
+                item.appendChild(deleteBtn);
+                notesListEl.appendChild(item);
+            });
+        }
+
+        /**
+         * Displays the content of the currently active note.
+         */
+        function displayActiveNote() {
+            const activeNote = notes.find(n => n.id === activeNoteId);
+            if (!activeNote) {
+                mainContentArea.classList.add('hidden');
+                placeholder.classList.remove('hidden');
+                placeholder.classList.add('flex');
+                return;
+            }
+            
+            mainContentArea.classList.remove('hidden');
+            placeholder.classList.add('hidden');
+            placeholder.classList.remove('flex');
+
+
+            noteTitleInput.value = activeNote.title;
+            textEditor.innerHTML = activeNote.content;
+            
+            // Clear previous drawing and load new one
+            clearCanvas();
+            if (activeNote.drawing) {
+                const img = new Image();
+                img.onload = () => {
+                    // Only draw if the current mode is draw, otherwise it loads in background
+                    if(currentMode === 'draw') {
+                        ctx.drawImage(img, 0, 0);
+                    }
+                };
+                img.src = activeNote.drawing;
+            }
+            
+            updateModeUI();
+        }
+
+        /**
+         * Updates the UI based on the current mode (write/draw).
+         */
+        function updateModeUI() {
+            const activeNote = notes.find(n => n.id === activeNoteId);
+            if (!activeNote) return;
+
+            if (currentMode === 'write') {
+                editorContainer.style.display = 'block';
+                canvas.style.display = 'none';
+                writeModeBtn.classList.add('bg-indigo-600');
+                drawModeBtn.classList.remove('bg-indigo-600');
+            } else {
+                editorContainer.style.display = 'none';
+                canvas.style.display = 'block';
+                drawModeBtn.classList.add('bg-indigo-600');
+                writeModeBtn.classList.remove('bg-indigo-600');
+                
+                // When switching to draw, ensure the canvas is sized and content is drawn
+                resizeCanvas(); 
+                const img = new Image();
+                img.onload = () => {
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                };
+                img.src = activeNote.drawing || '';
+            }
+        }
+
+        // --- EVENT HANDLERS ---
+
+        function handleNewNote() {
+            const newNote = {
+                id: Date.now(),
+                title: 'Untitled Note',
+                content: '<p>Start writing your new note...</p>',
+                drawing: '',
+                lastModified: Date.now(),
+            };
+            notes.push(newNote);
+            activeNoteId = newNote.id;
+            currentMode = 'write'; // Default to write mode for new notes
+            saveNotes();
+            renderNotesList();
+            displayActiveNote();
+        }
+
+        function handleNoteSelection(e) {
+            const target = e.target.closest('.note-item');
+            if (!target) return;
+
+            const noteId = Number(target.dataset.id);
+
+            // Handle delete button click
+            if(e.target.closest('.delete-btn')) {
+                handleDeleteNote(noteId);
+                return;
+            }
+            
+            if (noteId !== activeNoteId) {
+                activeNoteId = noteId;
+                currentMode = 'write'; // Reset to write mode on note switch
+                renderNotesList(); // To update active highlight
+                displayActiveNote();
+            }
+        }
+
+        function handleDeleteNote(noteIdToDelete) {
+             if (confirm('Are you sure you want to delete this note?')) {
+                notes = notes.filter(note => note.id !== noteIdToDelete);
+                
+                if (activeNoteId === noteIdToDelete) {
+                    activeNoteId = notes.length > 0 ? notes[0].id : null;
+                }
+
+                saveNotes();
+                renderNotesList();
+                displayActiveNote();
+            }
+        }
+
+        function handleTitleChange(e) {
+            const activeNote = notes.find(n => n.id === activeNoteId);
+            if (activeNote) {
+                activeNote.title = e.target.value;
+                activeNote.lastModified = Date.now();
+                saveNotes();
+                // Update title in sidebar in real-time
+                const noteItem = notesListEl.querySelector(`.note-item[data-id="${activeNoteId}"] span`);
+                if (noteItem) {
+                    noteItem.textContent = activeNote.title || 'Untitled Note';
+                }
+            }
+        }
+
+        function handleEditorInput() {
+            const activeNote = notes.find(n => n.id === activeNoteId);
+            if (activeNote) {
+                activeNote.content = textEditor.innerHTML;
+                activeNote.lastModified = Date.now();
+                saveNotes();
+            }
+        }
+
+        // --- CANVAS LOGIC ---
+        function resizeCanvas() {
+            const parent = canvas.parentElement;
+            if (!parent) return;
+
+            // Preserve drawing on resize
+            const dataUrl = canvas.toDataURL();
+            
+            canvas.width = parent.clientWidth;
+            canvas.height = parent.clientHeight;
+            
+            // Restore drawing after resize
+            const img = new Image();
+            img.onload = () => {
+                ctx.drawImage(img, 0, 0);
+            };
+            img.src = dataUrl;
+
+            // Reset canvas context properties
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function getEventPosition(event) {
+            const rect = canvas.getBoundingClientRect();
+            // Handle both touch and mouse events
+            const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+            const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top,
+            };
+        }
+
+        function startDrawing(e) {
+            e.preventDefault();
+            isDrawing = true;
+            const { x, y } = getEventPosition(e);
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            e.preventDefault();
+            const { x, y } = getEventPosition(e);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+        }
+
+        function stopDrawing() {
+            if (!isDrawing) return;
+            isDrawing = false;
+            ctx.closePath();
+            
+            // Save the drawing to the active note
+            const activeNote = notes.find(n => n.id === activeNoteId);
+            if (activeNote) {
+                activeNote.drawing = canvas.toDataURL('image/png');
+                activeNote.lastModified = Date.now();
+                saveNotes();
+            }
+        }
+
+
+        // --- INITIALIZATION ---
+        function init() {
+            // Load data
+            loadNotes();
+            
+            // Set initial active note (most recently modified one)
+            if (notes.length > 0) {
+                 const sorted = [...notes].sort((a,b) => b.lastModified - a.lastModified);
+                 activeNoteId = sorted[0].id;
+            }
+
+            // Initial render
+            renderNotesList();
+            displayActiveNote();
+
+            // Event Listeners
+            newNoteBtn.addEventListener('click', handleNewNote);
+            notesListEl.addEventListener('click', handleNoteSelection);
+            noteTitleInput.addEventListener('input', handleTitleChange);
+            textEditor.addEventListener('input', handleEditorInput);
+            
+            writeModeBtn.addEventListener('click', () => {
+                currentMode = 'write';
+                updateModeUI();
+            });
+            drawModeBtn.addEventListener('click', () => {
+                currentMode = 'draw';
+                updateModeUI();
+            });
+
+            // Canvas Listeners for mouse and touch
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseout', stopDrawing);
+            
+            canvas.addEventListener('touchstart', startDrawing, { passive: false });
+            canvas.addEventListener('touchmove', draw, { passive: false });
+            canvas.addEventListener('touchend', stopDrawing);
+
+            window.addEventListener('resize', resizeCanvas);
+        }
+
+        // Run the app
+        document.addEventListener('DOMContentLoaded', init);
+
+    </script>
+</body>
+</html>

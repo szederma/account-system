@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery | Distanzuino</title>
+    <link rel="icon" type="image/jpg" href="/images/icon.png">
+    <link rel="stylesheet" href="/redesign.css">
+
+    <script type="text/javascript" src="https://app.termly.io/resource-blocker/611984d8-f015-418c-b13f-dc82c88b1907?autoBlock=on"></script>
+
+    <style>
+        /* Smooth fade-in for gallery items */
+        .media-grid img,
+        .media-grid video {
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+        .media-grid img.show,
+        .media-grid video.show {
+            opacity: 1;
+        }
+    </style>
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-3HEL3CR3RW"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-3HEL3CR3RW');
+    </script>
+</head>
+
+<body>   
+    <div id="site-header"></div>
+
+    <main style="flex: 1;">
+        <div id="gallery-wrapper">
+            <section class="gallery">
+                <div class="section-title">
+                    <h2>Gallery</h2>
+                    <p>See Distanzuino in action. Explore photos and videos from events and development.</p>
+                </div>
+                <div class="media-grid" id="media-grid"></div>
+            </section>
+        </div>
+    </main>
+  
+    <div id="site-footer"></div>
+
+    <div id="lightbox">
+        <span id="lightbox-left" class="lightbox-arrow">&#10094;</span>
+        <img id="lightbox-img" src="" alt="Fullscreen View">
+        <span id="lightbox-right" class="lightbox-arrow">&#10095;</span>
+    </div>
+
+    <a href="#" class="back-to-top" aria-label="Back to Top">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+    </a>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Load header/footer immediately, gallery in parallel
+        const loadComponent = (url, elementId, callback) => {
+            fetch(url)
+                .then(res => res.ok ? res.text() : Promise.reject(`Component not found: ${url}`))
+                .then(data => {
+                    const el = document.getElementById(elementId);
+                    if (el) {
+                        el.innerHTML = data;
+                        if (callback) callback();
+                    }
+                })
+                .catch(err => console.error("Component load error:", err));
+        };
+
+        loadComponent('/header.html', 'site-header', initializeHeader);
+        loadComponent('/footer.html', 'site-footer');
+        loadGalleryContent();
+
+        // Back to Top Button
+        const backToTopButton = document.querySelector('.back-to-top');
+        window.addEventListener('scroll', () => {
+            backToTopButton.classList.toggle('visible', window.scrollY > 300);
+        }, { passive: true });
+    });
+
+    // Header logic (same as 404)
+    function initializeHeader() {
+        const header = document.querySelector('#header');
+        if (!header) return;
+
+        const mobileToggle = header.querySelector('.mobile-nav-toggle');
+        const submenuToggles = header.querySelectorAll('.has-submenu > .submenu-toggle');
+
+        if (mobileToggle) {
+            mobileToggle.addEventListener('click', () => {
+                header.classList.toggle('menu-open');
+                document.body.classList.toggle('no-scroll', header.classList.contains('menu-open'));
+            });
+        }
+
+        submenuToggles.forEach(toggle => {
+            toggle.addEventListener('click', e => {
+                e.preventDefault();
+                const parent = toggle.parentElement;
+
+                if (!header.classList.contains('header-mobile-layout')) {
+                    header.querySelectorAll('.has-submenu.open').forEach(item => {
+                        if (item !== parent) item.classList.remove('open');
+                    });
+                }
+
+                parent.classList.toggle('open');
+            });
+        });
+
+        header.querySelectorAll('nav a').forEach(link => {
+            link.addEventListener('click', () => {
+                const isSubmenuOpener = link.classList.contains('submenu-toggle');
+                const parentSubmenu = link.closest('.has-submenu');
+
+                if (header.classList.contains('header-mobile-layout')) {
+                    if (isSubmenuOpener) return;
+                    if (header.classList.contains('menu-open')) {
+                        header.classList.remove('menu-open');
+                        document.body.classList.remove('no-scroll');
+                        header.querySelectorAll('.has-submenu.open').forEach(item => item.classList.remove('open'));
+                    }
+                } else {
+                    if (parentSubmenu && !isSubmenuOpener) {
+                        parentSubmenu.classList.remove('open');
+                    }
+                }
+            });
+        });
+
+        document.addEventListener('click', e => {
+            if (!header.classList.contains('header-mobile-layout')) {
+                if (!e.target.closest('.has-submenu')) {
+                    header.querySelectorAll('.has-submenu.open').forEach(item => item.classList.remove('open'));
+                }
+            }
+        });
+
+        window.addEventListener('scroll', () => {
+            header.classList.toggle('scrolled', window.scrollY > 50);
+        }, { passive: true });
+
+        const updateLayout = () => {
+            if (window.innerWidth <= 768) {
+                header.classList.add('header-mobile-layout');
+            } else {
+                header.classList.remove('header-mobile-layout', 'menu-open');
+                document.body.classList.remove('no-scroll');
+            }
+        };
+        updateLayout();
+        window.addEventListener('resize', updateLayout);
+    }
+
+    // Lightbox logic
+    const mediaGrid = document.getElementById('media-grid');
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightbox-img');
+    const leftArrow = document.getElementById('lightbox-left');
+    const rightArrow = document.getElementById('lightbox-right');
+
+    let currentImages = [];
+    let currentIndex = 0;
+
+    function openLightbox(index) {
+        currentIndex = index;
+        lightbox.style.display = 'flex';
+        lightboxImg.src = currentImages[currentIndex];
+        document.body.classList.add('no-scroll');
+    }
+
+    function closeLightbox() {
+        lightbox.style.display = 'none';
+        document.body.classList.remove('no-scroll');
+    }
+
+    function showPrev() {
+        if (!currentImages.length) return;
+        currentIndex = (currentIndex - 1 + currentImages.length) % currentImages.length;
+        animateSwipe('right');
+        lightboxImg.src = currentImages[currentIndex];
+    }
+
+    function showNext() {
+        if (!currentImages.length) return;
+        currentIndex = (currentIndex + 1) % currentImages.length;
+        animateSwipe('left');
+        lightboxImg.src = currentImages[currentIndex];
+    }
+
+    let touchStartX = 0;
+    function handleSwipeGesture(e) {
+        const diff = e.changedTouches[0].screenX - touchStartX;
+        if (Math.abs(diff) > 50) diff < 0 ? showNext() : showPrev();
+    }
+
+    function animateSwipe(direction) {
+        lightboxImg.className = '';
+        void lightboxImg.offsetWidth;
+        lightboxImg.classList.add(direction === 'left' ? 'swipe-left' : 'swipe-right');
+    }
+
+    leftArrow.addEventListener('click', e => { e.stopPropagation(); showPrev(); });
+    rightArrow.addEventListener('click', e => { e.stopPropagation(); showNext(); });
+    lightbox.addEventListener('click', closeLightbox);
+    lightbox.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, false);
+    lightbox.addEventListener('touchend', handleSwipeGesture, false);
+    document.addEventListener('keydown', (e) => {
+        if (lightbox.style.display === 'flex') {
+            if (e.key === 'ArrowLeft') showPrev();
+            if (e.key === 'ArrowRight') showNext();
+            if (e.key === 'Escape') closeLightbox();
+        }
+    });
+
+    // Gallery loading with smooth fade-in
+    function loadGalleryContent() {
+        return fetch('gallery/')
+            .then(res => res.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const links = Array.from(doc.querySelectorAll('a'))
+                    .map(a => a.getAttribute('href'))
+                    .filter(file => file && file.match(/\.(jpe?g|png|gif|bmp|mp4|webm)$/i))
+                    .sort()
+                    .reverse();
+
+                links.forEach(file => {
+                    const src = `gallery/${file}`;
+                    const isVideo = file.match(/\.(mp4|webm)$/i);
+                    const el = isVideo ? document.createElement('video') : document.createElement('img');
+                    el.src = src;
+
+                    if (isVideo) {
+                        el.controls = true;
+                        el.onloadeddata = () => el.classList.add('show');
+                    } else {
+                        el.alt = file;
+                        const idx = currentImages.length;
+                        el.addEventListener('click', () => openLightbox(idx));
+                        currentImages.push(src);
+                        el.onload = () => el.classList.add('show');
+                    }
+
+                    el.onerror = () => console.warn(`Could not load: ${src}`);
+                    mediaGrid.appendChild(el);
+                });
+            })
+            .catch(err => {
+                console.error("Gallery load failed:", err);
+                mediaGrid.innerHTML = "<p style='text-align:center; color: var(--text-secondary);'>Unable to load gallery.</p>";
+            });
+    }
+  </script>
+</body>
+</html>

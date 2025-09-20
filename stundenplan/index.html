@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Stundenplan</title>
+  <style>
+    :root {
+      --bg:#0b1020; --panel:#0f172a; --text:#e6eaf2; --muted:#9aa3b2;
+      --line:rgba(255,255,255,0.08); --accent:#7aa2ff; --accent-soft:rgba(122,162,255,0.16);
+      --accent-soft-2:rgba(122,162,255,0.10); --radius:16px; --shadow:0 12px 30px rgba(0,0,0,0.35);
+    }
+    *{box-sizing:border-box} html,body{height:100%}
+    body{margin:0;background:linear-gradient(180deg,#0a0f1e,#0b1020);color:var(--text);
+         font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial;
+         -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;padding:20px}
+    .app{max-width:1100px;margin:0 auto}
+    header.appbar{position:sticky;top:0;z-index:40;margin-bottom:18px;background:rgba(15,23,42,.8);backdrop-filter:blur(8px);
+      border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 18px;
+      display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}
+    .title{font-size:20px;font-weight:800;letter-spacing:.2px} .subtitle{color:var(--muted);font-size:13px}
+    .chips{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .chip{font-size:12px;padding:8px 10px;border-radius:999px;border:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));font-variant-numeric:tabular-nums}
+    .chip-acc{border-color:rgba(122,162,255,.4)}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));border:1px solid var(--line);
+      border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:16px}
+    h2{margin:0 0 8px;font-size:16px;letter-spacing:.2px} .muted{color:var(--muted);font-size:13px}
+    .meta{display:flex;gap:8px;flex-wrap:wrap}
+    .badge{font-size:12px;padding:6px 8px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.03);font-weight:600}
+    .badge-accent{border-color:rgba(122,162,255,.5);background:linear-gradient(180deg, var(--accent-soft), var(--accent-soft-2))}
+    .grid-wrap{overflow:auto;border-radius:calc(var(--radius)-6px);border:1px solid var(--line)}
+    table.grid{width:100%;border-collapse:separate;border-spacing:0;background:rgba(255,255,255,.02)}
+    thead th{position:sticky;top:0;background:rgba(11,16,32,.96);border-bottom:1px solid var(--line);font-size:13px;text-align:left;padding:10px 12px}
+    thead th:first-child{width:150px}
+    tbody th,tbody td{border-bottom:1px solid var(--line);padding:12px;vertical-align:top;transition:background .35s ease, color .25s ease, transform .25s ease}
+    tbody tr:nth-child(odd) td,tbody tr:nth-child(odd) th{background:rgba(255,255,255,.01)}
+    tbody tr:hover td{background:rgba(255,255,255,.02)}
+    .period{color:var(--muted);font-size:13px}
+    .cell .subject{font-weight:700;letter-spacing:.2px}
+    .cell .details{color:var(--muted);font-size:12px;margin-top:4px}
+    .empty{color:var(--muted);font-style:italic}
+    .cell.current{
+      background: linear-gradient(180deg, var(--accent-soft), var(--accent-soft-2));
+      border-left: 2px solid var(--accent);
+      transform: translateZ(0);
+    }
+    .cell.current .subject{ font-weight:900; font-size: clamp(1rem, 0.9rem + 0.3vw, 1.15rem); letter-spacing:.25px; }
+    .cell.current .details{ color:#dbe5ff; font-weight:600; }
+    .now-card .subject{ font-size: clamp(22px, 4vw, 28px); font-weight: 900; letter-spacing: .3px; }
+    .now-card .meta .badge{ font-size: 13px; }
+    .now-card .meta .badge-accent{ font-weight: 700; }
+    .upnext{ margin-top:8px; font-size:13px; color:var(--muted); }
+    .upnext strong{ color:#eaf0ff; }
+    /* Cross-fade helper */
+    .fade { transition: opacity .25s ease; opacity: 1; will-change: opacity; }
+    .fade.hide { opacity: 0; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="appbar">
+      <div>
+        <div class="title">Stundenplan – 10b <span class="subtitle">(2025/26)</span></div>
+        <div class="subtitle" id="todayStr"></div>
+      </div>
+      <div class="chips">
+        <div class="chip chip-acc">Jetzt: <span id="nowStatus">–</span></div>
+        <div class="chip" id="clock">--:--</div>
+      </div>
+    </header>
+
+    <section class="card now-card">
+      <h2>Aktuelle Stunde</h2>
+      <div id="now" class="fade"><div class="muted">Wird geladen…</div></div>
+      <div id="upnext" class="upnext fade"></div>
+    </section>
+
+    <section class="card">
+      <h2>Wochenübersicht</h2>
+      <div class="grid-wrap">
+        <table class="grid" id="grid" aria-describedby="gridHelp">
+          <thead id="thead"></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    var DATA = {"className": "10b", "schoolYear": "2025/26", "days": ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"], "periods": [{"no": 1, "start": "7:40", "end": "8:25"}, {"no": 2, "start": "8:30", "end": "9:15"}, {"no": 3, "start": "9:35", "end": "10:20"}, {"no": 4, "start": "10:25", "end": "11:10"}, {"no": 5, "start": "11:25", "end": "12:10"}, {"no": 6, "start": "12:15", "end": "13:00"}, {"no": 7, "start": "13:05", "end": "13:50"}, {"no": 8, "start": "13:50", "end": "14:35"}, {"no": 9, "start": "14:45", "end": "15:25"}, {"no": 10, "start": "15:25", "end": "16:05"}], "entries": {"Montag": [{"subject": "Physik", "room": "PhR1", "teacher": "Höm"}, {"subject": "Physik", "room": "PhR1", "teacher": "Höm"}, {"subject": "Ungarisch", "room": "R10b", "teacher": "Gor"}, {"subject": "Ungarisch", "room": "R10b", "teacher": "Gor"}, {"subject": "UGeschichte", "room": "R10b", "teacher": "Kua"}, {"subject": "UGeschichte", "room": "R10b", "teacher": "Kua"}, {"subject": "", "room": "", "teacher": ""}, {"subject": "Kunst", "room": "WR", "teacher": "Zee"}, {"subject": "Kunst", "room": "WR", "teacher": "Zee"}, {"subject": "", "room": "", "teacher": ""}], "Dienstag": [{"subject": "DaF", "room": "R10b", "teacher": "Hed"}, {"subject": "Mathe", "room": "R10b", "teacher": "Wam"}, {"subject": "Geschichte", "room": "R10b", "teacher": "Kaz"}, {"subject": "Physik", "room": "PhR1", "teacher": "Höm"}, {"subject": "UChemie", "room": "ChR", "teacher": "Vaz"}, {"subject": "UChemie", "room": "ChR", "teacher": "Vaz"}, {"subject": "UBiologie", "room": "BioR1", "teacher": "Vaz"}, {"subject": "UBiologie", "room": "BioR1", "teacher": "Vaz"}, {"subject": "", "room": "", "teacher": ""}, {"subject": "", "room": "", "teacher": ""}], "Mittwoch": [{"subject": "Geschichte", "room": "R10b", "teacher": "Kaz"}, {"subject": "Geschichte", "room": "R10b", "teacher": "Kaz"}, {"subject": "Englisch", "room": "R10b", "teacher": "Eij"}, {"subject": "Englisch", "room": "R10b", "teacher": "Eij"}, {"subject": "Ungarisch", "room": "R10b", "teacher": "Gor"}, {"subject": "Mathe", "room": "R10b", "teacher": "Wam"}, {"subject": "Spanisch", "room": "R9a", "teacher": "Csb"}, {"subject": "", "room": "", "teacher": ""}, {"subject": "", "room": "", "teacher": ""}, {"subject": "", "room": "", "teacher": ""}], "Donnerstag": [{"subject": "Deutsch", "room": "R10b", "teacher": "Frt"}, {"subject": "Deutsch", "room": "R10b", "teacher": "Frt"}, {"subject": "Sport", "room": "TH2", "teacher": "Gog"}, {"subject": "Sport", "room": "TH2", "teacher": "Gog"}, {"subject": "Sozialkunde", "room": "R10b", "teacher": "Bau"}, {"subject": "Sozialkunde", "room": "R10b", "teacher": "Bau"}, {"subject": "Ungarisch", "room": "R10b", "teacher": "Gor"}, {"subject": "Spanisch", "room": "R9a", "teacher": "Csb"}, {"subject": "Religion", "room": "R10b", "teacher": "Pak"}, {"subject": "Religion", "room": "R10b", "teacher": "Pak"}], "Freitag": [{"subject": "Spanisch", "room": "R9a", "teacher": "Csb"}, {"subject": "Spanisch", "room": "R9a", "teacher": "Csb"}, {"subject": "Mathe", "room": "R10b", "teacher": "Wam"}, {"subject": "Mathe", "room": "R10b", "teacher": "Wam"}, {"subject": "Deutsch", "room": "R10b", "teacher": "Frt"}, {"subject": "Deutsch", "room": "R10b", "teacher": "Frt"}, {"subject": "Englisch", "room": "R10b", "teacher": "Eij"}, {"subject": "KL", "room": "R10b", "teacher": "Kaz"}, {"subject": "Erdkunde", "room": "R10b", "teacher": "Kaz"}, {"subject": "Erdkunde", "room": "R10b", "teacher": "Kaz"}]}};
+
+    function pad(n){return String(n).padStart(2,'0');}
+    function parseHHMM(s){ var a=s.split(':'), h=+a[0]||0, m=+a[1]||0; return {h:h,m:m}; }
+    function todayName(){ var d=new Date(); return ["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"][d.getDay()]; }
+    function getNow(){ var d=new Date(); return {h:d.getHours(), m:d.getMinutes()}; }
+    function minutes(t){ return t.h*60+t.m; }
+    function inRange(now,s,e){ var n=minutes(now), a=minutes(s), b=minutes(e); return n>=a && n<b; }
+    function getEntry(day,idx){ var arr=(DATA.entries&&DATA.entries[day])? DATA.entries[day] : []; return (idx>=0&&idx<arr.length)? arr[idx] : null; }
+    function fmtMin(n){ n=Math.max(0,Math.floor(n)); return n===1?'1 Minute':(n+' Minuten'); }
+
+    function gentleSwap(el, html){
+      if(!el) return;
+      if(el.__lastHTML === html) return;
+      el.classList.add('hide');
+      setTimeout(function(){ el.innerHTML = html; el.__lastHTML = html; el.classList.remove('hide'); }, 150);
+    }
+
+    function buildTimeline(day){
+      var segs=[], periods=(DATA.periods||[]).map(function(p){ return {no:p.no, start:p.start, end:p.end, s:parseHHMM(p.start), e:parseHHMM(p.end)}; });
+      for(var i=0;i<periods.length;i++){
+        var entry=getEntry(day,i), ok=entry && entry.subject && entry.subject.trim()!=='';
+        if(ok) segs.push({type:'class', start:periods[i].s, end:periods[i].e, p:periods[i], entry:entry});
+      }
+      for(var j=0;j<periods.length-1;j++){
+        var cur=periods[j], nxt=periods[j+1], gap=minutes(nxt.s)-minutes(cur.e);
+        if(gap>0) segs.push({type:'break', start:cur.e, end:nxt.s, minutes:gap});
+      }
+      segs.sort(function(a,b){ return minutes(a.start)-minutes(b.start); });
+      return segs;
+    }
+
+    function findCurrentThing(day){
+      var now=getNow(), timeline=buildTimeline(day);
+      for(var i=0;i<timeline.length;i++){ var seg=timeline[i]; if(inRange(now, seg.start, seg.end)) return seg; }
+      return null;
+    }
+
+    function findNextThing(day){
+      var now=getNow(), timeline=buildTimeline(day);
+      for(var i=0;i<timeline.length;i++){ var seg=timeline[i]; if(minutes(seg.start)>minutes(now)) return seg; }
+      return null;
+    }
+
+    function findNextClass(day){
+      var now=getNow(), timeline=buildTimeline(day);
+      for(var i=0;i<timeline.length;i++){ var seg=timeline[i]; if(seg.type==='class' && minutes(seg.start)>minutes(now)) return seg; }
+      return null;
+    }
+
+    function minsUntil(t){ var n=getNow(); return Math.max(0, minutes(t)-minutes(n)); }
+
+    function buildGrid(){
+      var thead=document.getElementById('thead'), tbody=document.getElementById('tbody');
+      if(!thead||!tbody) return;
+      thead.innerHTML=''; tbody.innerHTML='';
+      var trh=document.createElement('tr'), th0=document.createElement('th'); th0.textContent='Stunde'; trh.appendChild(th0);
+      for(var di=0; di<(DATA.days||[]).length; di++){ var day=DATA.days[di]; var th=document.createElement('th'); th.textContent=day; trh.appendChild(th); } 
+      thead.appendChild(trh);
+
+      for(var r=0;r<(DATA.periods||[]).length;r++){ var p=DATA.periods[r];
+        var tr=document.createElement('tr');
+        var th=document.createElement('th'); th.className='period'; th.innerHTML='<strong>'+p.no+'.</strong> <span class="muted">'+p.start+'–'+p.end+'</span>'; tr.appendChild(th);
+        for(var di=0; di<(DATA.days||[]).length; di++){ var day=DATA.days[di];
+          var td=document.createElement('td'); td.className='cell'; td.setAttribute('data-day',day); td.setAttribute('data-period',p.no);
+          var e=getEntry(day,r), subj=e&&e.subject?e.subject:'', room=(e&&e.room)?e.room.trim():'', teacher=(e&&e.teacher)?e.teacher.trim():'';
+          td.innerHTML = subj ? '<div class="subject">'+subj+'</div><div class="details">'+room+(room&&teacher?' · ':'')+teacher+'</div>' : '<span class="empty">– frei –</span>';
+          tr.appendChild(td);
+        }
+        tbody.appendChild(tr);
+      }
+    }
+
+    function updateNow(){
+      try{
+        var dayName=todayName(), box=document.getElementById('now'), up=document.getElementById('upnext'), status=document.getElementById('nowStatus');
+        var cells=document.querySelectorAll('.current'); for(var i=0;i<cells.length;i++) cells[i].classList.remove('current');
+
+        if(!(DATA.days||[]).includes(dayName)){
+          gentleSwap(box, '<div class="muted">Heute kein Unterricht.</div>');
+          gentleSwap(up, '');
+          if(status) status.textContent='Frei';
+          return;
+        }
+
+        // highlight current period cell (based on times only)
+        var curPeriod=null, now=getNow();
+        for(var i=0;i<(DATA.periods||[]).length;i++){ var p=DATA.periods[i], s=parseHHMM(p.start), e=parseHHMM(p.end); if(inRange(now,s,e)){ curPeriod=p; break; } }
+        if(curPeriod){
+          var selector='.cell[data-day="'+dayName+'"][data-period="'+curPeriod.no+'"]', cell=document.querySelector(selector);
+          if(cell) cell.classList.add('current');
+        }
+
+        var currentThing=findCurrentThing(dayName);
+        var nextThing=findNextThing(dayName);
+        var nextClass=findNextClass(dayName);
+
+        if(!currentThing){
+          if(nextThing){
+            var mins=minsUntil(nextThing.start);
+            var label=(nextThing.type==='class')?(nextThing.entry&&nextThing.entry.subject?nextThing.entry.subject:'Unterricht'):'Pause';
+            gentleSwap(box, '<div class="subject">Derzeit keine Stunde</div><div class="meta"><span class="badge">Tag: '+dayName+'</span></div>');
+            var extra = '';
+            if(nextThing.type==='break' && nextClass){
+              var mins2 = minsUntil(nextClass.start);
+              extra = '<br/><span class="muted">Danach: <strong>'+ (nextClass.entry && nextClass.entry.subject ? nextClass.entry.subject : 'Unterricht') +'</strong> in '+ fmtMin(mins2) +'</span>';
+            }
+            gentleSwap(up, 'Als Nächstes: <strong>'+label+'</strong> in '+fmtMin(mins) + extra);
+            if(status) status.textContent='Frei';
+          }else{
+            gentleSwap(box, '<div class="muted">Für heute nichts mehr</div>');
+            gentleSwap(up, '');
+            if(status) status.textContent='Frei';
+          }
+          return;
+        }
+
+        if(currentThing.type==='class'){
+          var e=currentThing.entry||{}, room=e.room?e.room:'', teacher=e.teacher?e.teacher:'';
+          var html = '<div class="subject">'+(e.subject||'—')+'</div>'
+                   + '<div class="meta">'
+                   + '<span class="badge badge-accent">Zeit: '+currentThing.p.start+'–'+currentThing.p.end+'</span>'
+                   + (room?'<span class="badge badge-accent">Raum: '+room+'</span>':'')
+                   + (teacher?'<span class="badge badge-accent">Lehrkraft: '+teacher+'</span>':'')
+                   + '</div>';
+          gentleSwap(box, html);
+          if(status) status.textContent = e.subject || 'Unterricht';
+        }else{
+          var end=currentThing.end, minutesLeft=Math.max(0, minutes(end)-minutes(getNow()));
+          var html = '<div class="subject">Pause</div>'
+                   + '<div class="meta">'
+                   + '<span class="badge badge-accent">Ende: '+pad(end.h)+':'+pad(end.m)+'</span>'
+                   + '<span class="badge">noch '+fmtMin(minutesLeft)+'</span>'
+                   + '</div>';
+          gentleSwap(box, html);
+          if(status) status.textContent='Pause';
+        }
+
+        if(nextThing){
+          var minsN=minsUntil(nextThing.start);
+          var labelN=(nextThing.type==='class')?(nextThing.entry&&nextThing.entry.subject?nextThing.entry.subject:'Unterricht'):'Pause';
+          var extraN='';
+          if(nextThing.type==='break' && nextClass){
+            var mins2 = minsUntil(nextClass.start);
+            extraN = '<br/><span class="muted">Danach: <strong>'+ (nextClass.entry&&nextClass.entry.subject?nextClass.entry.subject:'Unterricht') +'</strong> in '+ fmtMin(mins2) +'</span>';
+          }
+          gentleSwap(up, 'Als Nächstes: <strong>'+labelN+'</strong> in '+fmtMin(minsN) + extraN);
+        }else{
+          gentleSwap(up, '');
+        }
+      }catch(e){
+        // swallow
+      }
+    }
+
+    function updateClock(){
+      var d=new Date();
+      var c=document.getElementById('clock'); if(c) c.textContent=pad(d.getHours())+':'+pad(d.getMinutes());
+      var t=document.getElementById('todayStr'); if(t) t.textContent = d.toLocaleDateString('de-DE',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'});
+    }
+
+    function tick(){ updateClock(); updateNow(); }
+    buildGrid(); tick();
+    setInterval(tick, 1000); // instant updates every second
+    document.addEventListener('visibilitychange', function(){ if(!document.hidden) tick(); });
+  </script>
+</body>
+</html>

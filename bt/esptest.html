@@ -1,0 +1,1858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DistanzuinoBT</title>
+  <link rel="icon" type="image/jpg" href="/images/icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <script type="text/javascript" src="https://app.termly.io/resource-blocker/611984d8-f015-418c-b13f-dc82c88b1907?autoBlock=on"></script>
+
+
+
+  <style>
+@font-face {
+        font-family: 'Caros';
+        src: url('/caros/Caros-Bold.otf') format('opentype');
+        font-weight: bold;
+        font-style: normal;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Caros', sans-serif;
+      font-weight: 700;
+    }
+
+    body {
+      background: linear-gradient(135deg, #101010 0%, #1c1c1c 80%, #2a2a2a 100%);
+      color: #f0f0f0;
+      min-height: 100vh;
+      padding: clamp(12px, 2.5vw, 20px);
+      width: 100%;
+      overflow-x: hidden;
+    }
+
+    #ios-warning {
+      display: none;
+    }
+
+    #ios-warning div {
+      background: #222222;
+      padding: 30px;
+      border-radius: 16px;
+      max-width: 420px;
+      text-align: center;
+      border: 1px solid rgba(255, 31, 31, 0.35);
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    }
+    #ios-warning h2 {
+      margin-bottom: 16px;
+      color: #ff3c3c;
+      font-size: 1.6rem;
+    }
+    #ios-warning p {
+      margin-bottom: 20px;
+      line-height: 1.6;
+      color: #c0c0c0;
+      font-weight: 400;
+    }
+    #ios-warning a {
+      margin-top: 24px;
+      color: #ff3c3c;
+      text-decoration: none;
+      font-weight: bold;
+      padding: 14px;
+      transition: opacity 0.3s ease, text-decoration 0.3s ease;
+      display: inline-block;
+    }
+    #ios-warning a:hover {
+      text-decoration: underline;
+      opacity: 0.85;
+    }
+    #ios-warning img {
+      width: 80px;
+      height: auto;
+      border-radius: 2px;
+      margin-bottom: 24px;
+    }
+
+
+    .bento-grid {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      gap: clamp(8px, 1.8vw, 16px);
+      padding: clamp(8px, 1.8vw, 16px);
+      width: 100%;
+    }
+
+    .bento-container {
+      background: rgba(35, 35, 35, 0.95);
+      border-radius: 16px;
+      padding: clamp(12px, 2.5vw, 20px);
+      width: 100%;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* More subtle base shadow */
+      border: 1px solid rgba(255, 31, 31, 0.20); /* Slightly less prominent base border */
+      transition: transform 0.25s ease, border-color 0.25s ease, background-color 0.25s ease;
+    }
+
+    .bento-container:hover {
+      transform: translateY(-2px); /* Subtle lift */
+      border-color: rgba(255, 31, 31, 0.35); /* Clearer border indication */
+      background-color: rgba(40, 40, 40, 0.97); /* Slight background change */
+      /* No box-shadow glow */
+    }
+
+    #logo-container {
+      display: flex;
+      align-items: center;
+      gap: clamp(15px, 3.5vw, 25px);
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: clamp(12px, 2.5vw, 20px);
+      margin-bottom: clamp(16px, 3vw, 30px);
+    }
+
+    #logo {
+      width: clamp(50px, 16vw, 90px);
+      height: auto;
+      border-radius: 4px;
+    }
+
+    h1 {
+      font-size: clamp(1.75rem, 4.5vw, 2.8rem);
+      white-space: nowrap;
+      color: #ffffff;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2); /* More neutral subtle shadow */
+      font-weight: 700;
+    }
+
+    .control-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: clamp(8px, 1.8vw, 16px);
+      margin-bottom: clamp(12px, 2.5vw, 20px);
+    }
+
+    #connect-container {
+      display: flex;
+      align-items: center;
+      gap: clamp(10px, 2.5vw, 18px);
+      min-width: 0;
+      position: relative;
+    }
+
+    .button {
+      padding: clamp(8px, 1.8vw, 12px) clamp(15px, 3vw, 25px);
+      font-size: clamp(0.8rem, 2.2vw, 0.9rem);
+      border: 1px solid rgba(255, 31, 31, 0.4);
+      border-radius: 10px;
+      background: linear-gradient(45deg, #e61a1a, #ff3b3b);
+      color: white;
+      cursor: pointer;
+      transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.75px;
+      position: absolute;
+      left: 0;
+    }
+
+    .button:hover {
+      transform: translateY(-2px); /* Subtle lift */
+      /* background: linear-gradient(45deg, #ff1f1f, #ff5555); /* Original brighter background */
+      background: linear-gradient(45deg, #d31818, #eb3333); /* Slightly less bright, more solid */
+      border-color: rgba(255, 31, 31, 0.6);
+      /* No box-shadow glow */
+    }
+    .button:active { /* Added active state for better feedback */
+        transform: translateY(-1px);
+        background: linear-gradient(45deg, #c01010, #d32020);
+    }
+
+
+    #connect {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #disconnect {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #connection-status {
+      font-size: clamp(0.8rem, 2.2vw, 0.9rem);
+      margin-left: clamp(100px, 25vw, 140px);
+      white-space: nowrap;
+      animation: pulse 2.5s infinite ease-in-out; /* Slightly adjusted pulse */
+      color: #cccccc;
+      font-weight: 400;
+    }
+
+    @keyframes pulse { /* Adjusted pulse to be more subtle */
+      0% { opacity: 0.7; }
+      50% { opacity: 1; }
+      100% { opacity: 0.7; }
+    }
+
+    #instrument-container {
+      display: flex;
+      align-items: center;
+      gap: clamp(8px, 2vw, 15px);
+      min-width: 0;
+    }
+
+    select {
+      padding: clamp(6px, 1.2vw, 10px) clamp(10px, 2.2vw, 18px);
+      font-size: clamp(0.8rem, 2vw, 0.9rem);
+      max-width: min(120px, 100%);
+      border-radius: 10px;
+      background: #2c2c2c;
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.15); /* More neutral border */
+      font-weight: 600;
+      transition: border-color 0.2s ease, background-color 0.2s ease;
+    }
+    select:hover {
+        border-color: rgba(255, 31, 31, 0.5);
+        background-color: #333;
+    }
+
+
+    .volume-controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: clamp(8px, 1.8vw, 16px);
+      margin-bottom: clamp(12px, 2.5vw, 20px);
+    }
+
+    .slider-wrapper .instrument-selector {
+      display: flex;
+      align-items: center;
+      gap: clamp(10px, 2.5vw, 18px);
+      margin-bottom: clamp(10px, 2.5vw, 16px);
+    }
+    
+    .slider-wrapper > label[for^="volume"],
+    .instrument-selector label {
+      font-size: clamp(0.85rem, 2.1vw, 0.95rem);
+      color: #b0b0b0;
+      font-weight: 500;
+      margin-bottom: clamp(3px, 0.8vw, 5px);
+      display: block;
+    }
+
+
+    input[type="range"] {
+      width: 100%;
+      height: 10px;
+      border-radius: 5px;
+      background: #383838;
+      outline: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px; /* Slightly smaller for minimalist look */
+      height: 20px;
+      border-radius: 50%;
+      background: #ff1f1f;
+      cursor: pointer;
+      transition: transform 0.2s ease, background-color 0.2s ease;
+      border: 2px solid #f0f0f0; /* Light border for contrast */
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.1); /* Subtle scale */
+      background-color: #ff4444; /* Brighter red on hover */
+      /* No box-shadow glow */
+    }
+    input[type="range"]::-webkit-slider-thumb:active {
+      transform: scale(1.05);
+      background-color: #e61a1a; /* Darker red when active */
+    }
+
+
+    .tones-wrapper {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      padding: clamp(10px, 2.5vw, 18px);
+      gap: clamp(10px, 2.5vw, 18px);
+      background: rgba(35, 35, 35, 0.95);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 31, 31, 0.20); /* Consistent with bento */
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .tones-container {
+      display: flex;
+      gap: clamp(4px, 1vw, 8px);
+      flex-wrap: nowrap;
+    }
+
+    .tone {
+      width: clamp(30px, 7.5vw, 40px);
+      min-width: clamp(30px, 7.5vw, 40px);
+      height: clamp(45px, 10.5vw, 62px);
+      font-size: clamp(0.75rem, 2vw, 0.9rem);
+      border: 1px solid rgba(255, 255, 255, 0.1); /* Subtle border */
+      border-radius: 8px; /* Slightly less rounded than containers */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #303030; /* Darker base */
+      color: #c0c0c0; /* Lighter text for inactive */
+      transition: all 0.2s ease;
+      font-weight: 500; /* Normal weight for inactive */
+    }
+
+    .tone.active {
+      background: #ff1f1f;
+      transform: translateY(-3px); /* Less dramatic lift */
+      /* box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2); /* Subtle, modern elevation */
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05), 0 2px 4px rgba(0,0,0,0.05), 0 4px 8px rgba(0,0,0,0.05), 0 8px 16px rgba(0,0,0,0.05); /* Layered subtle shadow */
+      color: #fff;
+      font-weight: 700;
+      border-color: #ff1f1f; /* Match background */
+    }
+
+    .separator {
+      min-width: 2px; /* Thinner separator */
+      width: 2px;
+      height: 50px; /* Adjusted height */
+      background: rgba(255, 255, 255, 0.1); /* More subtle separator */
+      border-radius: 1px;
+    }
+
+    .disabled-container {
+      opacity: 0.4; /* More faded */
+      pointer-events: none;
+      filter: grayscale(60%); /* Slightly more grayscale */
+      transition: all 0.3s ease;
+    }
+
+    .container {
+      --color: #ff1f1f;
+      --size: clamp(20px, 3vw, 26px);
+      display: inline-flex;
+      align-items: center;
+      position: relative;
+      cursor: pointer;
+      padding: 5px;
+    }
+
+    .container input {
+      opacity: 0;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+
+    .container svg {
+      width: var(--size);
+      height: var(--size);
+      fill: currentColor;
+      transition: color 0.2s ease;
+    }
+
+    .container .voice {
+      display: none;
+      color: var(--color);
+    }
+
+    .container .mute {
+      display: block;
+      color: #555; /* Darker mute icon */
+    }
+    .container:hover .mute { /* Subtle hover for mute icon */
+        color: #777;
+    }
+    .container input:checked ~ .mute {
+      display: none;
+    }
+
+    .container input:checked ~ .voice {
+      display: block;
+    }
+    .container input:checked + .voice:hover { /* Subtle hover for voice icon when active */
+        color: #ff4444;
+    }
+
+
+    .slider-wrapper > div {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: clamp(6px, 1.5vw, 12px);
+      width: 100%;
+    }
+
+    input[type="range"] {
+      flex: 1;
+      min-width: 0;
+    }
+
+    #volume1Value, #volume2Value {
+      min-width: 50px;
+      text-align: right;
+      font-size: clamp(0.8rem, 2vw, 0.9rem);
+      color: #e0e0e0;
+      font-weight: 600;
+    }
+
+    #help-wrapper {
+      position: fixed; bottom: 20px; left: 0; right: 0; z-index: 999; pointer-events: none;
+    }
+
+    #help-box {
+      display: none;
+      opacity: 0;
+      transition: opacity 0.3s ease, transform 0.3s ease; /* Added transform transition */
+      transform: translateY(10px); /* Start slightly offset for entry animation */
+      margin: 0;
+      position: absolute;
+      bottom: 70px; /* Adjusted for larger button + spacing */
+      left: 20px;
+      max-width: 450px;
+      width: calc(100vw - 60px);
+      background: rgba(45, 45, 45, 0.98); /* Slightly more opaque, consistent with containers */
+      border: 1px solid rgba(255, 255, 255, 0.15); /* Consistent border */
+      border-radius: 12px; /* Slightly smaller radius */
+      padding: 20px 25px; /* Adjusted padding */
+      color: #d0d0d0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25); /* Modern subtle shadow */
+      max-height: 60vh;
+      overflow-y: auto;
+      pointer-events: auto;
+    }
+    /* For entry animation */
+    #help-box.visible { /* Add this class via JS when opening */
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+
+    #help-box h2 {
+      font-size: 1.4rem; /* Adjusted size */
+      margin-bottom: 12px;
+      color: #ff3c3c;
+      font-weight: 700;
+    }
+
+    #help-box p {
+      line-height: 1.65; /* Adjusted */
+      font-weight: 400;
+      margin-bottom: 12px;
+    }
+    #help-box p:last-child {
+      margin-bottom: 0;
+    }
+
+    #help-box p strong {
+      font-weight: 700;
+      color: #ff4c4c;
+    }
+    
+    #help-wrapper div[style*="position: absolute; bottom: 0; left: 20px;"] {
+        bottom: 15px; 
+        left: 15px;
+    }
+
+
+    #help-toggle {
+      width: 44px; /* Adjusted size */
+      height: 44px;
+      font-size: 26px;
+      font-weight: bold;
+      border-radius: 50%;
+      background: #ff1f1f;
+      color: white;
+      border: none; /* Removed border */
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2); /* Subtle shadow for floating button */
+      transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+      position: relative; 
+      z-index: 1;
+      pointer-events: auto;
+      display: flex; /* For centering '?' if needed */
+      align-items: center;
+      justify-content: center;
+    }
+    #help-toggle:hover {
+      background-color: #ff4444; /* Brighter on hover */
+      transform: scale(1.05) translateY(-1px); /* Lift and scale */
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+    }
+    #help-toggle:active {
+        transform: scale(1) translateY(0);
+        background-color: #e61a1a;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    /* --- Responsive Adjustments --- */
+    @media (max-width: 768px) {
+      body {
+        padding: 15px;
+      }
+
+      .bento-grid {
+        gap: 12px;
+        padding: 12px;
+      }
+
+      .bento-container {
+        padding: 15px;
+        border-radius: 12px; /* Consistent smaller radius */
+      }
+      .tones-wrapper {
+        border-radius: 12px;
+      }
+
+      h1 {
+        font-size: 2rem;
+      }
+
+      #logo {
+        width: clamp(50px, 15vw, 70px);
+      }
+
+      .volume-controls {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .control-row {
+        margin-bottom: clamp(8px, 2vw, 16px);
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      #connect-container {
+         grid-column: 1 / -1;
+      }
+
+
+      .button {
+        padding: 10px 18px;
+        font-size: 0.85rem;
+      }
+
+      select {
+        padding: 8px 14px;
+        font-size: 0.85rem;
+      }
+
+      .slider-wrapper {
+        gap: 8px;
+      }
+      
+      .slider-wrapper > label[for^="volume"],
+      .instrument-selector label {
+        font-size: 0.9rem;
+      }
+
+      label {
+        font-size: 14px;
+      }
+
+      .tone {
+        width: clamp(30px, 8vw, 36px);
+        height: clamp(45px, 12vw, 52px);
+        font-size: 0.8rem;
+        border-radius: 6px;
+      }
+
+      .container svg {
+        --size: clamp(18px, 2.8vw, 22px);
+      }
+
+
+      .tones-wrapper {
+        flex-direction: column;
+        padding: 15px;
+      }
+
+      .separator {
+        width: 80%;
+        max-width: 200px;
+        height: 1px; /* Thinner separator in column */
+        margin: 10px auto;
+        background: rgba(255,255,255,0.08);
+      }
+
+      #volume1Value, #volume2Value {
+        min-width: 45px;
+      }
+
+      .slider-wrapper label {
+        font-size: 0.85rem;
+      }
+      #help-box {
+        bottom: 65px; /* Adjust for help toggle */
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+
+      .bento-grid {
+        gap: 8px;
+        padding: 8px;
+      }
+
+      h1 {
+        font-size: 1.5rem;
+      }
+
+      #logo {
+        width: clamp(45px, 18vw, 60px);
+      }
+
+      #logo-container {
+        padding: 8px;
+        gap: clamp(10px, 3vw, 15px);
+        margin-bottom: clamp(12px, 2.5vw, 20px);
+      }
+
+      .bento-container, .tones-wrapper {
+        padding: 12px;
+        border-radius: 10px; /* Even smaller radius for compact screens */
+      }
+
+
+      .button {
+        padding: 8px 14px;
+        font-size: 0.75rem;
+        border-radius: 8px;
+      }
+
+      select {
+        padding: 6px 10px;
+        font-size: 0.75rem;
+        max-width: 110px;
+        border-radius: 8px;
+      }
+
+      .tone {
+        width: clamp(28px, 7vw, 32px);
+        min-width: clamp(28px, 7vw, 32px);
+        height: clamp(42px, 10vw, 48px);
+        font-size: 0.7rem;
+        border-radius: 6px;
+      }
+
+      .tones-wrapper {
+        padding: 12px;
+        gap: 8px;
+      }
+
+      .separator {
+        margin: clamp(6px, 1.5vw, 8px) auto;
+      }
+      
+      .slider-wrapper > label[for^="volume"],
+      .instrument-selector label {
+        font-size: 0.8rem;
+      }
+
+
+      .container svg {
+        --size: clamp(16px, 2.5vw, 20px);
+      }
+
+      #connection-status {
+        font-size: 0.75rem;
+      }
+      
+      #volume1Value, #volume2Value {
+        min-width: 40px;
+        font-size: 0.75rem;
+      }
+
+      #connect-container,
+      #instrument-container-left,
+      #instrument-container-right {
+        grid-column: 1;
+      }
+
+      #help-box {
+        max-width: calc(100vw - 30px); /* Adjust width */
+        left: 15px;
+        bottom: 60px; /* Adjust for help toggle */
+        padding: 15px;
+        border-radius: 10px;
+      }
+      #help-box h2 {
+        font-size: 1.2rem; /* Smaller heading for help */
+      }
+       #help-wrapper div[style*="position: absolute; bottom: 0; left: 20px;"] {
+        bottom: 10px;
+        left: 10px;
+      }
+      #help-toggle {
+        width: 40px;
+        height: 40px;
+        font-size: 24px;
+      }
+    }
+
+  </style>
+</head>
+<body>
+  <div id="ios-warning" style="display:none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.9); z-index: 1000; flex-direction: column; justify-content: center; align-items: center; padding: 20px;">
+    <div style="background: #282828; padding: 24px; border-radius: 12px; max-width: 400px; text-align: center; border: 1px solid rgba(255, 31, 31, 0.3);">
+      <img src="/images/logo.png" alt="Logo" style="width: 80px; height: auto; border-radius: 2px; margin-bottom: 24px;">
+      <h2 style="margin-bottom: 16px; color: #ff1f1f;">iOS Not Supported</h2>
+      <p style="margin-bottom: 20px; line-height: 1.5;">We're sorry, but DistanzuinoBT does not support iOS devices yet. Please use a device running Android or desktop browsers like Chrome or Edge.</p>
+      <a href="https://distanzuino.com" style="margin-top: 24px; color: #ff1f1f; text-decoration: none; font-weight: bold; padding: 12px; transition: opacity 0.3s ease;">
+        Visit distanzuino.com 
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="7" y1="17" x2="17" y2="7"></line>
+          <polyline points="7 7 17 7 17 17"></polyline>
+        </svg>
+      </a>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div id="logo-container">
+    <a href="https://distanzuino.com" target="_self">
+      <img id="logo" src="/images/logo.png" alt="Logo">
+    </a>
+    <h1>DistanzuinoBT</h1>
+  </div>
+
+  <div class="bento-grid">
+    <!-- Control Row -->
+    <div class="control-row">
+      <!-- Connect Container -->
+      <div class="bento-container" id="connect-container">
+        <div style="position: relative; width: 120px; height: 40px;"> <!-- Adjust width/height to match your button size -->
+          <button id="connect" class="button">Connect</button>
+          <button id="disconnect" class="button">Disconnect</button>
+        </div>
+        <p id="connection-status">Disconnected</p>
+      </div>
+    </div>
+
+    <!-- Tones Display -->
+    <div class="tones-wrapper">
+      <div id="tones1" class="tones-container">
+        <div class="tone" data-tone="C1">C1</div>
+        <div class="tone" data-tone="D1">D1</div>
+        <div class="tone" data-tone="E1">E1</div>
+        <div class="tone" data-tone="F1">F1</div>
+        <div class="tone" data-tone="G1">G1</div>
+        <div class="tone" data-tone="A1">A1</div>
+        <div class="tone" data-tone="H1">H1</div>
+      </div>
+      <div class="separator"></div>
+      <div id="tones2" class="tones-container">
+        <div class="tone" data-tone="C2">C2</div>
+        <div class="tone" data-tone="D2">D2</div>
+        <div class="tone" data-tone="E2">E2</div>
+        <div class="tone" data-tone="F2">F2</div>
+        <div class="tone" data-tone="G2">G2</div>
+        <div class="tone" data-tone="A2">A2</div>
+        <div class="tone" data-tone="H2">H2</div>
+      </div>
+    </div>
+
+
+    <div class="volume-controls">
+      <!-- Left Volume Container with Instrument Selector -->
+      <div class="bento-container slider-wrapper">
+        <div class="side-label">Left Side</div>
+        <div class="instrument-selector">
+          <label for="instrument1">Instrument:</label>
+          <select id="instrument1">
+            <option value="piano">Piano</option>
+            <option value="flute">Flute</option>
+            <option value="cello">Cello</option>
+            <option value="creator">Creator</option>
+          </select>
+        </div>
+        <label for="volume1">Volume:</label>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <input type="range" id="volume1" min="0" max="1" step="0.01" value="1">
+          <span id="volume1Value">100%</span>
+          <label class="container">
+            <input id="mute1" type="checkbox">
+            <svg viewBox="0 0 576 512" height="1em" xmlns="http://www.w3.org/2000/svg" class="voice">
+              <path d="M301.1 34.8C312.6 40 320 51.4 320 64V448c0 12.6-7.4 24-18.9 29.2s-25 3.1-34.4-5.3L131.8 352H64c-35.3 0-64-28.7-64-64V224c0-35.3 28.7-64 64-64h67.8L266.7 40.1c9.4-8.4 22.9-10.4 34.4-5.3zM425 167l55 55 55-55c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-55 55 55 55c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-55-55-55 55c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l55-55-55-55c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0z"></path>
+            </svg>
+            <svg viewBox="0 0 448 512" height="1em" xmlns="http://www.w3.org/2000/svg" class="mute">
+              <path d="M301.1 34.8C312.6 40 320 51.4 320 64V448c0 12.6-7.4 24-18.9 29.2s-25 3.1-34.4-5.3L131.8 352H64c-35.3 0-64-28.7-64-64V224c0-35.3 28.7-64 64-64h67.8L266.7 40.1c9.4-8.4 22.9-10.4 34.4-5.3zM412.6 181.5C434.1 199.1 448 225.9 448 256s-13.9 56.9-35.4 74.5c-10.3 8.4-25.4 6.8-33.8-3.5s-6.8-25.4 3.5-33.8C393.1 284.4 400 271 400 256s-6.9-28.4-17.7-37.3c-10.3-8.4-11.8-23.5-3.5-33.8s23.5-11.8 33.8-3.5z"></path>
+            </svg>
+          </label>
+        </div>
+        <div id="creator-graph-container1" style="display: none; margin-top: 10px;">
+            <h4 style="color: #ffffff;">Custom Sound</h4>
+            <canvas id="creator-graph1" height="200" style="background: #111; border: 1px solid #444;"></canvas>
+        </div>
+      </div>
+    
+      <!-- Right Volume Container with Instrument Selector -->
+      <div class="bento-container slider-wrapper">
+        <div class="side-label">Right Side</div>
+        <div class="instrument-selector">
+          <label for="instrument2">Instrument:</label>
+          <select id="instrument2">
+            <option value="piano">Piano</option>
+            <option value="flute">Flute</option>
+            <option value="cello">Cello</option>
+            <option value="creator">Creator</option>
+          </select>
+        </div>
+        <label for="volume2">Volume:</label>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <input type="range" id="volume2" min="0" max="1" step="0.01" value="1">
+          <span id="volume2Value">100%</span>
+          <label class="container">
+            <input id="mute2" type="checkbox">
+            <svg viewBox="0 0 576 512" height="1em" xmlns="http://www.w3.org/2000/svg" class="voice">
+              <path d="M301.1 34.8C312.6 40 320 51.4 320 64V448c0 12.6-7.4 24-18.9 29.2s-25 3.1-34.4-5.3L131.8 352H64c-35.3 0-64-28.7-64-64V224c0-35.3 28.7-64 64-64h67.8L266.7 40.1c9.4-8.4 22.9-10.4 34.4-5.3zM425 167l55 55 55-55c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-55 55 55 55c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-55-55-55 55c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l55-55-55-55c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0z"></path>
+            </svg>
+            <svg viewBox="0 0 448 512" height="1em" xmlns="http://www.w3.org/2000/svg" class="mute">
+              <path d="M301.1 34.8C312.6 40 320 51.4 320 64V448c0 12.6-7.4 24-18.9 29.2s-25 3.1-34.4-5.3L131.8 352H64c-35.3 0-64-28.7-64-64V224c0-35.3 28.7-64 64-64h67.8L266.7 40.1c9.4-8.4 22.9-10.4 34.4-5.3zM412.6 181.5C434.1 199.1 448 225.9 448 256s-13.9 56.9-35.4 74.5c-10.3 8.4-25.4 6.8-33.8-3.5s-6.8-25.4 3.5-33.8C393.1 284.4 400 271 400 256s-6.9-28.4-17.7-37.3c-10.3-8.4-11.8-23.5-3.5-33.8s23.5-11.8 33.8-3.5z"></path>
+            </svg>
+          </label>
+        </div>
+        <div id="creator-graph-container2" style="display: none; margin-top: 10px;">
+            <h4 style="color: #ffffff;">Custom Sound</h4>
+            <canvas id="creator-graph2" height="200" style="background: #111; border: 1px solid #444;"></canvas>
+        </div>
+      </div>
+
+
+
+      
+    </div>
+   
+  </div>
+  
+
+
+  <div id="help-wrapper" style="position: fixed; bottom: 20px; left: 0; right: 0; z-index: 999; pointer-events: none;">
+    <div id="help-box" style="
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    margin: 0;
+    position: absolute;
+    bottom: 50px;
+    left: 60px;
+    max-width: 450px;
+    width: calc(100vw - 80px);
+    background: rgba(40, 40, 40, 0.95);
+    border: 2px solid rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    padding: 20px;
+    color: #ccc;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    max-height: 60vh;
+    overflow-y: auto;
+    pointer-events: auto;
+  ">
+      <h2 style="font-size: 1.5rem; margin-bottom: 10px; color: #ff3939;">Help</h2>
+      <p style="line-height: 1.6;">
+        <strong>DistanzuinoBT</strong> is a touchless musical instrument. Move your hands above the left and right side — the sensor measures the distance and sends it to this site via Bluetooth. Based on your hand's position, the selected instrument sound is played.
+      </p>
+      <p style="line-height: 1.6; margin-top: 10px;">
+        <strong>1.</strong> Connect via Bluetooth<br>
+        <strong>2.</strong> Pick an instrument or create your own and adjust the volume<br>
+        <strong>3.</strong> Move your hand to play notes
+      </p>
+      <p style="margin-top: 20px; font-size: 1rem; color: #949494;">Got any questions or ideas? Conatct us at hello@distanzuino.com</p>
+    </div>
+  
+    <div style="position: absolute; bottom: 0; left: 20px; pointer-events: auto;">
+      <button id="help-toggle" style="
+        width: 44px;
+        height: 44px;
+        font-size: 26px;
+        font-weight: bold;
+        border-radius: 50%;
+        background: #ff1f1f;
+        color: white;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      ">
+        ?
+      </button>
+    </div>
+  </div>
+  
+  
+
+  <script>
+    let bluetoothDevice;
+    let server;
+    let service;
+    let characteristic;
+
+    let distance1 = 0;
+    let distance2 = 0;
+
+
+    const serviceUUID = "12345678-1234-1234-1234-1234567890ab";
+    const characteristicUUID = "87654321-4321-4321-4321-abcdefabcdef";
+
+    document.getElementById('connect').addEventListener('click', async () => {
+      const statusElement = document.getElementById('connection-status');
+      statusElement.innerText = 'Connecting...';
+
+      try {
+        bluetoothDevice = await navigator.bluetooth.requestDevice({
+          filters: [
+            { namePrefix: 'DistanzuinoBT' }
+          ],
+          optionalServices: [serviceUUID]
+        });
+
+
+        // Add the disconnect event listener
+        bluetoothDevice.addEventListener('gattserverdisconnected', () => {
+          console.log('Device disconnected unexpectedly.');
+
+
+          if (currentTone1) {
+            stopTone(currentTone1, currentInstrument1);
+            currentTone1 = null;
+            }
+            if (currentTone2) {
+            stopTone(currentTone2, currentInstrument2);
+            currentTone2 = null;
+            }
+
+
+          // Update UI state
+          document.getElementById('connect').style.opacity = '1';
+          document.getElementById('connect').style.pointerEvents = 'auto';
+          document.getElementById('disconnect').style.opacity = '0';
+          document.getElementById('disconnect').style.pointerEvents = 'none';
+
+          updateContainerStates(false);
+          updateUIState(false);
+        });
+
+        server = await bluetoothDevice.gatt.connect();
+        service = await server.getPrimaryService(serviceUUID);
+        characteristic = await service.getCharacteristic("87654321-4321-4321-4321-abcdefabcdef");
+
+        characteristic.startNotifications();
+        characteristic.addEventListener('characteristicvaluechanged', handleData);
+
+        document.getElementById('connect').style.opacity = '0';
+        document.getElementById('connect').style.pointerEvents = 'none';
+        document.getElementById('disconnect').style.opacity = '1';
+        document.getElementById('disconnect').style.pointerEvents = 'auto';
+
+        updateContainerStates(true);
+
+        statusElement.innerText = `Connected`;
+
+        updateUIState(true);
+      } catch (error) {
+        console.error('Error connecting:', error);
+        statusElement.innerText = 'Disconnected'; // Reset to "Disconnected" on failure
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      updateContainerStates(false);
+    });
+
+    function handleData(event) {
+      const decoder = new TextDecoder();
+      const rawValue = decoder.decode(event.target.value).trim();
+
+      // Split data into multiple packets in case they're concatenated
+      const packets = rawValue.split('\n'); // Assuming newline '\n' separates packets
+      packets.forEach(packet => {
+        const value = packet.trim();
+
+        if (value.startsWith('D1:')) {
+          const parsedValue = parseFloat(value.substring(3));
+          if (!isNaN(parsedValue)) {
+            distance1 = parsedValue / 10; // Convert to cm
+            updateDistanceDisplay(document.getElementById('distance1'), "1", distance1);
+          }
+        } else if (value.startsWith('D2:')) {
+          const parsedValue = parseFloat(value.substring(3));
+          if (!isNaN(parsedValue)) {
+            distance2 = parsedValue / 10; // Convert to cm
+            updateDistanceDisplay(document.getElementById('distance2'), "2", distance2);
+          }
+        }
+      });
+
+      handleSliderChange();
+    }
+
+
+    function updateContainerStates(isConnected) {
+      const containers = document.querySelectorAll('.bento-container:not(#connect-container):not(.always-enabled), .tones-wrapper');
+      containers.forEach(container => {
+        if (isConnected) {
+          container.classList.remove('disabled-container');
+        } else {
+          container.classList.add('disabled-container');
+        }
+      });
+    }
+
+
+    function updateDistanceDisplay(distanceElement, distanceLabel, distance) {
+      console.log(`Distance ${distanceLabel}: ${distance.toFixed(2)} cm`);
+    }
+
+    document.getElementById('disconnect').addEventListener('click', () => {
+      if (bluetoothDevice && bluetoothDevice.gatt.connected) {
+        bluetoothDevice.gatt.disconnect();
+      }
+
+      // Clear tone highlights
+      highlightTone('tones1', []);
+      highlightTone('tones2', []);
+
+      document.getElementById('connect').style.opacity = '1';
+      document.getElementById('connect').style.pointerEvents = 'auto';
+      document.getElementById('disconnect').style.opacity = '0';
+      document.getElementById('disconnect').style.pointerEvents = 'none';
+
+      updateContainerStates(false);
+
+      updateUIState(false);
+    });
+
+    function updateUIState(isConnected) {
+      const statusElement = document.getElementById('connection-status');
+
+      if (isConnected) {
+        statusElement.innerText = `Connected`;
+      } else {
+        statusElement.innerText = 'Disconnected';
+
+
+
+        // Clear tone highlights
+        highlightTone('tones1', []);
+        highlightTone('tones2', []);
+
+        distance1 = 0;
+        distance2 = 0;
+      }
+    }
+
+
+
+
+
+
+    /*+++++*/
+
+
+
+
+    let gains1 = [0.8, 0.6, 0.4, 0.3, 0.2, 0.1];
+    let gains2 = [0.7, 0.5, 0.3, 0.2, 0.2, 0.1];
+
+    function setupGraph(canvasId, gainsArray) {
+        const canvas = document.getElementById(canvasId);
+        const ctx = canvas.getContext('2d');
+        let draggingIndex = null;
+
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = 200;
+            draw();
+        }
+
+        function draw() {
+        const width = canvas.width;
+        const height = canvas.height;
+        ctx.clearRect(0, 0, width, height);
+
+        // Draw grid lines
+        ctx.strokeStyle = "#333";
+        ctx.lineWidth = 1;
+
+        for (let i = 0; i <= 10; i++) {
+          const y = height - 20 - i * ((height - 40) / 10);
+          ctx.beginPath();
+          ctx.moveTo(40, y);
+          ctx.lineTo(width, y);
+          ctx.stroke();
+        }
+
+        for (let i = 0; i < gainsArray.length; i++) {
+          const x = 40 + (width - 60) / (gainsArray.length - 1) * i;
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, height - 20);
+          ctx.stroke();
+        }
+
+        // Draw axes
+        ctx.strokeStyle = "#666";
+        ctx.beginPath();
+        ctx.moveTo(40, 0); ctx.lineTo(40, height);
+        ctx.moveTo(0, height - 20); ctx.lineTo(width, height - 20);
+        ctx.stroke();
+
+        // Draw labels
+        ctx.fillStyle = "#888";
+        ctx.font = "12px sans-serif";
+        for (let i = 0; i <= 10; i++) {
+          const y = height - 20 - i * ((height - 40) / 10);
+          ctx.fillText((i / 10).toFixed(1), 5, y + 3);
+        }
+
+        for (let i = 0; i < gainsArray.length; i++) {
+          const x = 40 + (width - 60) / (gainsArray.length - 1) * i;
+          ctx.fillText(i + 1, x - 5, height - 5);
+        }
+
+        // Draw gain curve
+        ctx.strokeStyle = "#ff4c4c";
+        ctx.beginPath();
+        gainsArray.forEach((gain, i) => {
+          const x = 40 + (width - 60) / (gainsArray.length - 1) * i;
+          const y = height - 20 - gain * (height - 40);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        // Draw control points
+        gainsArray.forEach((gain, i) => {
+          const x = 40 + (width - 60) / (gainsArray.length - 1) * i;
+          const y = height - 20 - gain * (height - 40);
+          ctx.beginPath();
+          ctx.arc(x, y, 6, 0, 2 * Math.PI);
+          ctx.fillStyle = '#fff';
+          ctx.fill();
+          ctx.stroke();
+        });
+      }
+
+
+        function getPointerPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+            x: clientX - rect.left,
+            y: clientY - rect.top,
+            };
+        }
+
+        function onStart(e) {
+            const { x, y } = getPointerPos(e);
+            const width = canvas.width;
+            const height = canvas.height;
+
+            gainsArray.forEach((gain, i) => {
+            const cx = 40 + (width - 60) / (gainsArray.length - 1) * i;
+            const cy = height - 20 - gain * (height - 40);
+            if (Math.hypot(cx - x, cy - y) < 12) {
+                draggingIndex = i;
+            }
+            });
+        }
+
+        function onMove(e) {
+            if (draggingIndex === null) return;
+            e.preventDefault();
+
+            const { y } = getPointerPos(e);
+            const height = canvas.height;
+            const gain = Math.max(0, Math.min(1, (height - 20 - y) / (height - 40)));
+
+            gainsArray[draggingIndex] = gain;
+            draw();
+        }
+
+        function onEnd() {
+            draggingIndex = null;
+        }
+
+        canvas.addEventListener('mousedown', onStart);
+        canvas.addEventListener('mousemove', onMove);
+        canvas.addEventListener('mouseup', onEnd);
+        canvas.addEventListener('mouseleave', onEnd);
+
+        canvas.addEventListener('touchstart', onStart, { passive: true });
+        canvas.addEventListener('touchmove', onMove, { passive: false });
+        canvas.addEventListener('touchend', onEnd);
+
+        function waitUntilContainerReady() {
+            if (canvas.parentElement.clientWidth > 0) {
+                resizeCanvas();
+            } else {
+                // Try again shortly
+                setTimeout(waitUntilContainerReady, 50);
+            }
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        waitUntilContainerReady();
+    }
+
+
+
+
+    setupGraph("creator-graph1", gains1);
+    setupGraph("creator-graph2", gains2);
+
+    function toggleCreatorGraph(id, instrumentValue) {
+    document.getElementById(`creator-graph-container${id}`).style.display =
+        instrumentValue === "creator" ? "block" : "none";
+    }
+
+    // Call this once on load
+    document.addEventListener('DOMContentLoaded', () => {
+    toggleCreatorGraph(1, document.getElementById("instrument1").value);
+    toggleCreatorGraph(2, document.getElementById("instrument2").value);
+    });
+
+    // Call this on change
+    document.getElementById('instrument1').addEventListener('change', function () {
+    currentInstrument1 = this.value;
+    toggleCreatorGraph(1, this.value);
+    });
+
+    document.getElementById('instrument2').addEventListener('change', function () {
+    currentInstrument2 = this.value;
+    toggleCreatorGraph(2, this.value);
+    });
+
+
+
+
+
+  
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const activeOscillators = {};
+
+
+    function startPianoTone(frequency, tone, sustained, volume = 1) {
+        if (activeOscillators[tone]) return;
+
+        const harmonics = [1, 2, 3, 4, 5, 6];
+        const maxGains = [0.76, 0.9, 0.4, 0.15, 0.3, 0.15];
+        const oscillators = [];
+        const gainNodes = [];
+        const baseDecayTime = 0.5;
+
+        activeOscillators[tone] = { oscillators, gainNodes, maxGains: maxGains.map(g => g * volume) };
+
+
+        harmonics.forEach((harmonic, index) => {
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.type = index === 0 ? 'triangle' : 'sawtooth';
+            oscillator.frequency.setValueAtTime(frequency * harmonic, audioCtx.currentTime);
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            // Apply volume to gain
+            const gainValue = maxGains[index] * volume;
+            gainNode.gain.setValueAtTime(gainValue, audioCtx.currentTime);
+            if (sustained) {
+            let fadeTime = baseDecayTime * Math.pow(1.8, 5 - index);
+            gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + fadeTime);
+            }
+
+
+            oscillators.push(oscillator);
+            gainNodes.push(gainNode);
+
+            oscillator.start();
+        });
+
+        activeOscillators[tone] = { oscillators, gainNodes };
+        }
+
+
+
+        function stopPianoTone(tone) {
+            if (activeOscillators[tone]) {
+                activeOscillators[tone].gainNodes.forEach((gainNode, index) => {
+                    if (index === 0) { // Keep fundamental tone fading longer
+                        gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1);
+                    } else {
+                        gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
+                    }
+                });
+                activeOscillators[tone].oscillators.forEach(osc => osc.stop(audioCtx.currentTime + 1));
+                delete activeOscillators[tone];
+            }
+        }
+
+
+
+
+    // ==== Cello tone handling ====
+    const celloReverb = audioCtx.createConvolver();
+    const celloReverbGain = audioCtx.createGain();
+    celloReverbGain.gain.value = 0.3;
+    celloReverb.connect(celloReverbGain);
+
+    const celloCompressor = audioCtx.createDynamicsCompressor();
+    celloCompressor.threshold.setValueAtTime(-30, audioCtx.currentTime);
+    celloCompressor.knee.setValueAtTime(20, audioCtx.currentTime);
+    celloCompressor.ratio.setValueAtTime(12, audioCtx.currentTime);
+    celloCompressor.attack.setValueAtTime(0.003, audioCtx.currentTime);
+    celloCompressor.release.setValueAtTime(0.25, audioCtx.currentTime);
+
+    const celloMasterGain = audioCtx.createGain();
+    celloMasterGain.gain.value = 0.6;
+
+    celloReverbGain.connect(celloCompressor);
+    celloCompressor.connect(celloMasterGain);
+    celloMasterGain.connect(audioCtx.destination);
+
+    function createCelloReverbImpulse(duration = 1.0, decay = 1.5) {
+    const rate = audioCtx.sampleRate;
+    const length = rate * duration;
+    const impulse = audioCtx.createBuffer(2, length, rate);
+    for (let i = 0; i < 2; i++) {
+        const channel = impulse.getChannelData(i);
+        for (let j = 0; j < length; j++) {
+        channel[j] = (Math.random() * 2 - 1) * Math.pow(1 - j / length, decay);
+        }
+    }
+    celloReverb.buffer = impulse;
+    }
+    createCelloReverbImpulse();
+
+    function startCelloTone(frequency, tone, volume = 1) {
+        if (activeOscillators[tone]) return;
+
+        const harmonics = [1, 2, 3, 4, 5, 6];
+        const maxGains = [0.4, 1.05, 1.4, 1.05, 0.5, 0.3];
+        const fadeOutTimes = [18, 16, 14, 12, 10, 8];
+        const toneGainFactor = 1 / (Object.keys(activeOscillators).length + 1);
+        const toneDetune = (Math.random() - 0.5) * 10;
+
+        const oscillators = [];
+        const gainNodes = [];
+
+        harmonics.forEach((harmonic, index) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const filter = audioCtx.createBiquadFilter();
+            const pan = audioCtx.createStereoPanner();
+            const warmth = audioCtx.createBiquadFilter();
+
+            osc.type = index === 0 ? 'triangle' : 'sine';
+            osc.frequency.setValueAtTime(frequency * harmonic, audioCtx.currentTime);
+            osc.detune.value = toneDetune + (Math.random() - 0.5) * 1.5;
+
+            filter.type = "bandpass";
+            filter.frequency.value = frequency * harmonic;
+            filter.Q.value = 8;
+
+            gain.gain.setValueAtTime(maxGains[index] * toneGainFactor * volume, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + fadeOutTimes[index]);
+
+            warmth.type = "lowpass";
+            warmth.frequency.setValueAtTime(5000, audioCtx.currentTime);
+            warmth.Q.value = 1;
+
+            pan.pan.value = (Math.random() - 0.5) * 0.5;
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(warmth);
+            warmth.connect(pan);
+            pan.connect(celloMasterGain);
+            pan.connect(celloReverb);
+
+            osc.start();
+            oscillators.push(osc);
+            gainNodes.push(gain);
+        });
+
+        activeOscillators[tone] = { oscillators, gainNodes };
+    }
+
+    function stopCelloTone(tone) {
+        const stopTime = audioCtx.currentTime + 0.05;
+        if (activeOscillators[tone]) {
+            activeOscillators[tone].gainNodes.forEach(gain => {
+            gain.gain.cancelScheduledValues(audioCtx.currentTime);
+            gain.gain.setValueAtTime(gain.gain.value, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0, stopTime + 0.3);
+            });
+            activeOscillators[tone].oscillators.forEach(osc => osc.stop(stopTime + 0.5));
+            delete activeOscillators[tone];
+        }
+    }
+
+
+    function startFluteTone(frequency, tone, volume = 1) {
+        if (activeOscillators[tone]) return;
+
+        const harmonics = [1, 2, 3, 4, 5, 6];
+        const maxGains = [1.2, 0.7, 0.5, 0.175, 0.1, 0.035];
+        const oscillators = [];
+        const gainNodes = [];
+
+        const masterGain = audioCtx.createGain();
+        masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
+        masterGain.connect(audioCtx.destination);
+
+        masterGain.gain.linearRampToValueAtTime(volume, audioCtx.currentTime + 0.1);
+
+        const vibrato = audioCtx.createOscillator();
+        const vibratoGain = audioCtx.createGain();
+        vibrato.frequency.setValueAtTime(5, audioCtx.currentTime);
+        vibratoGain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+        vibrato.connect(vibratoGain);
+
+        harmonics.forEach((harmonic, index) => {
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            osc.type = index === 0 ? 'triangle' : 'sine';
+            osc.frequency.setValueAtTime(frequency * harmonic, audioCtx.currentTime);
+            if (index > 0) {
+                osc.detune.setValueAtTime((Math.random() - 0.5) * 5, audioCtx.currentTime);
+            }
+
+            gainNode.gain.setValueAtTime(maxGains[index], audioCtx.currentTime);
+            osc.connect(gainNode);
+            gainNode.connect(masterGain);
+            vibratoGain.connect(osc.frequency);
+
+            osc.start();
+            oscillators.push(osc);
+            gainNodes.push(gainNode);
+        });
+
+        const noise = audioCtx.createBufferSource();
+        const bufferSize = audioCtx.sampleRate;
+        const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            output[i] = (Math.random() * 2 - 1) * 0.02;
+        }
+        noise.buffer = noiseBuffer;
+        noise.loop = true;
+
+        const noiseFilter = audioCtx.createBiquadFilter();
+        noiseFilter.type = "bandpass";
+        noiseFilter.frequency.setValueAtTime(3000, audioCtx.currentTime);
+        noise.connect(noiseFilter);
+        noiseFilter.connect(masterGain);
+        noise.start();
+
+        vibrato.start();
+
+        activeOscillators[tone] = {
+            oscillators,
+            gainNodes,
+            masterGain,
+            vibrato,
+            vibratoGain,
+            noise,
+            noiseFilter, // add this
+            maxGains
+        };
+
+
+    }
+
+    function stopFluteTone(tone) {
+        if (activeOscillators[tone]) {
+            const { oscillators, gainNodes, masterGain, vibrato, vibratoGain, noise, noiseFilter } = activeOscillators[tone];
+
+            masterGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1);
+
+            oscillators.forEach(osc => {
+                osc.stop(audioCtx.currentTime + 0.1);
+                osc.disconnect();
+            });
+
+            gainNodes.forEach(gain => gain.disconnect());
+
+            vibrato.stop(audioCtx.currentTime + 0.1);
+            vibrato.disconnect();
+            vibratoGain.disconnect();
+
+            noise.stop(audioCtx.currentTime + 0.1);
+            noise.disconnect();
+
+            noiseFilter.disconnect();
+            masterGain.disconnect();
+
+            delete activeOscillators[tone];
+        }
+    }
+
+
+
+    function startCustomTone(frequency, tone, gainProfile) {
+        if (activeOscillators[tone]) return;
+
+        const harmonics = [1, 2, 3, 4, 5, 6];
+        const oscillators = [];
+        const gainNodes = [];
+
+        harmonics.forEach((h, i) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(frequency * h, audioCtx.currentTime);
+            gain.gain.setValueAtTime(gainProfile[i] || 0, audioCtx.currentTime);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+
+            oscillators.push(osc);
+            gainNodes.push(gain);
+        });
+
+        activeOscillators[tone] = { oscillators, gainNodes };
+    }
+
+    function stopCustomTone(tone) {
+        if (activeOscillators[tone]) {
+            activeOscillators[tone].gainNodes.forEach((gain, i) => {
+            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
+            });
+            activeOscillators[tone].oscillators.forEach(osc => osc.stop(audioCtx.currentTime + 0.3));
+            delete activeOscillators[tone];
+        }
+    }
+
+
+
+
+
+    const frequencies = {
+        'C1': 130.81, 'D1': 146.83, 'E1': 164.81, 'F1': 174.61, 'G1': 196.00, 'A1': 220.00, 'H1': 246.94,
+        'C2': 261.63, 'D2': 293.66, 'E2': 329.63, 'F2': 349.23, 'G2': 392.00, 'A2': 440.00, 'H2': 493.88
+    };
+
+
+
+
+    const frequencyRanges = {
+      1: [
+        { min: 3, max: 8.99, tone: 'H1', },
+        { min: 9, max: 14.99, tone: 'A1', },
+        { min: 15, max: 20.99, tone: 'G1' },
+        { min: 21, max: 26.99, tone: 'F1' },
+        { min: 27, max: 32.99, tone: 'E1' },
+        { min: 33, max: 38.99, tone: 'D1' },
+        { min: 39, max: 45, tone: 'C1' }
+      ],
+      2: [
+        { min: 3, max: 8.99, tone: 'C2' },
+        { min: 9, max: 14.99, tone: 'D2' },
+        { min: 15, max: 20.99, tone: 'E2' },
+        { min: 21, max: 26.99, tone: 'F2' },
+        { min: 27, max: 32.99, tone: 'G2' },
+        { min: 33, max: 38.99, tone: 'A2' },
+        { min: 39, max: 45, tone: 'H2' }
+      ]
+    };
+    
+
+
+
+    let currentInstrument1 = "piano"; // Left side
+    let currentInstrument2 = "piano"; // Right side
+
+
+
+    function playTone(tone, volume, instrument, side) {
+        const freq = frequencies[tone];
+        if (!freq) return;
+
+        if (instrument === 'creator') {
+            const g = side === 1 ? gains1 : gains2;
+            startCustomTone(freq, tone, g.map(v => v * volume));
+        } else {
+            switch (instrument) {
+            case 'piano': startPianoTone(freq, tone, true, volume); break;
+            case 'cello': startCelloTone(freq, tone, volume); break;
+            case 'flute': startFluteTone(freq, tone, volume); break;
+            }
+        }
+    }
+
+
+
+    function stopTone(tone, instrument) {
+        switch (instrument) {
+            case 'piano': stopPianoTone(tone); break;
+            case 'cello': stopCelloTone(tone); break;
+            case 'flute': stopFluteTone(tone); break;
+            case 'creator': stopCustomTone(tone); break;
+        }
+    }
+
+
+
+
+    document.getElementById('instrument1').addEventListener('change', function() {
+      currentInstrument1 = this.value;
+      // Only update the left side
+      if (distance1 >= 3 && distance1 <= 45) {
+        const frequencies1 = getFrequencies(1, distance1);
+        const volume1 = document.getElementById('mute1').checked ? 0 : parseFloat(document.getElementById("volume1").value);
+        if (frequencies1.length > 0) {
+          playFrequencies(frequencies1, volume1, 1);
+        }
+      }
+    });
+
+    document.getElementById('instrument2').addEventListener('change', function() {
+      currentInstrument2 = this.value;
+      // Only update the right side
+      if (distance2 >= 3 && distance2 <= 45) {
+        const frequencies2 = getFrequencies(2, distance2);
+        const volume2 = document.getElementById('mute2').checked ? 0 : parseFloat(document.getElementById("volume2").value);
+        if (frequencies2.length > 0) {
+          playFrequencies(frequencies2, volume2, 2);
+        }
+      }
+    });
+
+
+
+    function highlightTone(tonesContainerId, distance) {
+      const tonesContainer = document.getElementById(tonesContainerId);
+      const tones = tonesContainer.querySelectorAll('.tone');
+      tones.forEach(tone => tone.classList.remove('active'));
+
+      // Find the frequency range based on the distance
+      const label = tonesContainerId === 'tones1' ? 1 : 2;
+      const ranges = frequencyRanges[label];
+
+      // Find the corresponding tone
+      for (const range of ranges) {
+        if (distance >= range.min && distance <= range.max) {
+          const toneName = range.tone;
+          const matchingTone = Array.from(tones).find(tone => tone.textContent === toneName);
+          if (matchingTone) {
+            matchingTone.classList.add('active');
+          }
+          break; // Stop searching once the correct tone is found
+        }
+      }
+    }
+
+
+    let isMuted1 = false;
+    let isMuted2 = false;
+
+    let currentTone1 = null;
+    let currentTone2 = null;
+
+
+    function handleSliderChange() {
+      const isMuted1 = document.getElementById('mute1').checked;
+      const isMuted2 = document.getElementById('mute2').checked;
+
+      const volume1 = isMuted1 ? 0 : parseFloat(document.getElementById("volume1").value);
+      const volume2 = isMuted2 ? 0 : parseFloat(document.getElementById("volume2").value);
+
+      
+      // Process left side (1)
+      if (distance1 >= 3 && distance1 <= 45) {
+        for (const range of frequencyRanges[1]) {
+          if (distance1 >= range.min && distance1 <= range.max) {
+            const tone = range.tone;
+            highlightTone('tones1', distance1);
+
+            if (currentTone1 !== tone) {
+                if (currentTone1) stopTone(currentTone1, currentInstrument1);
+                playTone(tone, volume1, currentInstrument1, 1);
+                currentTone1 = tone;
+            }
+
+
+            break;
+          }
+        }
+      } else {
+        if (currentTone1) stopTone(currentTone1, currentInstrument1);
+        currentTone1 = null;
+        highlightTone('tones1', []);
+      }
+
+
+      if (distance2 >= 3 && distance2 <= 45) {
+        for (const range of frequencyRanges[2]) {
+          if (distance2 >= range.min && distance2 <= range.max) {
+            const tone = range.tone;
+            highlightTone('tones2', distance2);
+
+            if (currentTone2 !== tone) {
+                if (currentTone2) stopTone(currentTone2, currentInstrument2);
+                playTone(tone, volume2, currentInstrument2, 2);
+                currentTone2 = tone;
+            }
+
+
+            break;
+          }
+        }
+      } else {
+        if (currentTone2) stopTone(currentTone2, currentInstrument2);
+        currentTone2 = null;
+        highlightTone('tones2', []);
+      }
+
+
+
+
+      // Update volume displays
+      document.getElementById("volume1Value").textContent = `${Math.round(volume1 * 100)}%`;
+      document.getElementById("volume2Value").textContent = `${Math.round(volume2 * 100)}%`;
+    
+
+        // Adjust volume of currently playing tones
+        if (currentTone1 && activeOscillators[currentTone1]) {
+            const oscObj = activeOscillators[currentTone1];
+            if (oscObj.maxGains) {
+                oscObj.gainNodes.forEach((gainNode, index) => {
+                const newGain = oscObj.maxGains[index] / parseFloat(document.getElementById("volume1").value || 1) * volume1;
+                gainNode.gain.setValueAtTime(newGain, audioCtx.currentTime);
+                });
+            } else if (oscObj.masterGain) {
+                oscObj.masterGain.gain.setValueAtTime(volume1, audioCtx.currentTime);
+            } else {
+                // Creator: scale custom gains
+                gains.forEach((g, i) => {
+                if (oscObj.gainNodes[i]) {
+                    oscObj.gainNodes[i].gain.setValueAtTime(g * volume1, audioCtx.currentTime);
+                }
+                });
+            }
+        }
+
+        if (currentTone2 && activeOscillators[currentTone2]) {
+            const oscObj = activeOscillators[currentTone2];
+            if (oscObj.maxGains) {
+                // For piano, cello, flute
+                oscObj.gainNodes.forEach((gainNode, index) => {
+                const newGain = oscObj.maxGains[index] / parseFloat(document.getElementById("volume2").value || 1) * volume2;
+                gainNode.gain.setValueAtTime(newGain, audioCtx.currentTime);
+                });
+            } else if (oscObj.masterGain) {
+                // For single gainNode instruments
+                oscObj.masterGain.gain.setValueAtTime(volume2, audioCtx.currentTime);
+            } else {
+                // For Creator: scale custom gains
+                gains.forEach((g, i) => {
+                if (oscObj.gainNodes[i]) {
+                    oscObj.gainNodes[i].gain.setValueAtTime(g * volume2, audioCtx.currentTime);
+                }
+                });
+            }
+        }
+
+        
+    
+    }
+
+
+    window.onload = () => {
+      const disconnectButton = document.getElementById('disconnect');
+      disconnectButton.style.opacity = '0';
+      disconnectButton.style.pointerEvents = 'none';
+    };
+
+    document.getElementById('volume1').addEventListener('input', handleSliderChange);
+    document.getElementById('volume2').addEventListener('input', handleSliderChange);
+    document.getElementById('mute1').addEventListener('change', handleSliderChange);
+    document.getElementById('mute2').addEventListener('change', handleSliderChange);
+
+
+
+    function isIOS() {
+      return [
+        'iPad Simulator',
+        'iPhone Simulator',
+        'iPod Simulator',
+        'iPad',
+        'iPhone',
+        'iPod'
+      ].includes(navigator.platform)
+      || (navigator.userAgent.includes("Mac") && "ontouchend" in document);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const iosWarning = document.getElementById('ios-warning');
+      iosWarning.style.display = 'none'; // Hide by default
+
+      if (isIOS()) {
+        iosWarning.style.display = 'flex'; // Show only if iOS
+      }
+    });
+  </script>
+
+
+<script>
+  const helpBox = document.getElementById('help-box');
+  const helpToggle = document.getElementById('help-toggle');
+
+  helpToggle.addEventListener('click', () => {
+    if (helpBox.style.display === 'none' || helpBox.style.opacity === '0') {
+      helpBox.style.display = 'block';
+      setTimeout(() => {
+        helpBox.style.opacity = '1';
+      }, 10);
+    } else {
+      closeHelpBox();
+    }
+  });
+
+  function closeHelpBox() {
+    helpBox.style.opacity = '0';
+    helpBox.addEventListener('transitionend', function hideBox() {
+      helpBox.style.display = 'none';
+      helpBox.removeEventListener('transitionend', hideBox);
+    });
+  }
+
+  document.addEventListener('click', (event) => {
+    const isClickInside = helpBox.contains(event.target) || helpToggle.contains(event.target);
+    if (!isClickInside && helpBox.style.display === 'block') {
+      closeHelpBox();
+    }
+  });
+</script>
+
+ 
+
+  
+</body>
+</html>

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login</title>
+  <style>
+    :root {
+      --dark-bg: #23272A;
+      --darker-bg: #2C2F33;
+      --accent-primary: #7289DA; /* Blurple */
+      --accent-secondary: #43B581; /* Green for register */
+      --text-primary: #FFFFFF;
+      --text-secondary: #99AAB5;
+      --input-bg: #40444B;
+      --border-color: rgba(114, 137, 218, 0.3);
+      --hover-accent: #677BC4;
+      --hover-secondary-accent: #3AA071;
+    }
+
+    @font-face {
+      font-family: 'Caros';
+      src: local('Caros'), local('Caros-Regular');
+    }
+
+    body {
+      background-color: var(--dark-bg);
+      color: var(--text-primary);
+      font-family: 'Caros', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .auth-container {
+      max-width: 400px;
+      width: 100%;
+      background: var(--darker-bg);
+      padding: 30px 40px;
+      border-radius: 12px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+      text-align: center;
+    }
+
+    h2 {
+      color: var(--accent-primary);
+      font-size: 2rem;
+      margin-bottom: 25px;
+    }
+
+    input[type="email"], input[type="password"], input[type="text"] {
+      width: 100%;
+      padding: 14px 18px;
+      margin-bottom: 15px;
+      background: var(--input-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-primary);
+      box-sizing: border-box;
+      font-size: 1rem;
+      outline: none;
+    }
+    input:focus {
+        border-color: var(--accent-primary);
+    }
+
+    .button-group {
+      display: flex;
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    button {
+      flex: 1;
+      padding: 12px;
+      border-radius: 8px;
+      border: none;
+      color: white;
+      font-weight: bold;
+      font-size: 1rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background-color 0.3s ease, opacity 0.3s;
+    }
+    button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    #login-btn {
+      background: var(--accent-primary);
+    }
+    #login-btn:hover:not(:disabled) {
+      background-color: var(--hover-accent);
+    }
+
+    #register-btn {
+      background: var(--accent-secondary);
+    }
+    #register-btn:hover:not(:disabled) {
+      background-color: var(--hover-secondary-accent);
+    }
+    
+    .status-message {
+        padding: 10px;
+        margin-bottom: 15px; /* Adjusted from 20px to 15px for tighter look */
+        border-radius: 5px;
+        text-align: center;
+        font-size: 0.9rem;
+        /* Default error color is more subtle, success stands out */
+        color: #E4717A; /* Soft red for errors */
+        background-color: rgba(220, 53, 69, 0.1);
+        border: 1px solid rgba(220, 53, 69, 0.2);
+    }
+    .status-message.success {
+        color: var(--accent-secondary);
+        background-color: rgba(67, 181, 129, 0.1);
+        border: 1px solid rgba(67, 181, 129, 0.2);
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="auth-container">
+    <h2>Welcome! Log in or Register to access Chats</h2>
+    <div id="status-area"></div>
+
+    <input id="auth-email" type="email" placeholder="Email Address" autocomplete="email" />
+    <input id="auth-password" type="password" placeholder="Password" autocomplete="current-password" />
+    <input id="auth-username" type="text" placeholder="Username (for registration)" autocomplete="username" />
+
+    <div class="button-group">
+      <button id="login-btn">Login</button>
+      <button id="register-btn">Register</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyAddXTzBxZk1Su6fNnsgRuNnWqFrq_ZjCY", // Replace with your actual API key
+        authDomain: "distanzuino-project.firebaseapp.com",
+        projectId: "distanzuino-project",
+        storageBucket: "distanzuino-project.appspot.com",
+        messagingSenderId: "584745723160",
+        appId: "1:584745723160:web:97387a22f4b4b9fb9c6a6d"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const emailInput = document.getElementById("auth-email");
+    const passwordInput = document.getElementById("auth-password");
+    const usernameInput = document.getElementById("auth-username");
+    const loginBtn = document.getElementById("login-btn");
+    const registerBtn = document.getElementById("register-btn");
+    const statusArea = document.getElementById("status-area");
+
+    function showStatus(message, type = "error") {
+        statusArea.innerHTML = `<div class="status-message ${type}">${message}</div>`;
+    }
+    function clearStatus() {
+        statusArea.innerHTML = "";
+    }
+    function setFormDisabled(disabled) {
+        loginBtn.disabled = disabled;
+        registerBtn.disabled = disabled;
+        emailInput.disabled = disabled;
+        passwordInput.disabled = disabled;
+        usernameInput.disabled = disabled;
+    }
+
+    loginBtn.onclick = async () => {
+      clearStatus();
+      const email = emailInput.value.trim();
+      const password = passwordInput.value.trim();
+
+      if (!email || !password) {
+        return showStatus("Email and Password are required for login.");
+      }
+      setFormDisabled(true);
+      showStatus("Attempting login...", "success");
+
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        // onAuthStateChanged will handle redirect
+      } catch (e) {
+        console.error("Login failed:", e);
+        showStatus("Login failed: " + e.message);
+        setFormDisabled(false);
+      }
+    };
+
+    registerBtn.onclick = async () => {
+        clearStatus();
+        const email = emailInput.value.trim();
+        const password = passwordInput.value.trim();
+        const username = usernameInput.value.trim();
+
+        if (!email || !password || !username) {
+            return showStatus("Email, Password, and Username are required for registration.");
+        }
+        if (password.length < 6) {
+            return showStatus("Password should be at least 6 characters long.");
+        }
+        if (username.length < 3 || username.length > 20) {
+            return showStatus("Username must be between 3 and 20 characters.");
+        }
+        setFormDisabled(true);
+        showStatus("Registering...", "success");
+
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            await setDoc(doc(db, 'users', user.uid), {
+                username: username,
+                email: user.email, 
+                createdAt: serverTimestamp(),
+                joinedRooms: {} // Initialize with no rooms
+            });
+            
+            // onAuthStateChanged will handle redirect
+        } catch (e) {
+            console.error("Registration failed:", e);
+            showStatus("Registration failed: " + e.message);
+            setFormDisabled(false);
+        }
+    };
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        showStatus("Logged in. Redirecting to chat...", "success");
+        setFormDisabled(true); 
+        setTimeout(() => {
+            window.location.href = "/chat"; 
+        }, 1000);
+      } else {
+        setFormDisabled(false);
+        console.log("User is not logged in. Login form is active.");
+      }
+    });
+  </script>
+</body>
+</html>

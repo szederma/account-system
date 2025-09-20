@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DistanzuinoBT</title>
+  <style>
+    body {
+        background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+        color: white; /* Optional: changes the text color to white for better contrast */
+        }
+
+    .slider-container {
+      display: flex;
+      justify-content: space-around;
+      margin: 20px 0;
+    }
+    .slider-wrapper {
+      text-align: center;
+    }
+
+    .tones-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px; /* Smaller space between tone sets */
+      margin-top: 20px;
+      padding: 10px;
+    }
+
+    .tones-container {
+      display: flex;
+      gap: 5px; /* Space between individual tones */
+    }
+
+    .tone {
+      display: inline-block;
+      width: 22px; /* Slightly thinner for smaller screens */
+      height: 50px; /* Keep the taller size */
+      text-align: center;
+      line-height: 50px; /* Center text vertically */
+      border: 1px solid rgb(255, 31, 31);
+      border-radius: 5px;
+      background-color: lightgray;
+      color: black
+    }
+
+    .tone.active {
+      background-color: rgb(255, 115, 115);
+      font-weight: bold;
+      color: black
+    }
+
+    .separator {
+      width: 3px; /* Slightly thicker for visibility */
+      background-color: rgb(255, 31, 31); /* Ensure high contrast */
+      min-height: 50px; /* Ensure it has enough height */
+      height: 100%; /* Dynamically match parent height */
+    }
+
+    @media (max-width: 600px) {
+      .tones-wrapper {
+        gap: 5px; /* Reduce gap even more on small screens */
+      }
+
+      .separator {
+        width: 2px; /* Slightly thinner separator for mobile */
+        min-height: 40px; /* Reduce height for smaller screens */
+      }
+
+      .tone {
+        width: 19px; /* Thinner tones on mobile */
+        height: 45px; /* Slightly shorter tones on mobile */
+      }
+    }
+
+
+    .hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+
+    .mute-button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 20px;
+    }
+
+    .mute-button.muted {
+      color: red; /* Highlight when muted */
+      font-weight: bold;
+    }
+
+    .mute-icon {
+      font-size: 24px; /* Adjust the size of the mute icon */
+    }
+
+    /* Mute Toggle Button (From Uiverse.io by catraco) */
+    .container {
+      --color: #a5a5b0;
+      --size: 30px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      cursor: pointer;
+      font-size: var(--size);
+      user-select: none;
+      fill: var(--color);
+    }
+
+    .container .mute {
+      position: absolute;
+      animation: keyframes-fill 0.5s;
+    }
+
+    .container .voice {
+      position: absolute;
+      display: none;
+      animation: keyframes-fill 0.5s;
+    }
+
+    .container input:checked ~ .mute {
+      display: none;
+    }
+
+    .container input:checked ~ .voice {
+      display: block;
+    }
+
+    .container input {
+      position: absolute;
+      opacity: 0;
+      cursor: pointer;
+      height: 0;
+      width: 0;
+    }
+
+    @keyframes keyframes-fill {
+      0% {
+        transform: rotate(0deg) scale(0);
+        opacity: 0;
+      }
+      50% {
+        transform: rotate(-10deg) scale(1.2);
+      }
+    }
+
+    #logo-container {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    #logo {
+      width: 50px; /* Adjust the size of the logo */
+      height: auto;
+      margin-right: 10px; /* Space between logo and header */
+    }
+
+    h1 {
+      margin: 0; /* Remove default margin */
+    }
+
+
+  </style>
+</head>
+<body>
+  <div id="logo-container">
+    <a href="https://distanzuino.com" target="_self">
+      <img id="logo" src="/bt/images/logo.jpg" alt="Logo">
+    </a>
+    <h1>DistanzuinoBT</h1>
+  </div>
+
+  <div id="top-container">
+    <div id="button-container">
+      <button id="connect" class="button">Connect</button>
+      <button id="disconnect" class="button" style="opacity: 0; pointer-events: none;">Disconnect</button>
+    </div>
+  </div>
+
+  <div id="status-container">
+    <p id="connection-status" class="fade-in">Disconnected</p>
+  </div>
+  
+  
+  <div id="instrument-container" class="slider-wrapper">
+    <label for="instrument">Instrument:</label>
+    <select id="instrument">
+      <option value="piano">Piano</option>
+      <option value="flute">Flute</option>
+    </select>
+  </div>
+
+  <div class="slider-container">
+    <!-- Volume 1 Slider -->
+    <div class="slider-wrapper">
+      <label for="volume1">Left Side Volume:</label>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <input type="range" id="volume1" min="0" max="1" step="0.01" value="1" style="flex-grow: 1;">
+        <span id="volume1Value">100%</span>
+        <label class="container">
+          <input id="mute1" type="checkbox">
+          <svg viewBox="0 0 576 512" height="1em" xmlns="http://www.w3.org/2000/svg" class="mute">
+            <path d="M301.1 34.8C312.6 40 320 51.4 320 64V448c0 12.6-7.4 24-18.9 29.2s-25 3.1-34.4-5.3L131.8 352H64c-35.3 0-64-28.7-64-64V224c0-35.3 28.7-64 64-64h67.8L266.7 40.1c9.4-8.4 22.9-10.4 34.4-5.3zM425 167l55 55 55-55c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-55 55 55 55c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-55-55-55 55c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l55-55-55-55c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0z"></path>
+          </svg>
+          <svg viewBox="0 0 448 512" height="1em" xmlns="http://www.w3.org/2000/svg" class="voice">
+            <path d="M301.1 34.8C312.6 40 320 51.4 320 64V448c0 12.6-7.4 24-18.9 29.2s-25 3.1-34.4-5.3L131.8 352H64c-35.3 0-64-28.7-64-64V224c0-35.3 28.7-64 64-64h67.8L266.7 40.1c9.4-8.4 22.9-10.4 34.4-5.3zM412.6 181.5C434.1 199.1 448 225.9 448 256s-13.9 56.9-35.4 74.5c-10.3 8.4-25.4 6.8-33.8-3.5s-6.8-25.4 3.5-33.8C393.1 284.4 400 271 400 256s-6.9-28.4-17.7-37.3c-10.3-8.4-11.8-23.5-3.5-33.8s23.5-11.8 33.8-3.5z"></path>
+          </svg>
+        </label>
+      </div>
+    </div>
+  
+    <!-- Volume 2 Slider -->
+    <div class="slider-wrapper">
+      <label for="volume2">Right Side Volume:</label>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <input type="range" id="volume2" min="0" max="1" step="0.01" value="1" style="flex-grow: 1;">
+        <span id="volume2Value">100%</span>
+        <label class="container">
+          <input id="mute2" type="checkbox">
+          <svg viewBox="0 0 576 512" height="1em" xmlns="http://www.w3.org/2000/svg" class="mute">
+            <path d="M301.1 34.8C312.6 40 320 51.4 320 64V448c0 12.6-7.4 24-18.9 29.2s-25 3.1-34.4-5.3L131.8 352H64c-35.3 0-64-28.7-64-64V224c0-35.3 28.7-64 64-64h67.8L266.7 40.1c9.4-8.4 22.9-10.4 34.4-5.3zM425 167l55 55 55-55c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-55 55 55 55c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-55-55-55 55c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l55-55-55-55c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0z"></path>
+          </svg>
+          <svg viewBox="0 0 448 512" height="1em" xmlns="http://www.w3.org/2000/svg" class="voice">
+            <path d="M301.1 34.8C312.6 40 320 51.4 320 64V448c0 12.6-7.4 24-18.9 29.2s-25 3.1-34.4-5.3L131.8 352H64c-35.3 0-64-28.7-64-64V224c0-35.3 28.7-64 64-64h67.8L266.7 40.1c9.4-8.4 22.9-10.4 34.4-5.3zM412.6 181.5C434.1 199.1 448 225.9 448 256s-13.9 56.9-35.4 74.5c-10.3 8.4-25.4 6.8-33.8-3.5s-6.8-25.4 3.5-33.8C393.1 284.4 400 271 400 256s-6.9-28.4-17.7-37.3c-10.3-8.4-11.8-23.5-3.5-33.8s23.5-11.8 33.8-3.5z"></path>
+          </svg>
+        </label>
+      </div>
+    </div>
+  </div>
+  
+
+  <div id="tones-container" class="tones-wrapper">
+    <div id="tones1" class="tones-container">
+      <div class="tone" data-tone="C1">C1</div>
+      <div class="tone" data-tone="D1">D1</div>
+      <div class="tone" data-tone="E1">E1</div>
+      <div class="tone" data-tone="F1">F1</div>
+      <div class="tone" data-tone="G1">G1</div>
+      <div class="tone" data-tone="A1">A1</div>
+      <div class="tone" data-tone="H1">H1</div>
+    </div>
+    <div class="separator"></div>
+    <div id="tones2" class="tones-container">
+      <div class="tone" data-tone="C2">C2</div>
+      <div class="tone" data-tone="D2">D2</div>
+      <div class="tone" data-tone="E2">E2</div>
+      <div class="tone" data-tone="F2">F2</div>
+      <div class="tone" data-tone="G2">G2</div>
+      <div class="tone" data-tone="A2">A2</div>
+      <div class="tone" data-tone="H2">H2</div>
+    </div>
+  </div>
+  
+  
+
+  <script>
+    let bluetoothDevice;
+    let server;
+    let service;
+    let characteristic;
+
+    let distance1 = 0;
+    let distance2 = 0;
+
+    const HM10_SERVICE_UUID = '0000ffe0-0000-1000-8000-00805f9b34fb';
+    const HM10_CHARACTERISTIC_UUID = '0000ffe1-0000-1000-8000-00805f9b34fb';
+
+    document.getElementById('connect').addEventListener('click', async () => {
+      const statusElement = document.getElementById('connection-status');
+      statusElement.innerText = 'Connecting...';
+
+      try {
+        bluetoothDevice = await navigator.bluetooth.requestDevice({
+          filters: [{ namePrefix: 'DistanzuinoBT' }],
+          optionalServices: [HM10_SERVICE_UUID]
+        });
+
+        // Add the disconnect event listener
+        bluetoothDevice.addEventListener('gattserverdisconnected', () => {
+          console.log('Device disconnected unexpectedly.');
+
+          // Stop all active sounds
+          stopFrequencies(1);
+          stopFrequencies(2);
+
+          // Update UI state
+          document.getElementById('connect').style.opacity = '1';
+          document.getElementById('connect').style.pointerEvents = 'auto';
+          document.getElementById('disconnect').style.opacity = '0';
+          document.getElementById('disconnect').style.pointerEvents = 'none';
+
+          updateUIState(false);
+        });
+
+        server = await bluetoothDevice.gatt.connect();
+        service = await server.getPrimaryService(HM10_SERVICE_UUID);
+        characteristic = await service.getCharacteristic(HM10_CHARACTERISTIC_UUID);
+
+        characteristic.startNotifications();
+        characteristic.addEventListener('characteristicvaluechanged', handleData);
+
+        document.getElementById('connect').style.opacity = '0';
+        document.getElementById('connect').style.pointerEvents = 'none';
+        document.getElementById('disconnect').style.opacity = '1';
+        document.getElementById('disconnect').style.pointerEvents = 'auto';
+
+
+        initializeOscillators(1);
+        initializeOscillators(2);
+
+        updateUIState(true);
+      } catch (error) {
+        console.error('Error connecting:', error);
+        statusElement.innerText = 'Disconnected'; // Reset to "Disconnected" on failure
+      }
+    });
+
+
+    function handleData(event) {
+      const decoder = new TextDecoder();
+      const rawValue = decoder.decode(event.target.value).trim();
+
+      // Split data into multiple packets in case they're concatenated
+      const packets = rawValue.split('\n'); // Assuming newline '\n' separates packets
+      packets.forEach(packet => {
+        const value = packet.trim();
+
+        if (value.startsWith('D1:')) {
+          const parsedValue = parseFloat(value.substring(3));
+          if (!isNaN(parsedValue)) {
+            distance1 = parsedValue / 10; // Convert to cm
+            updateDistanceDisplay(document.getElementById('distance1'), "1", distance1);
+          }
+        } else if (value.startsWith('D2:')) {
+          const parsedValue = parseFloat(value.substring(3));
+          if (!isNaN(parsedValue)) {
+            distance2 = parsedValue / 10; // Convert to cm
+            updateDistanceDisplay(document.getElementById('distance2'), "2", distance2);
+          }
+        }
+      });
+
+      // Refresh audio with corrected distances
+      handleSliderChange();
+    }
+
+
+
+
+    function updateDistanceDisplay(distanceElement, distanceLabel, distance) {
+      console.log(`Distance ${distanceLabel}: ${distance.toFixed(2)} cm`);
+    }
+
+    document.getElementById('disconnect').addEventListener('click', () => {
+      if (bluetoothDevice && bluetoothDevice.gatt.connected) {
+        bluetoothDevice.gatt.disconnect();
+      }
+
+      // Stop all active sounds
+      stopFrequencies(1);
+      stopFrequencies(2);
+
+      // Clear tone highlights
+      highlightTone('tones1', []);
+      highlightTone('tones2', []);
+
+      document.getElementById('connect').style.opacity = '1';
+      document.getElementById('connect').style.pointerEvents = 'auto';
+      document.getElementById('disconnect').style.opacity = '0';
+      document.getElementById('disconnect').style.pointerEvents = 'none';
+
+      updateUIState(false);
+    });
+
+    function updateUIState(isConnected) {
+      const statusElement = document.getElementById('connection-status');
+
+      if (isConnected) {
+        statusElement.innerText = 'Connected';
+      } else {
+        statusElement.innerText = 'Disconnected';
+
+        // Stop all frequencies
+        stopFrequencies(1);
+        stopFrequencies(2);
+
+        // Clear tone highlights
+        highlightTone('tones1', []);
+        highlightTone('tones2', []);
+
+        distance1 = 0;
+        distance2 = 0;
+      }
+    }
+
+
+
+
+
+
+
+    //*****
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillators = {
+      1: [],
+      2: []
+    };
+
+    const gains = {
+      1: [],
+      2: []
+    };
+
+
+
+    function initializeOscillators(label) {
+      for (let i = 0; i < 3; i++) { // Create three oscillators for each label
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        oscillator.type = 'sine';
+        oscillator.frequency.value = 0; // Start at 0 Hz (silent)
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        gainNode.gain.value = 0; // Start with no sound
+        oscillator.start();
+
+        oscillators[label].push(oscillator);
+        gains[label].push(gainNode);
+      }
+    }
+
+    const frequencyRanges = {
+      1: [
+        { min: 3, max: 8.99, tone: 'H1', },
+        { min: 9, max: 14.99, tone: 'A1', },
+        { min: 15, max: 20.99, tone: 'G1' },
+        { min: 21, max: 26.99, tone: 'F1' },
+        { min: 27, max: 32.99, tone: 'E1' },
+        { min: 33, max: 38.99, tone: 'D1' },
+        { min: 39, max: 45, tone: 'C1' }
+      ],
+      2: [
+        { min: 3, max: 8.99, tone: 'C2' },
+        { min: 9, max: 14.99, tone: 'D2' },
+        { min: 15, max: 20.99, tone: 'E2' },
+        { min: 21, max: 26.99, tone: 'F2' },
+        { min: 27, max: 32.99, tone: 'G2' },
+        { min: 33, max: 38.99, tone: 'A2' },
+        { min: 39, max: 45, tone: 'H2' }
+      ]
+    };
+
+    
+    const pianoToneMap = {
+      'C1': [[133, 0.0045], [258, 0.0041], [391, 0.012]],
+      'D1': [[150, 0.04], [291,  0.06], [441, 0.045]],
+      'E1': [[166, 0.0175], [333, 0.015], [492, 0.022]],
+      'F1': [[175, 0.03], [350, 0.055], [525, 0.045]],
+      'G1': [[200, 0.009], [391, 0.086], [591, 0.03]],
+      'A1': [[216, 0.059], [441, 0.088], [657, 0.021]],
+      'H1': [[250, 0.02], [491, 0.11], [747, 0.02]],
+      'C2': [[258, 0.034], [524, 0.028], [782, 0.003]],
+      'D2': [[292, 0.0275], [582, 0.009], [883, 0.0015]],
+      'E2': [[324, 0.0095], [658, 0.0036], [987, 0.0041]],
+      'F2': [[350, 0.038], [692, 0.028], [1040, 0.006]],
+      'G2': [[391, 0.096], [782, 0.026], [1174, 0.014]],
+      'A2': [[440, 0.0357], [877, 0.012], [1318, 0.007]],
+      'H2': [[492, 0.0315], [989, 0.009], [1483, 0.005]]
+    };
+
+
+    const fluteToneMap = {
+      'C1': [[527, 0.015], [1087, 0.053], [1649, 0.013]],
+      'D1': [[617.33, 0.011], [1208.3, 0.009], [1850.9, 0.003]],
+      'E1': [[665.81, 0.03], [1332, 0.017], [1998, 0.016]],
+      'F1': [[708.28, 0.06], [1426, 0.01], [2136, 0.01]],
+      'G1': [[773.87, 0.047], [1563, 0.005], [2337, 0.003]],
+      'A1': [[872.26, 0.08], [1749, 0.0025], [2606, 0.012]],
+      'H1': [[980.65, 0.145], [1971, 0.01], [2921, 0.003]],
+      'C2': [[1087, 0.07396], [2131, 0.03017], [3272, 0.01365]],
+      'D2': [[1152, 0.07838], [3445, 0.04875], [5221, 0.02177]],
+      'E2': [[1378, 0.09375], [4734, 0.06698], [6718, 0.02801]],
+      'F2': [[1788, 0.12165], [2929, 0.04144], [4522, 0.01885]],
+      'G2': [[1637, 0.11138], [4823, 0.06824], [8010, 0.0334]],
+      'A2': [[1001, 0.0681], [2003, 0.02834], [3058, 0.01275]],
+      'H2': [[1044, 0.07103], [1871, 0.02647], [2821, 0.01176]]
+    };
+
+
+    let currentInstrument = "piano"; // Default is Piano
+
+
+    function getFrequencies(label, distance) {
+      const toneMap = currentInstrument === "piano" ? pianoToneMap : fluteToneMap; // Choose the tone map based on the selected instrument
+      const ranges = frequencyRanges[label];
+      
+      for (const range of ranges) {
+        if (distance >= range.min && distance <= range.max) {
+          const tone = range.tone; // E.g., 'H1', 'C1'
+          const frequenciesWithIntensity = toneMap[tone]; // Get array for this tone, now including intensities
+          return frequenciesWithIntensity ? frequenciesWithIntensity : [];
+        }
+      }
+      return [];
+    }
+
+
+    function playFrequencies(frequenciesWithIntensity, volume, label) {
+      frequenciesWithIntensity.forEach(([freq, intensity], index) => {
+        if (oscillators[label][index]) {
+          const oscillator = oscillators[label][index];
+          const gainNode = gains[label][index];
+
+          // Smoothly transition frequency and gain
+          oscillator.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.01);
+          gainNode.gain.setTargetAtTime(volume * intensity, audioCtx.currentTime, 0.01);
+        }
+      });
+
+      // Turn off unused oscillators
+      for (let i = frequenciesWithIntensity.length; i < oscillators[label].length; i++) {
+        gains[label][i].gain.setTargetAtTime(0, audioCtx.currentTime, 0.01); // Smooth fade-out
+      }
+    }
+
+
+    function stopFrequencies(label) {
+      gains[label].forEach(gainNode => {
+        gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.01); // Smooth fade-out
+      });
+    }
+
+    document.getElementById('instrument').addEventListener('change', function() {
+      currentInstrument = this.value; // Update the current instrument
+      handleSliderChange(); // Recalculate and play frequencies with the new instrument
+    });
+
+
+
+    function highlightTone(tonesContainerId, distance) {
+      const tonesContainer = document.getElementById(tonesContainerId);
+      const tones = tonesContainer.querySelectorAll('.tone');
+      tones.forEach(tone => tone.classList.remove('active'));
+
+      // Find the frequency range based on the distance
+      const label = tonesContainerId === 'tones1' ? 1 : 2;
+      const ranges = frequencyRanges[label];
+
+      // Find the corresponding tone
+      for (const range of ranges) {
+        if (distance >= range.min && distance <= range.max) {
+          const toneName = range.tone;
+          const matchingTone = Array.from(tones).find(tone => tone.textContent === toneName);
+          if (matchingTone) {
+            matchingTone.classList.add('active');
+          }
+          break; // Stop searching once the correct tone is found
+        }
+      }
+    }
+
+
+    let isMuted1 = false;
+    let isMuted2 = false;
+
+    document.getElementById('mute1').addEventListener('change', function () {
+      const isMuted1 = this.checked;
+      handleSliderChange(); // Recalculate volume based on mute state
+    });
+
+    document.getElementById('mute2').addEventListener('change', function () {
+      const isMuted2 = this.checked;
+      handleSliderChange(); // Recalculate volume based on mute state
+    });
+
+
+    function handleSliderChange() {
+
+      const isMuted1 = document.getElementById('mute1').checked;
+      const isMuted2 = document.getElementById('mute2').checked;
+
+      const volume1 = isMuted1 ? 0 : parseFloat(document.getElementById("volume1").value);
+      const volume2 = isMuted2 ? 0 : parseFloat(document.getElementById("volume2").value);
+
+      const frequencies1 = distance1 >= 3 && distance1 <= 45 ? getFrequencies("1", distance1) : [];
+      const frequencies2 = distance2 >= 3 && distance2 <= 45 ? getFrequencies("2", distance2) : [];
+
+      const percentage1 = Math.round(volume1 * 100);
+      const percentage2 = Math.round(volume2 * 100);
+
+      if (frequencies1.length > 0) {
+        playFrequencies(frequencies1, volume1, 1);
+        highlightTone('tones1', distance1);
+      } else {
+        stopFrequencies(1);
+        highlightTone('tones1', []);
+      }
+
+      if (frequencies2.length > 0) {
+        playFrequencies(frequencies2, volume2, 2);
+        highlightTone('tones2', distance2);
+      } else {
+        stopFrequencies(2);
+        highlightTone('tones2', []);
+      }
+
+
+      document.getElementById("volume1Value").textContent = `${percentage1}%`;
+      document.getElementById("volume2Value").textContent = `${percentage2}%`;
+    }
+
+    document.querySelectorAll('input[type="range"]').forEach(slider => {
+      slider.addEventListener("input", handleSliderChange);
+    });
+
+    window.onload = () => {
+      const disconnectButton = document.getElementById('disconnect');
+      disconnectButton.style.opacity = '0';
+      disconnectButton.style.pointerEvents = 'none';
+    };
+
+  </script>
+</body>
+</html>

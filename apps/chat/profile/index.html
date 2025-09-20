@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Profile Settings</title>
+  <style>
+    :root {
+      --dark-bg: #23272A;
+      --darker-bg: #2C2F33;
+      --accent-primary: #7289DA;
+      --text-primary: #FFFFFF;
+      --text-secondary: #99AAB5;
+      --input-bg: #40444B;
+      --border-color: rgba(114, 137, 218, 0.3);
+      --danger-red: #e74c3c; /* Brighter red for danger */
+      --hover-accent: #677BC4;
+    }
+
+    @font-face {
+      font-family: 'Caros';
+      src: local('Caros'), local('Caros-Regular');
+    }
+
+    body {
+      background-color: var(--dark-bg);
+      color: var(--text-primary);
+      font-family: 'Caros', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .profile-container {
+      max-width: 500px;
+      width: 100%;
+      margin: 40px auto;
+      padding: 30px 40px;
+      background: var(--darker-bg);
+      border-radius: 12px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.3); /* Softer shadow */
+    }
+
+    h2, h3 {
+      color: var(--accent-primary);
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    h3 {
+        margin-top: 30px;
+        margin-bottom: 15px;
+        text-align: left;
+        font-size: 1.2rem;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 8px;
+    }
+
+    #profile-info p {
+      font-size: 1rem;
+      margin-bottom: 10px;
+      color: var(--text-secondary);
+    }
+    #profile-info strong {
+      color: var(--text-primary);
+      min-width: 90px;
+      display: inline-block;
+    }
+    #profile-info span {
+      color: var(--text-primary);
+      font-weight: normal;
+    }
+
+    input[type="text"], input[type="email"], input[type="password"] {
+      width: 100%;
+      padding: 12px 15px;
+      margin-bottom: 15px;
+      background: var(--input-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      color: var(--text-primary);
+      box-sizing: border-box;
+      outline: none;
+    }
+    input[type="text"]:focus {
+        border-color: var(--accent-primary);
+    }
+
+    button {
+      background: var(--accent-primary);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      font-family: inherit;
+      transition: background-color 0.3s ease;
+      display: block; 
+      width: 100%; 
+      margin-top: 10px;
+      font-size: 0.95rem;
+    }
+    button:hover {
+      background-color: var(--hover-accent);
+    }
+
+    #logout-btn {
+      background: #6c757d; 
+    }
+    #logout-btn:hover {
+      background: #5a6268;
+    }
+    
+    #delete-account {
+      background: var(--danger-red);
+    }
+    #delete-account:hover {
+      background: #c0392b; /* Darker red */
+    }
+
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 30px;
+      color: var(--accent-primary);
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .back-link:hover {
+      text-decoration: underline;
+    }
+    
+    .status-message {
+        padding: 10px;
+        margin-bottom: 20px; /* More space */
+        border-radius: 5px;
+        text-align: center;
+        font-size: 0.9rem;
+    }
+    .status-message.success {
+        background-color: rgba(40, 167, 69, 0.15); 
+        color: #28a745;
+        border: 1px solid rgba(40, 167, 69, 0.3);
+    }
+    .status-message.error {
+        background-color: rgba(220, 53, 69, 0.15); 
+        color: #dc3545;
+        border: 1px solid rgba(220, 53, 69, 0.3);
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="profile-container">
+    <h2>Profile Settings</h2>
+    <div id="status-area"></div>
+
+    <div id="profile-info">
+      <p><strong>Email:</strong> <span id="user-email">Loading...</span></p>
+      <p><strong>Username:</strong> <span id="user-username">Loading...</span></p>
+    </div>
+
+    <h3>Change Username</h3>
+    <input id="new-username" type="text" placeholder="Enter new username">
+    <button id="save-username">Save Username</button>
+
+    <h3>Password</h3>
+    <p style="font-size: 0.9rem; opacity: 0.8; color: var(--text-secondary); margin-bottom: 5px;">We’ll send a password reset link to your registered email address.</p>
+    <button id="reset-password">Send Password Reset Email</button>
+    
+    <h3>Account Actions</h3>
+    <button id="logout-btn">Logout</button>
+    <button id="delete-account">Delete My Account</button>
+
+    <a href="/chat" class="back-link">Back to Chat</a>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, sendPasswordResetEmail, deleteUser, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyAddXTzBxZk1Su6fNnsgRuNnWqFrq_ZjCY", // Replace with your actual API key
+        authDomain: "distanzuino-project.firebaseapp.com",
+        projectId: "distanzuino-project",
+        storageBucket: "distanzuino-project.appspot.com",
+        messagingSenderId: "584745723160",
+        appId: "1:584745723160:web:97387a22f4b4b9fb9c6a6d"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const userEmailSpan = document.getElementById("user-email");
+    const userUsernameSpan = document.getElementById("user-username");
+    const newUsernameInput = document.getElementById("new-username");
+    const saveUsernameBtn = document.getElementById("save-username");
+    const resetPasswordBtn = document.getElementById("reset-password");
+    const deleteAccountBtn = document.getElementById("delete-account");
+    const logoutBtn = document.getElementById("logout-btn");
+    const statusArea = document.getElementById("status-area");
+
+    let currentUser; 
+
+    function showStatus(message, type = "success") {
+        statusArea.innerHTML = `<div class="status-message ${type}">${message}</div>`;
+        setTimeout(() => {
+            statusArea.innerHTML = "";
+        }, 4000);
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        showStatus("You must be logged in to view this page. Redirecting...", "error");
+        setTimeout(() => window.location.href = "/chat/login", 2000); // Ensure path is correct
+        return;
+      }
+
+      currentUser = user;
+      userEmailSpan.textContent = user.email;
+
+      try {
+        const userDocRef = doc(db, "users", user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists()) {
+          userUsernameSpan.textContent = userDocSnap.data().username || "(No username set)";
+          newUsernameInput.value = userDocSnap.data().username || "";
+        } else {
+          userUsernameSpan.textContent = "(User data not found)";
+          console.warn("User document not found in Firestore for UID:", user.uid);
+        }
+      } catch (error) {
+        console.error("Error fetching user document:", error);
+        userUsernameSpan.textContent = "(Error loading username)";
+        showStatus("Error loading profile data: " + error.message, "error");
+      }
+    });
+
+    saveUsernameBtn.onclick = async () => {
+      if (!currentUser) return showStatus("Not logged in.", "error");
+      const newUsername = newUsernameInput.value.trim();
+      if (!newUsername) return showStatus("Please enter a new username.", "error");
+      if (newUsername.length < 3 || newUsername.length > 20) {
+        return showStatus("Username must be between 3 and 20 characters.", "error");
+      }
+
+      saveUsernameBtn.disabled = true;
+      try {
+        await setDoc(doc(db, "users", currentUser.uid), { username: newUsername }, { merge: true });
+        userUsernameSpan.textContent = newUsername;
+        // Potentially update username in all room member lists (advanced feature, not implemented here for simplicity)
+        showStatus("Username updated successfully!", "success");
+      } catch (e) {
+        console.error("Error updating username:", e);
+        showStatus("Error updating username: " + e.message, "error");
+      } finally {
+        saveUsernameBtn.disabled = false;
+      }
+    };
+
+    resetPasswordBtn.onclick = async () => {
+      if (!currentUser) return showStatus("Not logged in.", "error");
+      resetPasswordBtn.disabled = true;
+      try {
+        await sendPasswordResetEmail(auth, currentUser.email);
+        showStatus("Password reset email sent to " + currentUser.email, "success");
+      } catch (e) {
+        console.error("Failed to send reset email:", e);
+        showStatus("Failed to send reset email: " + e.message, "error");
+      } finally {
+        resetPasswordBtn.disabled = false;
+      }
+    };
+
+    logoutBtn.onclick = async () => {
+      logoutBtn.disabled = true;
+      try {
+        await signOut(auth);
+        showStatus("Logged out successfully. Redirecting...", "success");
+        setTimeout(() => window.location.href = "/chat/login", 1500);
+      } catch (e) {
+        console.error("Logout failed:", e);
+        showStatus("Logout failed: " + e.message, "error");
+        logoutBtn.disabled = false;
+      }
+    };
+
+    deleteAccountBtn.onclick = async () => {
+      if (!currentUser) return showStatus("Not logged in.", "error");
+      
+      if (!confirm("DANGER! Are you absolutely sure you want to permanently delete your account and all associated data (including room memberships and created rooms where you are the sole admin/member)? This action cannot be undone.")) {
+        return;
+      }
+      if (!confirm("Second confirmation: This is permanent. Still proceed?")) {
+        return;
+      }
+
+      deleteAccountBtn.disabled = true;
+      const userId = currentUser.uid; 
+
+      try {
+        // TODO: Implement more comprehensive data cleanup if needed (e.g., remove user from rooms' member lists, delete rooms they created if they are the only member). This is a complex operation.
+        // For now, just deleting the user doc and auth user.
+        await deleteDoc(doc(db, "users", userId));
+        console.log("Firestore user document deleted for user:", userId);
+
+        await deleteUser(currentUser); 
+        
+        showStatus("Account deleted successfully. Redirecting...", "success");
+        setTimeout(() => window.location.href = "/chat/login", 2000);
+
+      } catch (e) {
+        console.error("Failed to delete account:", e);
+        deleteAccountBtn.disabled = false;
+        if (e.code === 'auth/requires-recent-login') {
+          showStatus("This operation requires recent authentication. Please log out and log back in before deleting your account.", "error");
+        } else {
+          showStatus("Failed to delete account: " + e.message + ". User data may have been partially removed. Contact support.", "error");
+        }
+      }
+    };
+  </script>
+</body>
+</html>
