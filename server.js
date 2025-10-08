@@ -3,11 +3,12 @@ const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { Pool } = require('pg');
-const path = require('path');  // Required for static file paths
+const path = require('path');  // Required to resolve paths for static files
 require('dotenv').config();
 
 const app = express();
 
+// CORS setup to allow requests from distanzuino.com
 const corsOptions = {
   origin: 'https://distanzuino.com',  // Allow only this domain to make requests
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -19,8 +20,8 @@ app.use(cors(corsOptions));  // Apply CORS with the specified options
 // Middleware to parse incoming requests with JSON payloads
 app.use(express.json());
 
-// Serve static files directly from the "web" folder (assuming it's the root folder now)
-app.use(express.static(path.join(__dirname)));  // Serve everything from the current directory
+// Serve static files from the "web" folder
+app.use(express.static(path.join(__dirname, 'web')));  // Serve everything from the "web" folder
 
 // Connect to PostgreSQL using the environment variable from .env
 const pool = new Pool({
@@ -33,7 +34,6 @@ const generateToken = (user) => {
   return jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRY || '1h' });
 };
 
-// Registration endpoint
 // Registration endpoint
 app.post('/api/register', async (req, res) => {
   const { username, email, password } = req.body;
@@ -60,7 +60,6 @@ app.post('/api/register', async (req, res) => {
     res.status(500).json({ error: 'Error registering user' });
   }
 });
-
 
 // Login endpoint
 app.post('/api/login', async (req, res) => {
@@ -106,7 +105,7 @@ app.get('/api/user', async (req, res) => {
 
 // Serve static files from the "web" folder (frontend files)
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'test', 'index.html'));  // Serve the test page by default
+  res.sendFile(path.join(__dirname, 'web', 'test', 'index.html'));  // Serve the test page by default
 });
 
 // Start server
