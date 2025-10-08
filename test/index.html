@@ -1,51 +1,44 @@
+<!-- web/test/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Test Page</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f9; }
-    .container { max-width: 600px; margin: auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
-    h2 { text-align: center; }
-    p { font-size: 18px; }
-  </style>
 </head>
 <body>
+  <h1>Welcome to the Test Page</h1>
 
-<div class="container">
-  <h2>Welcome</h2>
-  <p id="username"></p>
-  <button onclick="logout()">Logout</button>
-</div>
+  <p id="user-info">Loading user data...</p>
 
-<script>
-  window.onload = async () => {
+  <button id="logout-button">Logout</button>
+
+  <script>
+    // Check if user is logged in by checking for JWT token
     const token = localStorage.getItem('token');
+
     if (!token) {
-      window.location.href = '/login';  // Redirect to Login page if not logged in
-    }
-
-    const response = await fetch('https://account-system-t285.onrender.com/api/user', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
-
-    const data = await response.json();
-    if (response.ok) {
-      document.getElementById('username').innerText = `Hello, ${data.email}`;  // Display username (or email)
+      window.location.href = '/login/index.html';  // Redirect to login if no token found
     } else {
-      alert(data.error || 'Failed to fetch user data');
+      // Fetch user data
+      fetch('/api/user', {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('user-info').textContent = `Welcome, ${data.email}`;
+      })
+      .catch(() => {
+        window.location.href = '/login/index.html';  // Redirect to login if error
+      });
+
+      // Logout functionality
+      document.getElementById('logout-button').addEventListener('click', () => {
+        localStorage.removeItem('token');
+        window.location.href = '/login/index.html';  // Redirect to login
+      });
     }
-  };
-
-  function logout() {
-    localStorage.removeItem('token');  // Remove token from localStorage
-    window.location.href = '/login';  // Redirect to Login page
-  }
-</script>
-
+  </script>
 </body>
 </html>
