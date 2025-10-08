@@ -3,7 +3,7 @@ const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { Pool } = require('pg');
-const path = require('path');  // To serve static files
+const path = require('path');  // Required for static file paths
 require('dotenv').config();
 
 const app = express();
@@ -20,8 +20,8 @@ app.use(cors(corsOptions));  // Apply CORS with the specified options
 // Middleware to parse incoming requests with JSON payloads
 app.use(express.json());
 
-// Serve static files from the "web" folder (frontend files)
-app.use(express.static(path.join(__dirname, 'web')));  // Serve everything from the "web" folder
+// Serve static files directly from the "web" folder (assuming it's the root folder now)
+app.use(express.static(path.join(__dirname)));  // Serve everything from the current directory
 
 // Connect to PostgreSQL using the environment variable from .env
 const pool = new Pool({
@@ -103,9 +103,9 @@ app.get('/api/user', async (req, res) => {
   }
 });
 
-// Serve static files from the "web" folder
+// Serve static files from the "web" folder (frontend files)
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'web', 'test', 'index.html'));  // Serve the test page by default
+  res.sendFile(path.join(__dirname, 'test', 'index.html'));  // Serve the test page by default
 });
 
 // Start server
