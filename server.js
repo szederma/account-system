@@ -8,9 +8,8 @@ require('dotenv').config();
 
 const app = express();
 
-// CORS setup to allow requests from distanzuino.com
 const corsOptions = {
-  origin: 'https://distanzuino.com',  // Allow only this domain
+  origin: 'https://distanzuino.com',  // Allow only this domain to make requests
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
@@ -34,6 +33,7 @@ const generateToken = (user) => {
   return jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRY || '1h' });
 };
 
+// Registration endpoint
 // Registration endpoint
 app.post('/api/register', async (req, res) => {
   const { username, email, password } = req.body;
@@ -60,6 +60,7 @@ app.post('/api/register', async (req, res) => {
     res.status(500).json({ error: 'Error registering user' });
   }
 });
+
 
 // Login endpoint
 app.post('/api/login', async (req, res) => {
